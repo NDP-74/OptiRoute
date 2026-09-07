@@ -55,6 +55,7 @@ public class DriverService {
         driver.setPhoneNumber(request.phoneNumber());
         driver.setAnnualSalary(request.annualSalary());
         driver.setMonthlyWorkingHours(request.monthlyWorkingHours());
+        applyLocation(driver,request);
         applyVehicleAndTypes(driver,request);
 
         Driver savedDriver = driverRepository.save(driver);
@@ -70,6 +71,7 @@ public class DriverService {
         driver.setPhoneNumber(request.phoneNumber());
         driver.setAnnualSalary(request.annualSalary());
         driver.setMonthlyWorkingHours(request.monthlyWorkingHours());
+        applyLocation(driver,request);
         applyVehicleAndTypes(driver,request);
 
         Driver updatedDriver = driverRepository.save(driver);
@@ -81,6 +83,12 @@ public class DriverService {
         driver.setSemiTrailer(request.semiTrailerId() == null ? null : semiTrailerService.getEntityById(request.semiTrailerId()));
         driver.setCostType(request.costType());
         driver.setDriverType(request.driverType());
+    }
+
+    private void applyLocation(Driver driver, DriverRequest request) {
+        driver.setLocationLabel(request.locationLabel());
+        driver.setLocationLatitude(request.locationLatitude());
+        driver.setLocationLongitude(request.locationLongitude());
     }
 
     @Transactional

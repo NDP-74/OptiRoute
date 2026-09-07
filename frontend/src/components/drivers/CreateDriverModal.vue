@@ -58,6 +58,9 @@ const submitDriver = async () => {
             semiTrailerId: form.semiTrailerId,
             costType: form.costType,
             driverType: form.driverType,
+            locationLabel: form.locationLabel,
+            locationLatitude: form.locationLatitude,
+            locationLongitude: form.locationLongitude,
         }
 
         await createDriver(payload)

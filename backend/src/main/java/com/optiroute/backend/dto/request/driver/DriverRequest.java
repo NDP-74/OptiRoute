@@ -11,5 +11,6 @@ import com.optiroute.backend.type.driver.DriverCostType;
 import com.optiroute.backend.type.driver.DriverType;
 
 public record DriverRequest(@NotBlank String firstName, @NotBlank String lastName, String phoneNumber, @NotNull @PositiveOrZero BigDecimal annualSalary,
-        @NotNull @Positive BigDecimal monthlyWorkingHours, Long tractorId, Long semiTrailerId, @NotNull DriverCostType costType, @NotNull DriverType driverType) {
+        @NotNull @Positive BigDecimal monthlyWorkingHours, Long tractorId, Long semiTrailerId, @NotNull DriverCostType costType, @NotNull DriverType driverType,
+        String locationLabel, BigDecimal locationLatitude, BigDecimal locationLongitude) {
 }

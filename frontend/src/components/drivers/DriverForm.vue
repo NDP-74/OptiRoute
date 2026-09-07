@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue"
+import { computed, onMounted, ref } from "vue"
 import { getTractors } from "@/api/vehicle/tractorApi"
 import { getSemiTrailers } from "@/api/vehicle/semiTrailerApi"
 import type { TractorSummary } from "@/models/vehicle/Tractor"
 import type { SemiTrailerSummary } from "@/models/vehicle/SemiTrailer"
 import type { DriverFormData } from "@/models/driver/Driver"
 import { formatVehicleLabel } from "@/utils/vehicleUtils"
+import HereAutocompleteInput from "@/components/maps/HereAutocompleteInput.vue"
 
 const form = defineModel<DriverFormData>({
     required: true,
@@ -14,6 +15,15 @@ const form = defineModel<DriverFormData>({
 const tractors = ref<TractorSummary[]>([])
 const semiTrailers = ref<SemiTrailerSummary[]>([])
 const optionsError = ref(false)
+
+const parkingLocation = computed({
+    get: () => form.value.locationLabel ? { address: form.value.locationLabel } : undefined,
+    set: (value: { address?: string; position?: { lat: number; lng: number } } | undefined) => {
+        form.value.locationLabel = value?.address ?? null
+        form.value.locationLatitude = value?.position?.lat ?? null
+        form.value.locationLongitude = value?.position?.lng ?? null
+    },
+})
 
 withDefaults(
     defineProps<{ disabled?: boolean }>(),
@@ -68,6 +78,8 @@ onMounted(async () => {
                 <input v-model="form.phoneNumber" type="tel" maxlength="30" :disabled="disabled"
                     class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:bg-slate-100" />
             </div>
+
+            <HereAutocompleteInput v-model="parkingLocation" label="Lieu de stationnement" :disabled="disabled" />
 
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>

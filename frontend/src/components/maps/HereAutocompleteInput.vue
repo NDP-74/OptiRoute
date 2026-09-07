@@ -8,6 +8,7 @@ import { autocompletePlaces, geocodePlace } from '@/api/here/mapsApi'
 const props = defineProps<{
     label?: string
     modelValue?: any
+    disabled?: boolean
 }>()
 
 const emit = defineEmits(['selected', 'update:modelValue'])
@@ -101,15 +102,17 @@ async function selectPlace(item: any) {
             {{ label }}
         </label>
 
-        <input v-model="inputValue" type="text" class="w-full rounded-xl border border-slate-300 p-3"
+        <input v-model="inputValue" type="text" :disabled="props.disabled"
+            class="w-full rounded-xl border border-slate-300 p-3 disabled:cursor-not-allowed disabled:bg-slate-100"
             :placeholder="label" />
 
         <!-- RESULTS -->
         <div v-if="results.length > 0"
             class="absolute z-50 mt-2 w-full bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
 
-            <button v-for="item in results" :key="item.id" @click="selectPlace(item)"
-                class="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100">
+            <button v-for="item in results" :key="item.id" type="button" :disabled="props.disabled"
+                @click="selectPlace(item)"
+                class="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 disabled:cursor-not-allowed">
 
                 <div class="text-sm font-medium">
                     {{ item.title }}

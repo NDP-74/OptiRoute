@@ -200,6 +200,9 @@ watch(
 
             <DetailSection title="Coordonnées" :icon="Phone">
                 <DetailRow label="Téléphone" :value="driver.phoneNumber || 'Non renseigné'" />
+
+                <DetailRow label="Lieu de stationnement" :value="driver.locationLabel || 'Non renseigné'"
+                    :break-value="true" />
             </DetailSection>
 
             <DetailSection title="Véhicules affectés" :icon="Info">

@@ -11,7 +11,7 @@ public class DriverUtils {
             driver.getMonthlyWorkingHours(), driver.getTractor() != null ? driver.getTractor().getId() : null,
             driver.getTractor() != null ? driver.getTractor().getRegistration() : null, driver.getSemiTrailer() != null ? driver.getSemiTrailer().getId() : null,
             driver.getSemiTrailer() != null ? driver.getSemiTrailer().getRegistration() : null, driver.getCostType() != null ? driver.getCostType().name() : null,
-            driver.getDriverType() != null ? driver.getDriverType().name() : null);
+            driver.getDriverType() != null ? driver.getDriverType().name() : null, driver.getLocationLabel(), driver.getLocationLatitude(), driver.getLocationLongitude());
     }
 
     public static DriverLightResponse toSummaryResponse(Driver driver) {

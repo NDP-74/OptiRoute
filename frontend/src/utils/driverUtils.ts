@@ -14,6 +14,9 @@ export const createEmptyDriverForm = (): DriverFormData => ({
     semiTrailerId: null,
     costType: null,
     driverType: null,
+    locationLabel: null,
+    locationLatitude: null,
+    locationLongitude: null,
 })
 
 export const getDriverName = (driver: DriverDetails | null): string => {

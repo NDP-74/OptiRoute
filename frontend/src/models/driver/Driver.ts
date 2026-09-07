@@ -17,6 +17,9 @@ export interface DriverDetails extends DriverSummary {
     semiTrailerRegistration: string | null
     costType: DriverCostType
     driverType: DriverType
+    locationLabel: string | null
+    locationLatitude: number | null
+    locationLongitude: number | null
 }
 
 export type DriverCostType = "HOURLY" | "FIXED"
@@ -32,6 +35,9 @@ export interface CreateDriverRequest {
     semiTrailerId: number | null
     costType: DriverCostType | null
     driverType: DriverType | null
+    locationLabel: string | null
+    locationLatitude: number | null
+    locationLongitude: number | null
 }
 
 export interface UpdateDriverRequest {
@@ -44,6 +50,9 @@ export interface UpdateDriverRequest {
     semiTrailerId: number | null
     costType: DriverCostType | null
     driverType: DriverType | null
+    locationLabel: string | null
+    locationLatitude: number | null
+    locationLongitude: number | null
 }
 
 export interface DriverFormData {
@@ -56,4 +65,7 @@ export interface DriverFormData {
     semiTrailerId: number | null
     costType: DriverCostType | null
     driverType: DriverType | null
+    locationLabel: string | null
+    locationLatitude: number | null
+    locationLongitude: number | null
 }

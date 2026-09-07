@@ -58,4 +58,13 @@ public class Driver extends EntityUtils {
     @Enumerated(EnumType.STRING)
     @Column(name = "driver_type", nullable = false, length = 30)
     private DriverType driverType;
+
+    @Column(name = "location_label", length = 255)
+    private String locationLabel;
+
+    @Column(name = "location_latitude", precision = 10, scale = 7)
+    private BigDecimal locationLatitude;
+
+    @Column(name = "location_longitude", precision = 10, scale = 7)
+    private BigDecimal locationLongitude;
 }

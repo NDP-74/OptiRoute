@@ -58,6 +58,9 @@ const populateForm = () => {
         semiTrailerId: props.driver.semiTrailerId,
         costType: props.driver.costType,
         driverType: props.driver.driverType,
+        locationLabel: props.driver.locationLabel,
+        locationLatitude: props.driver.locationLatitude,
+        locationLongitude: props.driver.locationLongitude,
     } satisfies DriverFormData)
 }
 
@@ -80,6 +83,9 @@ const submitDriver = async () => {
             semiTrailerId: form.semiTrailerId,
             costType: form.costType,
             driverType: form.driverType,
+            locationLabel: form.locationLabel,
+            locationLatitude: form.locationLatitude,
+            locationLongitude: form.locationLongitude,
         }
 
         await updateDriver(props.driver.id, payload)
