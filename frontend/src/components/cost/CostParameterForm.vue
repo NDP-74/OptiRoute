@@ -144,7 +144,7 @@ const normalizeExistingConditions = () => {
                         Valeur
                     </label>
 
-                    <input v-model.number="form.value" type="number" min="0" step="100" required :disabled="disabled"
+                    <input v-model.number="form.value" type="number" min="0" step="0.01" required :disabled="disabled"
                         class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:bg-slate-100" />
                 </div>
 
