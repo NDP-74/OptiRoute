@@ -21,6 +21,17 @@ export interface PlanningRequest {
     endDate: string;
 }
 
+export interface PlanningDriverSummary {
+    id: number;
+    name: string;
+    salaryForNonTransportDays: number;
+}
+
+export interface PlanningResponse {
+    transports: PlanningTransport[];
+    drivers: PlanningDriverSummary[];
+}
+
 export interface PlanningDriver {
     id: number;
     name: string;

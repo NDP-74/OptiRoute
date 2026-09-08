@@ -30,7 +30,7 @@ function openTransport(transportId: number): void { selectedTransportId.value = 
 function closeTransport(): void { selectedTransportId.value = null; }
 
 
-const { transports, loading, error, loadPlanning } = usePlanning();
+const { transports, drivers, loading, error, loadPlanning } = usePlanning();
 
 const handleTransportDeleted = async (): Promise<void> => {
     closeTransport();
@@ -169,6 +169,15 @@ const days = computed<PlanningDay[]>(() => {
 const planningDrivers = computed<PlanningDriver[]>(() => {
     const driversMap = new Map<number, PlanningDriver>();
 
+    drivers.value.forEach((driverSummary) => {
+        driversMap.set(driverSummary.id, {
+            id: driverSummary.id,
+            name: driverSummary.name,
+            totalCost: driverSummary.salaryForNonTransportDays,
+            days: {},
+        });
+    });
+
     const sortedTransports = [...transports.value].sort((first, second) => {
         return (new Date(first.plannedStart).getTime() - new Date(second.plannedStart).getTime());
     });
@@ -177,14 +186,7 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
         let driver = driversMap.get(transport.driverId);
 
         if (!driver) {
-            driver = {
-                id: transport.driverId,
-                name: transport.driverName,
-                totalCost: 0,
-                days: {},
-            };
-
-            driversMap.set(transport.driverId, driver);
+            return;
         }
 
         const dayKey = formatDateKey(new Date(transport.plannedStart));

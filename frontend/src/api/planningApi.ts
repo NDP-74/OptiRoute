@@ -2,10 +2,10 @@ import type { TransportDetail } from "@/models/transport/TransportDetail";
 import api from "./axios";
 
 
-import type { PlanningTransport, PlanningRequest } from "@/models/planning/planning";
+import type { PlanningRequest, PlanningResponse } from "@/models/planning/planning";
 
-export const getPlanning = async (request: PlanningRequest): Promise<PlanningTransport[]> => {
-    const response = await api.get<PlanningTransport[]>("/transports/planning",
+export const getPlanning = async (request: PlanningRequest): Promise<PlanningResponse> => {
+    const response = await api.get<PlanningResponse>("/transports/planning",
         {
             params: request,
         }

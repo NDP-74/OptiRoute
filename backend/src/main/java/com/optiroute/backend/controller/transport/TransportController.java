@@ -1,15 +1,13 @@
 package com.optiroute.backend.controller.transport;
 
 import java.time.LocalDate;
-import java.util.List;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.optiroute.backend.dto.request.transport.TransportFromRouteRequest;
 import com.optiroute.backend.dto.request.transport.TransportRequest;
 import com.optiroute.backend.dto.response.transport.TransportDetailResponse;
-import com.optiroute.backend.dto.response.transport.TransportPlanningResponse;
+import com.optiroute.backend.dto.response.transport.PlanningResponse;
 import com.optiroute.backend.entity.transport.Transport;
 import com.optiroute.backend.service.transport.TransportDetailService;
 import com.optiroute.backend.service.transport.TransportFacadeService;
@@ -37,7 +35,7 @@ public class TransportController {
     }
 
     @GetMapping("/planning")
-    public ResponseEntity<List<TransportPlanningResponse>> getPlanning(@RequestParam LocalDate startDate, @RequestParam LocalDate endDate) {
+    public ResponseEntity<PlanningResponse> getPlanning(@RequestParam LocalDate startDate, @RequestParam LocalDate endDate) {
         return ResponseEntity.ok(transportPlanningService.getPlanning(startDate,endDate));
     }
 
