@@ -27,7 +27,7 @@ public class HereApiClient {
             .queryParam("destination",destination).queryParam("alternatives",alternatives).queryParam("return","polyline,summary,tolls").queryParam("transportMode","truck")
             .queryParam("routingMode","fast")
 
-            .queryParam("vehicle[currentWeight]",truckConfiguration.getEmptyWeightKg()).queryParam("vehicle[height]",truckConfiguration.getHeightCm())
+            .queryParam("vehicle[currentWeight]",truckConfiguration.getWeightKg()).queryParam("vehicle[height]",truckConfiguration.getHeightCm())
             .queryParam("vehicle[width]",truckConfiguration.getWidthCm()).queryParam("vehicle[length]",truckConfiguration.getLengthCm())
             .queryParam("vehicle[axleCount]",truckConfiguration.getAxleCount()).queryParam("vehicle[speedCap]",truckConfiguration.getMaxSpeed())
 

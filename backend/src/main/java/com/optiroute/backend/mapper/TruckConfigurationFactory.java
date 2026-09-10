@@ -15,7 +15,7 @@ public class TruckConfigurationFactory {
     }
 
     public TruckConfiguration create(Tractor tractor, SemiTrailer semiTrailer, boolean emptyTrip) {
-        return TruckConfiguration.builder().emptyWeightKg(add(tractor.getEmptyWeightKg(),semiTrailer.getEmptyWeightKg()))
+        return TruckConfiguration.builder().weightKg(emptyTrip ? add(tractor.getEmptyWeightKg(),semiTrailer.getEmptyWeightKg()) : tractor.getGrossCombinationWeightKg())
             .heightCm(max(tractor.getHeightCm(),semiTrailer.getHeightCm())).widthCm(max(tractor.getWidthCm(),semiTrailer.getWidthCm()))
             .lengthCm(add(tractor.getLengthCm(),semiTrailer.getLengthCm())).axleCount(add(tractor.getAxleCount(),semiTrailer.getAxleCount()))
             .maxSpeed(CommonUtils.kmhToMs(min(tractor.getMaxSpeed(),semiTrailer.getMaxSpeed())))
