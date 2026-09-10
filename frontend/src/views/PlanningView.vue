@@ -173,6 +173,8 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
         driversMap.set(driverSummary.id, {
             id: driverSummary.id,
             name: driverSummary.name,
+            tractorRegistration: driverSummary.tractorRegistration,
+            semiTrailerRegistration: driverSummary.semiTrailerRegistration,
             totalCost: driverSummary.salaryForNonTransportDays,
             days: {},
         });

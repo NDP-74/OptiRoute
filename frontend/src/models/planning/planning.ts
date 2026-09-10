@@ -7,6 +7,9 @@ export interface PlanningTransport {
     driverId: number;
     driverName: string;
 
+    tractorRegistration: string | null;
+    semiTrailerRegistration: string | null;
+
     plannedStart: string;
     plannedEnd: string;
 
@@ -24,6 +27,8 @@ export interface PlanningRequest {
 export interface PlanningDriverSummary {
     id: number;
     name: string;
+    tractorRegistration: string | null;
+    semiTrailerRegistration: string | null;
     salaryForNonTransportDays: number;
 }
 
@@ -35,6 +40,8 @@ export interface PlanningResponse {
 export interface PlanningDriver {
     id: number;
     name: string;
+    tractorRegistration: string | null;
+    semiTrailerRegistration: string | null;
     totalCost: number;
     days: Record<string, PlanningTransport[]>;
 }

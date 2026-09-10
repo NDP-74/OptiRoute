@@ -8,6 +8,8 @@ public record TransportPlanningResponse(
 
         Long driverId, String driverName,
 
+        String tractorRegistration, String semiTrailerRegistration,
+
         OffsetDateTime plannedStart, OffsetDateTime plannedEnd,
 
         String originName, String destinationName,

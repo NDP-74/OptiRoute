@@ -26,6 +26,10 @@
             <p class="truncate">
                 ↓ {{ endTime }} — {{ transport.destinationName }}
             </p>
+
+            <p v-if="vehiclesLabel" class="truncate">
+                🚛 {{ vehiclesLabel }}
+            </p>
         </div>
 
         <div class="mt-2 flex items-center justify-end border-t border-emerald-200 pt-2">
@@ -78,5 +82,13 @@ const formattedCost = computed(() => {
         style: "currency",
         currency: "EUR",
     }).format(totalCost);
+});
+
+const vehiclesLabel = computed(() => {
+    const parts = [props.transport.tractorRegistration, props.transport.semiTrailerRegistration].filter(
+        (registration): registration is string => !!registration
+    );
+
+    return parts.join(" — ");
 });
 </script>

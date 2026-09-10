@@ -15,6 +15,10 @@
           <p class="mt-0.5 text-xs text-slate-500">
             {{ transportCountLabel }}
           </p>
+
+          <p class="mt-1 truncate text-xs text-slate-500">
+            {{ vehiclesLabel }}
+          </p>
         </div>
       </div>
     </div>
@@ -27,6 +31,8 @@ import { computed } from "vue";
 const props = defineProps<{
   driverName: string;
   transportCount: number;
+  tractorRegistration: string | null;
+  semiTrailerRegistration: string | null;
 }>();
 
 const initials = computed<string>(() => {
@@ -36,6 +42,18 @@ const initials = computed<string>(() => {
     .slice(0, 2)
     .map((part) => part.charAt(0).toUpperCase())
     .join("");
+});
+
+const vehiclesLabel = computed<string>(() => {
+  const parts = [props.tractorRegistration, props.semiTrailerRegistration].filter(
+    (registration): registration is string => !!registration
+  );
+
+  if (parts.length === 0) {
+    return "Aucun véhicule assigné";
+  }
+
+  return parts.join(" — ");
 });
 
 const transportCountLabel = computed<string>(() => {
