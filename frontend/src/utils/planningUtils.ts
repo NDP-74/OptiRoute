@@ -9,6 +9,7 @@ export function usePlanning() {
     const loading = ref(false);
     const transports = ref<PlanningResponse["transports"]>([]);
     const drivers = ref<PlanningResponse["drivers"]>([]);
+    const unassignedVehicles = ref<PlanningResponse["unassignedVehicles"]>({ registrations: [], depreciationCost: 0 });
     const error = ref<string | null>(null);
 
     async function loadPlanning(request: PlanningRequest) {
@@ -18,6 +19,7 @@ export function usePlanning() {
             const planning = await getPlanning(request);
             transports.value = planning.transports;
             drivers.value = planning.drivers;
+            unassignedVehicles.value = planning.unassignedVehicles;
         } catch (e) {
             error.value = "Impossible de charger le planning.";
         } finally {
@@ -25,7 +27,7 @@ export function usePlanning() {
         }
     }
 
-    return { loading, transports, drivers, error, loadPlanning };
+    return { loading, transports, drivers, unassignedVehicles, error, loadPlanning };
 }
 
 export function createPlanningGridStyle(dayCount: number) {

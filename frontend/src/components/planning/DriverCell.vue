@@ -31,8 +31,7 @@ import { computed } from "vue";
 const props = defineProps<{
   driverName: string;
   transportCount: number;
-  tractorRegistration: string | null;
-  semiTrailerRegistration: string | null;
+  vehicleRegistrations: string[];
 }>();
 
 const initials = computed<string>(() => {
@@ -45,15 +44,11 @@ const initials = computed<string>(() => {
 });
 
 const vehiclesLabel = computed<string>(() => {
-  const parts = [props.tractorRegistration, props.semiTrailerRegistration].filter(
-    (registration): registration is string => !!registration
-  );
-
-  if (parts.length === 0) {
+  if (props.vehicleRegistrations.length === 0) {
     return "Aucun véhicule assigné";
   }
 
-  return parts.join(" — ");
+  return props.vehicleRegistrations.join(" — ");
 });
 
 const transportCountLabel = computed<string>(() => {

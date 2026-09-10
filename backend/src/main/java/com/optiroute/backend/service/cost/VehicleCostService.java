@@ -96,4 +96,31 @@ public class VehicleCostService {
 
 		return !date.isBefore(startDate) && !date.isAfter(endDate);
 	}
+
+	// Amortissement cumulé sur la période sélectionnée pour un véhicule non affecté
+	// à un conducteur
+	public double calculateDepreciationForPeriod(BigDecimal purchaseCost, LocalDate depreciationStartDate, LocalDate depreciationEndDate, LocalDate periodStart,
+		LocalDate periodEndExclusive) {
+		if (purchaseCost == null || depreciationStartDate == null || depreciationEndDate == null) {
+			return 0;
+		}
+
+		int workingDaysInDepreciationPeriod = workingDaysService.getWorkingDaysBetween(depreciationStartDate,depreciationEndDate);
+		if (workingDaysInDepreciationPeriod <= 0) {
+			return 0;
+		}
+
+		LocalDate periodEndInclusive = periodEndExclusive.minusDays(1);
+		LocalDate overlapStart = depreciationStartDate.isAfter(periodStart) ? depreciationStartDate : periodStart;
+		LocalDate overlapEnd = depreciationEndDate.isBefore(periodEndInclusive) ? depreciationEndDate : periodEndInclusive;
+
+		if (overlapEnd.isBefore(overlapStart)) {
+			return 0;
+		}
+
+		int workingDaysInOverlap = workingDaysService.getWorkingDaysBetween(overlapStart,overlapEnd);
+		double dailyDepreciation = purchaseCost.doubleValue() / workingDaysInDepreciationPeriod;
+
+		return dailyDepreciation * workingDaysInOverlap;
+	}
 }

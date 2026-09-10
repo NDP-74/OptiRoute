@@ -30,7 +30,7 @@ function openTransport(transportId: number): void { selectedTransportId.value = 
 function closeTransport(): void { selectedTransportId.value = null; }
 
 
-const { transports, drivers, loading, error, loadPlanning } = usePlanning();
+const { transports, drivers, unassignedVehicles, loading, error, loadPlanning } = usePlanning();
 
 const handleTransportDeleted = async (): Promise<void> => {
     closeTransport();
@@ -166,6 +166,8 @@ const days = computed<PlanningDay[]>(() => {
     );
 });
 
+const UNASSIGNED_VEHICLES_ROW_ID = -1;
+
 const planningDrivers = computed<PlanningDriver[]>(() => {
     const driversMap = new Map<number, PlanningDriver>();
 
@@ -173,8 +175,9 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
         driversMap.set(driverSummary.id, {
             id: driverSummary.id,
             name: driverSummary.name,
-            tractorRegistration: driverSummary.tractorRegistration,
-            semiTrailerRegistration: driverSummary.semiTrailerRegistration,
+            vehicleRegistrations: [driverSummary.tractorRegistration, driverSummary.semiTrailerRegistration].filter(
+                (registration): registration is string => !!registration
+            ),
             totalCost: driverSummary.salaryForNonTransportDays,
             days: {},
         });
@@ -202,9 +205,21 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
         driver.totalCost += transport.totalCost;
     });
 
-    return Array.from(driversMap.values()).sort((first, second) => {
+    const sortedDrivers = Array.from(driversMap.values()).sort((first, second) => {
         return first.name.localeCompare(second.name, "fr", { sensitivity: "base" });
     });
+
+    if (unassignedVehicles.value.registrations.length > 0) {
+        sortedDrivers.push({
+            id: UNASSIGNED_VEHICLES_ROW_ID,
+            name: "Véhicules sans conducteur",
+            vehicleRegistrations: unassignedVehicles.value.registrations,
+            totalCost: unassignedVehicles.value.depreciationCost,
+            days: {},
+        });
+    }
+
+    return sortedDrivers;
 });
 
 async function loadCurrentPeriod(): Promise<void> {

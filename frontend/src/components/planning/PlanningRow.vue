@@ -1,8 +1,7 @@
 <template>
     <div class="grid min-w-0 border-b border-slate-200 bg-white" :style="gridStyle">
         <InfoCell :driver-name="driver.name" :transport-count="transportCount"
-            :tractor-registration="driver.tractorRegistration"
-            :semi-trailer-registration="driver.semiTrailerRegistration" />
+            :vehicle-registrations="driver.vehicleRegistrations" />
 
         <CostCell :total-cost="driver.totalCost" />
 
