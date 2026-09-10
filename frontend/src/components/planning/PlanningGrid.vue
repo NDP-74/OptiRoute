@@ -43,20 +43,25 @@
     <div v-else>
       <PlanningRow v-for="driver in drivers" :key="driver.id" :driver="driver" :days="days"
         @transport-select="emit('transport-select', $event)" />
+
+      <PlanningTotalRow :total-cost="totalCost" :day-count="days.length" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
+
 import PlanningRow from "@/components/planning/PlanningRow.vue";
 import PlanningHeader from "@/components/planning/PlanningHeader.vue";
+import PlanningTotalRow from "@/components/planning/PlanningTotalRow.vue";
 
 import type {
   PlanningDay,
   PlanningDriver,
 } from "@/models/planning/planning";
 
-defineProps<{
+const props = defineProps<{
   drivers: PlanningDriver[];
   days: PlanningDay[];
   loading: boolean;
@@ -67,5 +72,9 @@ const emit = defineEmits<{
   retry: [];
   "transport-select": [transportId: number];
 }>();
+
+const totalCost = computed<number>(() => {
+  return props.drivers.reduce((total, driver) => total + driver.totalCost, 0);
+});
 
 </script>
