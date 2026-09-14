@@ -16,7 +16,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class TruckConfiguration {
 
-    private Integer emptyWeightKg;
+    private Integer weightKg;
 
     private Integer heightCm;
     private Integer widthCm;

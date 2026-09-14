@@ -32,6 +32,14 @@ watch(() => props.modelValue, (value) => {
 watch(inputValue, (value) => {
     if (isSelecting.value) return
 
+    const coordinates = parseCoordinates(value)
+    if (coordinates) {
+        fetchPlaces.cancel?.()
+        emit('update:modelValue', coordinates)
+        results.value = []
+        return
+    }
+
     fetchPlaces(value)
 })
 
@@ -59,6 +67,28 @@ const fetchPlaces = debounce(
         maxWait: 5000 // équivalent VueUse maxWait
     }
 )
+
+function parseCoordinates(value: string) {
+    const parts = value.split(',').map(part => part.trim())
+    if (parts.length !== 2 || parts.some(part => part === '')) return null
+
+    const latitude = Number(parts[0])
+    const longitude = Number(parts[1])
+
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)
+        || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+        return null
+    }
+
+    return {
+        name: value.trim(),
+        address: value.trim(),
+        position: {
+            lat: latitude,
+            lng: longitude
+        }
+    }
+}
 
 async function selectPlace(item: any) {
     try {
