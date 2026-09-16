@@ -53,32 +53,11 @@ const showAssignModal = ref(false)
 
 const routeRequest = ref<RouteRequest>()
 
-const fastestRouteDuration = computed(() => {
-    const durations = props.routeResponse?.routes.map(route => route.duration) ?? []
-    return durations.length ? Math.min(...durations) : null
-})
-
-const cheapestRouteCost = computed(() => {
-    const costs = props.routeResponse?.routes.map(route => route.costs.totalCost) ?? []
-    return costs.length ? Math.min(...costs) : null
-})
-
-function getRouteSpecificities(route: RouteResponse['routes'][number]): string[] {
-    const specificities: string[] = []
-
-    if (route.costs.tollCost === 0) {
-        specificities.push('Route sans péage')
+function getRouteSpecificities(): string {
+    if (routeRequest.value?.mode === "CHEAPEST") {
+        return "Route la plus économique"
     }
-
-    if (route.duration === fastestRouteDuration.value) {
-        specificities.push('Route la plus rapide')
-    }
-
-    if (route.costs.totalCost === cheapestRouteCost.value) {
-        specificities.push('Route la plus économique')
-    }
-
-    return specificities
+    return "Route la plus rapide"
 }
 
 const onRouteCalculated = (data: { response: RouteResponse, request: RouteRequest }) => {
@@ -88,15 +67,29 @@ const onRouteCalculated = (data: { response: RouteResponse, request: RouteReques
 }
 
 const assignStartDate = computed(() => {
-    return routeRequest.value?.departureTime ?? ''
-})
-
-const assignEndDate = computed(() => {
-    if (!routeRequest.value?.departureTime || props.selectedIndex === undefined || !props.routeResponse) {
+    if (!routeRequest.value?.routeTime) {
         return ''
     }
 
-    const start = new Date(routeRequest.value.departureTime)
+    const routeDate = new Date(routeRequest.value.routeTime)
+    if (routeRequest.value.timeMode === 'ARRIVAL' && props.selectedIndex !== undefined && props.routeResponse) {
+        const route = props.routeResponse.routes[props.selectedIndex]
+        routeDate.setSeconds(routeDate.getSeconds() - (route?.duration ?? 0))
+    }
+
+    return routeDate.toISOString()
+})
+
+const assignEndDate = computed(() => {
+    if (!routeRequest.value?.routeTime || props.selectedIndex === undefined || !props.routeResponse) {
+        return ''
+    }
+
+    if (routeRequest.value.timeMode === 'ARRIVAL') {
+        return routeRequest.value.routeTime
+    }
+
+    const start = new Date(routeRequest.value.routeTime)
     const route = props.routeResponse.routes[props.selectedIndex]
 
     if (route != undefined && route.duration !== undefined) {
@@ -193,7 +186,7 @@ onMounted(async () => {
 
                     <!-- RESULTS -->
                     <div v-if="routeResponse?.routes" class="space-y-3">
-                        <h2 class="text-xl font-bold text-slate-800">Itinéraires trouvés</h2>
+                        <h2 class="text-xl font-bold text-slate-800">Itinéraire trouvé</h2>
 
                         <div class="space-y-3">
                             <div v-for="(route, index) in routeResponse.routes" :key="index"
@@ -206,11 +199,10 @@ onMounted(async () => {
                                 <div class="flex items-start justify-between gap-4">
                                     <!-- LEFT -->
                                     <div class="min-w-0 flex-1">
-                                        <div v-if="getRouteSpecificities(route).length"
-                                            class="mb-2 flex flex-wrap gap-1.5">
-                                            <span v-for="specificity in getRouteSpecificities(route)" :key="specificity"
+                                        <div class="mb-2 flex flex-wrap gap-1.5">
+                                            <span
                                                 class="rounded-md bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">
-                                                {{ specificity }}
+                                                {{ getRouteSpecificities() }}
                                             </span>
                                         </div>
 

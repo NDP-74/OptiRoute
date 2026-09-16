@@ -50,6 +50,34 @@ function clearMarkers() {
     waypointMarkers.length = 0
 }
 
+function createLineString(polyline: string) {
+    let parsedPolyline: any
+
+    try {
+        parsedPolyline = JSON.parse(polyline)
+    } catch {
+        return H.geo.LineString.fromFlexiblePolyline(polyline)
+    }
+
+    const geometry = parsedPolyline.type === 'Feature' ? parsedPolyline.geometry : parsedPolyline
+
+    if (geometry?.type === 'LineString' && Array.isArray(geometry.coordinates)) {
+        const lineString = new H.geo.LineString()
+
+        for (const coordinate of geometry.coordinates) {
+            if (Array.isArray(coordinate) && coordinate.length >= 2) {
+                lineString.pushLatLngAlt(coordinate[1], coordinate[0], coordinate[2] ?? 0)
+            }
+        }
+
+        if (lineString.getPointCount() > 1) {
+            return lineString
+        }
+    }
+
+    return H.geo.LineString.fromFlexiblePolyline(polyline)
+}
+
 function setMarkers(origin: any, destination: any, waypoints: any[] = []) {
     clearMarkers()
 
@@ -95,8 +123,8 @@ function displayRoutes(routes: any[], selectedRoute: any) {
             polylines = [route.polyline]
         }
 
-        for (const encodedPolyline of polylines) {
-            const lineString = H.geo.LineString.fromFlexiblePolyline(encodedPolyline)
+        for (const encodedPolyline of polylines.filter(Boolean)) {
+            const lineString = createLineString(encodedPolyline)
             const polyline = new H.map.Polyline(lineString,
                 {
                     style: {

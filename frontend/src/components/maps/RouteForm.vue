@@ -27,10 +27,9 @@ const form = reactive({
     destination: null as any,
     waypoints: [] as any[],
 
-    departureTime: null as any,
+    routeTime: null as any,
 
     mode: 'FASTEST',
-    maxTravelTimeMinutes: null,
     emptyTrip: false,
 
     tractorId: null,
@@ -82,17 +81,17 @@ async function submit() {
     isSubmitting.value = true
 
     try {
-        const effectiveDepartureTime = toOffsetDateTime(form.departureTime) ?? new Date().toISOString()
+        const effectiveRouteTime = toOffsetDateTime(form.routeTime) ?? new Date().toISOString()
 
         const payload = {
             origin: toPosition(form.origin),
             destination: toPosition(form.destination),
             waypoints: form.waypoints.filter(Boolean).map(toPosition),
 
-            departureTime: effectiveDepartureTime,
+            routeTime: effectiveRouteTime,
+            timeMode: departureMode.value === 'ARRIVALTIME' ? 'ARRIVAL' : 'DEPARTURE',
 
             mode: form.mode,
-            maxTravelTimeMinutes: form.maxTravelTimeMinutes,
             emptyTrip: form.emptyTrip,
 
             tractorId: form.tractorId,
@@ -183,28 +182,6 @@ onMounted(async () => {
                 </option>
 
             </select>
-
-            <!-- MAX TIME -->
-            <div v-if="form.mode === 'CHEAPEST'" class="space-y-3">
-                <div class="flex items-center justify-between">
-                    <label class="block text-sm font-medium">
-                        Temps de trajet maximum
-                    </label>
-
-                    <span class="text-sm font-semibold text-slate-700">
-                        {{ formatDurationMinutes(form.maxTravelTimeMinutes) }}
-                    </span>
-                </div>
-
-                <input v-model.number="form.maxTravelTimeMinutes" type="range" min="0" max="1440" step="15"
-                    class="w-full accent-slate-900" />
-
-                <div class="flex justify-between text-xs text-slate-400">
-                    <span>0 min</span>
-                    <span>24 h</span>
-                </div>
-            </div>
-
         </div>
 
         <!-- TRIP TYPE -->
@@ -221,7 +198,7 @@ onMounted(async () => {
         <div class="space-y-3">
 
             <label class="block text-sm font-medium">
-                Départ
+                Heure
             </label>
 
             <select v-model="departureMode" class="w-full rounded-xl border border-slate-300 p-3">
@@ -232,10 +209,14 @@ onMounted(async () => {
                 <option value="PLANNED">
                     Départ prévu à
                 </option>
+
+                <option value="ARRIVALTIME">
+                    Arrivée à
+                </option>
             </select>
 
-            <input v-if="departureMode === 'PLANNED'" v-model="form.departureTime" type="datetime-local"
-                class="w-full rounded-xl border border-slate-300 p-3" />
+            <input v-if="departureMode === 'PLANNED' || departureMode === 'ARRIVALTIME'" v-model="form.routeTime"
+                type="datetime-local" class="w-full rounded-xl border border-slate-300 p-3" />
 
         </div>
 

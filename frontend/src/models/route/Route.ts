@@ -8,11 +8,11 @@ export interface RouteRequest {
     tractorId: number
     semiTrailerId?: number
 
+    mode: 'FASTEST' | 'CHEAPEST'
     emptyTrip: boolean
 
-    departureTime?: string
-
-    maxTravelTimeMinutes?: number
+    routeTime?: string
+    timeMode?: 'DEPARTURE' | 'ARRIVAL'
 
     driverHourlyRate: number
 }
@@ -25,6 +25,7 @@ export interface RouteDto {
     duration: number
     baseDuration: number
     distanceMeters: number
+    polyline?: string
 
     costs: RouteCostDetailsDto
 }
