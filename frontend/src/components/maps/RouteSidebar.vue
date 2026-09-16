@@ -176,11 +176,11 @@ onMounted(async () => {
 <template>
     <div class="relative h-full">
         <div :class="[
-            'h-full w-[400px] bg-white shadow-2xl border-r',
+            'h-full w-[400px] shrink-0 bg-white shadow-2xl border-r',
             'transition-all duration-300 overflow-hidden',
             open ? 'translate-x-0' : '-translate-x-full']">
             <div class="h-full flex flex-col">
-                <div class="flex-1 overflow-y-auto p-4 space-y-6">
+                <div class="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
                     <!-- FORM -->
                     <RouteForm @route-calculated="onRouteCalculated" />
 
@@ -274,4 +274,6 @@ onMounted(async () => {
 
     <AssignRouteModal :show="showAssignModal" :drivers="drivers" :customers="customers" :start-date="assignStartDate"
         :end-date="assignEndDate" @close="showAssignModal = false" @submit="handleAssignRoute" />
+
+
 </template>

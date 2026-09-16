@@ -11,14 +11,13 @@ import type { Position } from '@/models/route/Position'
 import type { TractorSummary } from "@/models/vehicle/Tractor"
 import type { SemiTrailerSummary } from "@/models/vehicle/SemiTrailer"
 import { formatVehicleLabel } from "@/utils/vehicleUtils"
-import { formatDurationMinutes } from "@/utils/formatters"
 
 //Variables
 const departureMode = ref('NOW')
 const tractors = ref<TractorSummary[]>([])
 const semiTrailers = ref<SemiTrailerSummary[]>([])
 const isSubmitting = ref(false)
-const MAX_WAYPOINTS = 4
+const MAX_WAYPOINTS = 3
 
 const emit = defineEmits(['route-calculated'])
 
@@ -148,7 +147,7 @@ onMounted(async () => {
             <div class="flex items-center justify-end gap-3">
                 <button type="button" @click="addWaypoint" :disabled="form.waypoints.length >= MAX_WAYPOINTS"
                     class="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
-                    {{ form.waypoints.length >= MAX_WAYPOINTS ? 'Limite atteinte (4)' : '+ Ajouter une étape' }}
+                    {{ form.waypoints.length >= MAX_WAYPOINTS ? 'Limite atteinte (3)' : '+ Ajouter une étape' }}
                 </button>
             </div>
 
