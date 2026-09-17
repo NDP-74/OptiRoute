@@ -15,6 +15,7 @@ const props = defineProps<{
 const emit = defineEmits<{
     "update:range": [value: [Date, Date]];
     "today-range": [startOffset: number, additionalDays: number];
+    "create-route": [];
 }>();
 
 const selectedRange = ref<DateRange>([
@@ -119,6 +120,12 @@ watch(
                     </div>
                 </div>
             </div>
+
+            <button type="button"
+                class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+                @click="emit('create-route')">
+                Créer et assigner un itinéraire
+            </button>
         </div>
     </div>
 </template>

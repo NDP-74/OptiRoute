@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref } from 'vue'
 import RouteForm from './RouteForm.vue'
 
 import {
@@ -10,33 +10,12 @@ import {
     Car
 } from 'lucide-vue-next'
 
-import AssignRouteModal from '@/components/maps/AssignRouteModal.vue'
+import PlanningRouteModal from '@/components/planning/PlanningRouteModal.vue'
 
-import type { CreateTransportRequest, CreateTransportFromRouteRequest, AssignTransport } from '@/models/transport/TransportRequest.ts'
 import type { RouteRequest, RouteResponse } from '@/models/route/Route'
-import type { DriverSummary } from '@/models/driver/Driver.ts'
-import type { Customer } from '@/models/Customer'
-
-import { createTransportFromRoute } from '@/api/transportApi.ts'
-import { getDrivers } from '@/api/driver/driverApi.ts'
-import { getCustomers } from '@/api/customerApi'
-import { getApiErrorMessage } from '@/api/utils'
 
 import { formatDurationSeconds } from "@/utils/formatters"
 
-import { useNotification } from '@/composables/useNotification'
-
-const notification = useNotification()
-
-const drivers = ref<DriverSummary[]>([])
-const customers = ref<Customer[]>([])
-
-const loadAssignmentData = async () => {
-    const [loadedDrivers, loadedCustomers] = await Promise.all([getDrivers(), getCustomers()])
-
-    drivers.value = loadedDrivers
-    customers.value = loadedCustomers
-}
 
 const props = defineProps<{
     routeResponse?: RouteResponse
@@ -66,111 +45,9 @@ const onRouteCalculated = (data: { response: RouteResponse, request: RouteReques
     emit('route-calculated', data)
 }
 
-const assignStartDate = computed(() => {
-    if (!routeRequest.value?.routeTime) {
-        return ''
-    }
-
-    const routeDate = new Date(routeRequest.value.routeTime)
-    if (routeRequest.value.timeMode === 'ARRIVAL' && props.selectedIndex !== undefined && props.routeResponse) {
-        const route = props.routeResponse.routes[props.selectedIndex]
-        routeDate.setSeconds(routeDate.getSeconds() - (route?.duration ?? 0))
-    }
-
-    return routeDate.toISOString()
-})
-
-const assignEndDate = computed(() => {
-    if (!routeRequest.value?.routeTime || props.selectedIndex === undefined || !props.routeResponse) {
-        return ''
-    }
-
-    if (routeRequest.value.timeMode === 'ARRIVAL') {
-        return routeRequest.value.routeTime
-    }
-
-    const start = new Date(routeRequest.value.routeTime)
-    const route = props.routeResponse.routes[props.selectedIndex]
-
-    if (route != undefined && route.duration !== undefined) {
-        start.setSeconds(start.getSeconds() + route.duration)
-    }
-
-    return start.toISOString()
-})
-
 function selectRoute(index: number) {
     emit('route-selected', index)
 }
-
-const handleAssignRoute = async (data: AssignTransport) => {
-    const requestValue = routeRequest.value
-
-    if (!requestValue || props.selectedIndex === undefined || !props.routeResponse) {
-        return
-    }
-
-    const selectedRoute = props.routeResponse.routes[props.selectedIndex]
-
-    if (!selectedRoute) {
-        return
-    }
-
-    const plannedStart = assignStartDate.value
-    const plannedEnd = assignEndDate.value
-
-    if (!plannedStart || !plannedEnd) {
-        return
-    }
-
-    const transport: CreateTransportRequest = {
-        name: data.title,
-        customerId: data.customerId,
-
-        driverId: data.driverId,
-        tractorId: requestValue.tractorId,
-        semiTrailerId: requestValue.semiTrailerId,
-        emptyTrip: requestValue.emptyTrip,
-
-        plannedStart,
-        plannedEnd,
-
-        originName: requestValue.origin.name,
-        originAddress: requestValue.origin.address,
-        originLat: requestValue.origin.lat,
-        originLng: requestValue.origin.lng,
-
-        destinationName: requestValue.destination.name,
-        destinationAddress: requestValue.destination.address,
-        destinationLat: requestValue.destination.lat,
-        destinationLng: requestValue.destination.lng
-    }
-
-    const request: CreateTransportFromRouteRequest = {
-        transport,
-        selectedRoute
-    }
-
-    try {
-        await createTransportFromRoute(request)
-
-        notification.success(
-            'Planning enregistré',
-            `Le transport « ${data.title} » a bien été ajouté.`
-        )
-    } catch (error) {
-        notification.error(
-            'Enregistrement impossible',
-            getApiErrorMessage(error, 'Le transport n’a pas pu être ajouté au planning.')
-        )
-    } finally {
-        showAssignModal.value = false
-    }
-}
-
-onMounted(async () => {
-    await loadAssignmentData()
-})
 </script>
 
 <template>
@@ -272,8 +149,9 @@ onMounted(async () => {
 
     </div>
 
-    <AssignRouteModal :show="showAssignModal" :drivers="drivers" :customers="customers" :start-date="assignStartDate"
-        :end-date="assignEndDate" @close="showAssignModal = false" @submit="handleAssignRoute" />
+    <PlanningRouteModal :show="showAssignModal" :initial-route-request="routeRequest"
+        :initial-route-response="routeResponse" :initial-selected-route-index="selectedIndex"
+        @close="showAssignModal = false" @saved="showAssignModal = false" />
 
 
 </template>

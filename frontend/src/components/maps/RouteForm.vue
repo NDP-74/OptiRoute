@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { ArrowUpDown } from 'lucide-vue-next'
 import HereAutocompleteInput from './HereAutocompleteInput.vue'
 
@@ -8,9 +8,14 @@ import { getTractors } from "@/api/vehicle/tractorApi"
 import { getSemiTrailers } from "@/api/vehicle/semiTrailerApi"
 
 import type { Position } from '@/models/route/Position'
+import type { RouteRequest } from '@/models/route/Route'
 import type { TractorSummary } from "@/models/vehicle/Tractor"
 import type { SemiTrailerSummary } from "@/models/vehicle/SemiTrailer"
 import { formatVehicleLabel } from "@/utils/vehicleUtils"
+
+const props = defineProps<{
+    initialRequest?: RouteRequest | null
+}>()
 
 //Variables
 const departureMode = ref('NOW')
@@ -31,9 +36,36 @@ const form = reactive({
     mode: 'FASTEST',
     emptyTrip: false,
 
-    tractorId: null,
-    semiTrailerId: null,
+    tractorId: null as number | null,
+    semiTrailerId: null as number | null,
 })
+
+function toPlace(position: Position) {
+    return {
+        name: position.name ?? '',
+        address: position.address ?? '',
+        position: {
+            lat: position.lat,
+            lng: position.lng,
+        },
+    }
+}
+
+function applyInitialRequest(request: RouteRequest | null | undefined) {
+    if (!request) return
+
+    form.origin = toPlace(request.origin)
+    form.destination = toPlace(request.destination)
+    form.waypoints = (request.waypoints ?? []).map(toPlace)
+    form.routeTime = request.routeTime ? request.routeTime.slice(0, 16) : null
+    form.mode = request.mode
+    form.emptyTrip = request.emptyTrip
+    form.tractorId = request.tractorId
+    form.semiTrailerId = request.semiTrailerId ?? null
+    departureMode.value = request.timeMode === 'ARRIVAL' ? 'ARRIVALTIME' : 'PLANNED'
+}
+
+watch(() => props.initialRequest, applyInitialRequest, { immediate: true })
 
 // Functions
 

@@ -1,13 +1,15 @@
 <template>
     <div class="relative flex h-full min-h-0 flex-col overflow-hidden bg-slate-100">
         <PlanningToolbar :start-date="selectedStartDate" :end-date="selectedEndDate" @update:range="handleRangeChange"
-            @today-range="applyTodayRange" />
+            @today-range="applyTodayRange" @create-route="openRouteModal" />
 
         <PlanningGrid :drivers="planningDrivers" :days="days" :loading="loading" :error="error"
             @retry="loadCurrentPeriod" @transport-select="openTransport" />
 
         <TransportDetailDrawer :open="selectedTransportId !== null" :transport-id="selectedTransportId"
             @close="closeTransport" @deleted="handleTransportDeleted" />
+
+        <PlanningRouteModal :show="showRouteModal" @close="closeRouteModal" @saved="handleRouteSaved" />
     </div>
 </template>
 
@@ -17,6 +19,7 @@ import { useRoute, useRouter } from "vue-router";
 
 import PlanningGrid from "@/components/planning/PlanningGrid.vue";
 import PlanningToolbar from "@/components/planning/PlanningToolbar.vue";
+import PlanningRouteModal from "@/components/planning/PlanningRouteModal.vue";
 import TransportDetailDrawer from "@/components/transports/TransportDetailDrawer.vue";
 
 import { usePlanning } from "@/utils/planningUtils";
@@ -25,15 +28,23 @@ import type { PlanningDay, PlanningDriver, PlanningTransport, } from "@/models/p
 
 
 const selectedTransportId = ref<number | null>(null);
+const showRouteModal = ref(false);
 
 function openTransport(transportId: number): void { selectedTransportId.value = transportId; }
 function closeTransport(): void { selectedTransportId.value = null; }
+function openRouteModal(): void { showRouteModal.value = true; }
+function closeRouteModal(): void { showRouteModal.value = false; }
 
 
 const { transports, drivers, loading, error, loadPlanning } = usePlanning();
 
 const handleTransportDeleted = async (): Promise<void> => {
     closeTransport();
+    await loadCurrentPeriod();
+};
+
+const handleRouteSaved = async (): Promise<void> => {
+    closeRouteModal();
     await loadCurrentPeriod();
 };
 

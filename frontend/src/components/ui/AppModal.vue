@@ -1,7 +1,10 @@
 <script setup lang="ts">
-defineProps<{
+withDefaults(defineProps<{
   show: boolean
-}>()
+  panelClass?: string
+}>(), {
+  panelClass: 'max-w-3xl'
+})
 
 const emit = defineEmits(['close'])
 
@@ -15,8 +18,8 @@ const emit = defineEmits(['close'])
       <div v-if="show" class="fixed inset-0 z-[100] flex items-center justify-center p-4" @keydown.esc="emit('close')">
         <div class="absolute inset-0 bg-slate-950/50 backdrop-blur-sm" @click="emit('close')" />
 
-        <div class="relative z-10 w-full max-w-3xl rounded-2xl bg-white p-6 shadow-2xl" role="dialog" aria-modal="true"
-          @click.stop>
+        <div :class="['relative z-10 w-full rounded-2xl bg-white p-6 shadow-2xl', panelClass]" role="dialog"
+          aria-modal="true" @click.stop>
           <slot />
         </div>
       </div>
