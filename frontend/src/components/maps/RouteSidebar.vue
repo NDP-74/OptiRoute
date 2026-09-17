@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref } from 'vue'
 import RouteForm from './RouteForm.vue'
 
 import {
@@ -10,33 +10,12 @@ import {
     Car
 } from 'lucide-vue-next'
 
-import AssignRouteModal from '@/components/maps/AssignRouteModal.vue'
+import PlanningRouteModal from '@/components/planning/PlanningRouteModal.vue'
 
-import type { CreateTransportRequest, CreateTransportFromRouteRequest, AssignTransport } from '@/models/transport/TransportRequest.ts'
 import type { RouteRequest, RouteResponse } from '@/models/route/Route'
-import type { DriverSummary } from '@/models/driver/Driver.ts'
-import type { Customer } from '@/models/Customer'
-
-import { createTransportFromRoute } from '@/api/transportApi.ts'
-import { getDrivers } from '@/api/driver/driverApi.ts'
-import { getCustomers } from '@/api/customerApi'
-import { getApiErrorMessage } from '@/api/utils'
 
 import { formatDurationSeconds } from "@/utils/formatters"
 
-import { useNotification } from '@/composables/useNotification'
-
-const notification = useNotification()
-
-const drivers = ref<DriverSummary[]>([])
-const customers = ref<Customer[]>([])
-
-const loadAssignmentData = async () => {
-    const [loadedDrivers, loadedCustomers] = await Promise.all([getDrivers(), getCustomers()])
-
-    drivers.value = loadedDrivers
-    customers.value = loadedCustomers
-}
 
 const props = defineProps<{
     routeResponse?: RouteResponse
@@ -53,32 +32,11 @@ const showAssignModal = ref(false)
 
 const routeRequest = ref<RouteRequest>()
 
-const fastestRouteDuration = computed(() => {
-    const durations = props.routeResponse?.routes.map(route => route.duration) ?? []
-    return durations.length ? Math.min(...durations) : null
-})
-
-const cheapestRouteCost = computed(() => {
-    const costs = props.routeResponse?.routes.map(route => route.costs.totalCost) ?? []
-    return costs.length ? Math.min(...costs) : null
-})
-
-function getRouteSpecificities(route: RouteResponse['routes'][number]): string[] {
-    const specificities: string[] = []
-
-    if (route.costs.tollCost === 0) {
-        specificities.push('Route sans péage')
+function getRouteSpecificities(): string {
+    if (routeRequest.value?.mode === "CHEAPEST") {
+        return "Route la plus économique"
     }
-
-    if (route.duration === fastestRouteDuration.value) {
-        specificities.push('Route la plus rapide')
-    }
-
-    if (route.costs.totalCost === cheapestRouteCost.value) {
-        specificities.push('Route la plus économique')
-    }
-
-    return specificities
+    return "Route la plus rapide"
 }
 
 const onRouteCalculated = (data: { response: RouteResponse, request: RouteRequest }) => {
@@ -87,113 +45,25 @@ const onRouteCalculated = (data: { response: RouteResponse, request: RouteReques
     emit('route-calculated', data)
 }
 
-const assignStartDate = computed(() => {
-    return routeRequest.value?.departureTime ?? ''
-})
-
-const assignEndDate = computed(() => {
-    if (!routeRequest.value?.departureTime || props.selectedIndex === undefined || !props.routeResponse) {
-        return ''
-    }
-
-    const start = new Date(routeRequest.value.departureTime)
-    const route = props.routeResponse.routes[props.selectedIndex]
-
-    if (route != undefined && route.duration !== undefined) {
-        start.setSeconds(start.getSeconds() + route.duration)
-    }
-
-    return start.toISOString()
-})
-
 function selectRoute(index: number) {
     emit('route-selected', index)
 }
-
-const handleAssignRoute = async (data: AssignTransport) => {
-    const requestValue = routeRequest.value
-
-    if (!requestValue || props.selectedIndex === undefined || !props.routeResponse) {
-        return
-    }
-
-    const selectedRoute = props.routeResponse.routes[props.selectedIndex]
-
-    if (!selectedRoute) {
-        return
-    }
-
-    const plannedStart = assignStartDate.value
-    const plannedEnd = assignEndDate.value
-
-    if (!plannedStart || !plannedEnd) {
-        return
-    }
-
-    const transport: CreateTransportRequest = {
-        name: data.title,
-        customerId: data.customerId,
-
-        driverId: data.driverId,
-        tractorId: requestValue.tractorId,
-        semiTrailerId: requestValue.semiTrailerId,
-        emptyTrip: requestValue.emptyTrip,
-
-        plannedStart,
-        plannedEnd,
-
-        originName: requestValue.origin.name,
-        originAddress: requestValue.origin.address,
-        originLat: requestValue.origin.lat,
-        originLng: requestValue.origin.lng,
-
-        destinationName: requestValue.destination.name,
-        destinationAddress: requestValue.destination.address,
-        destinationLat: requestValue.destination.lat,
-        destinationLng: requestValue.destination.lng
-    }
-
-    const request: CreateTransportFromRouteRequest = {
-        transport,
-        selectedRoute
-    }
-
-    try {
-        await createTransportFromRoute(request)
-
-        notification.success(
-            'Planning enregistré',
-            `Le transport « ${data.title} » a bien été ajouté.`
-        )
-    } catch (error) {
-        notification.error(
-            'Enregistrement impossible',
-            getApiErrorMessage(error, 'Le transport n’a pas pu être ajouté au planning.')
-        )
-    } finally {
-        showAssignModal.value = false
-    }
-}
-
-onMounted(async () => {
-    await loadAssignmentData()
-})
 </script>
 
 <template>
     <div class="relative h-full">
         <div :class="[
-            'h-full w-[400px] bg-white shadow-2xl border-r',
+            'h-full w-[400px] shrink-0 bg-white shadow-2xl border-r',
             'transition-all duration-300 overflow-hidden',
             open ? 'translate-x-0' : '-translate-x-full']">
             <div class="h-full flex flex-col">
-                <div class="flex-1 overflow-y-auto p-4 space-y-6">
+                <div class="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
                     <!-- FORM -->
                     <RouteForm @route-calculated="onRouteCalculated" />
 
                     <!-- RESULTS -->
                     <div v-if="routeResponse?.routes" class="space-y-3">
-                        <h2 class="text-xl font-bold text-slate-800">Itinéraires trouvés</h2>
+                        <h2 class="text-xl font-bold text-slate-800">Itinéraire trouvé</h2>
 
                         <div class="space-y-3">
                             <div v-for="(route, index) in routeResponse.routes" :key="index"
@@ -206,11 +76,10 @@ onMounted(async () => {
                                 <div class="flex items-start justify-between gap-4">
                                     <!-- LEFT -->
                                     <div class="min-w-0 flex-1">
-                                        <div v-if="getRouteSpecificities(route).length"
-                                            class="mb-2 flex flex-wrap gap-1.5">
-                                            <span v-for="specificity in getRouteSpecificities(route)" :key="specificity"
+                                        <div class="mb-2 flex flex-wrap gap-1.5">
+                                            <span
                                                 class="rounded-md bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">
-                                                {{ specificity }}
+                                                {{ getRouteSpecificities() }}
                                             </span>
                                         </div>
 
@@ -280,6 +149,9 @@ onMounted(async () => {
 
     </div>
 
-    <AssignRouteModal :show="showAssignModal" :drivers="drivers" :customers="customers" :start-date="assignStartDate"
-        :end-date="assignEndDate" @close="showAssignModal = false" @submit="handleAssignRoute" />
+    <PlanningRouteModal :show="showAssignModal" :initial-route-request="routeRequest"
+        :initial-route-response="routeResponse" :initial-selected-route-index="selectedIndex"
+        @close="showAssignModal = false" @saved="showAssignModal = false" />
+
+
 </template>

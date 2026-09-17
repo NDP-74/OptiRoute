@@ -16,7 +16,7 @@
             "request": "launch",
             "mainClass": "com.optiroute.backend.OptiRouteApplication",
             "env": {
-                "HERE_API_KEY": "HqU8SGT6rni_-RM3NkfvYHJVVrzWhefEmG2j1swtzIo"
+                
             },
             "projectName": "backend"
         }

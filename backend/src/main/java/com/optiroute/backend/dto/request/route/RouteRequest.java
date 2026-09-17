@@ -2,6 +2,7 @@ package com.optiroute.backend.dto.request.route;
 
 import com.optiroute.backend.model.Position;
 import com.optiroute.backend.type.GpsModeType;
+import com.optiroute.backend.type.RouteTimeMode;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -15,9 +16,8 @@ public class RouteRequest {
 
     private GpsModeType mode;
 
-    private OffsetDateTime departureTime;
-
-    private Integer maxTravelTimeMinutes;
+    private OffsetDateTime routeTime;
+    private RouteTimeMode timeMode = RouteTimeMode.DEPARTURE;
 
     private Long tractorId;
     private Long semiTrailerId;
@@ -56,20 +56,20 @@ public class RouteRequest {
         this.mode = mode;
     }
 
-    public OffsetDateTime getDepartureTime() {
-        return departureTime;
+    public OffsetDateTime getRouteTime() {
+        return routeTime;
     }
 
-    public void setDepartureTime(OffsetDateTime departureTime) {
-        this.departureTime = departureTime;
+    public void setRouteTime(OffsetDateTime routeTime) {
+        this.routeTime = routeTime;
     }
 
-    public Integer getMaxTravelTimeMinutes() {
-        return maxTravelTimeMinutes;
+    public RouteTimeMode getTimeMode() {
+        return timeMode;
     }
 
-    public void setMaxTravelTimeMinutes(Integer maxTravelTimeMinutes) {
-        this.maxTravelTimeMinutes = maxTravelTimeMinutes;
+    public void setTimeMode(RouteTimeMode timeMode) {
+        this.timeMode = timeMode == null ? RouteTimeMode.DEPARTURE : timeMode;
     }
 
     public Long getTractorId() {

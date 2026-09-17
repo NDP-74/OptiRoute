@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { ArrowUpDown } from 'lucide-vue-next'
 import HereAutocompleteInput from './HereAutocompleteInput.vue'
 
@@ -8,17 +8,21 @@ import { getTractors } from "@/api/vehicle/tractorApi"
 import { getSemiTrailers } from "@/api/vehicle/semiTrailerApi"
 
 import type { Position } from '@/models/route/Position'
+import type { RouteRequest } from '@/models/route/Route'
 import type { TractorSummary } from "@/models/vehicle/Tractor"
 import type { SemiTrailerSummary } from "@/models/vehicle/SemiTrailer"
 import { formatVehicleLabel } from "@/utils/vehicleUtils"
-import { formatDurationMinutes } from "@/utils/formatters"
+
+const props = defineProps<{
+    initialRequest?: RouteRequest | null
+}>()
 
 //Variables
 const departureMode = ref('NOW')
 const tractors = ref<TractorSummary[]>([])
 const semiTrailers = ref<SemiTrailerSummary[]>([])
 const isSubmitting = ref(false)
-const MAX_WAYPOINTS = 4
+const MAX_WAYPOINTS = 3
 
 const emit = defineEmits(['route-calculated'])
 
@@ -27,15 +31,41 @@ const form = reactive({
     destination: null as any,
     waypoints: [] as any[],
 
-    departureTime: null as any,
+    routeTime: null as any,
 
     mode: 'FASTEST',
-    maxTravelTimeMinutes: null,
     emptyTrip: false,
 
-    tractorId: null,
-    semiTrailerId: null,
+    tractorId: null as number | null,
+    semiTrailerId: null as number | null,
 })
+
+function toPlace(position: Position) {
+    return {
+        name: position.name ?? '',
+        address: position.address ?? '',
+        position: {
+            lat: position.lat,
+            lng: position.lng,
+        },
+    }
+}
+
+function applyInitialRequest(request: RouteRequest | null | undefined) {
+    if (!request) return
+
+    form.origin = toPlace(request.origin)
+    form.destination = toPlace(request.destination)
+    form.waypoints = (request.waypoints ?? []).map(toPlace)
+    form.routeTime = request.routeTime ? request.routeTime.slice(0, 16) : null
+    form.mode = request.mode
+    form.emptyTrip = request.emptyTrip
+    form.tractorId = request.tractorId
+    form.semiTrailerId = request.semiTrailerId ?? null
+    departureMode.value = request.timeMode === 'ARRIVAL' ? 'ARRIVALTIME' : 'PLANNED'
+}
+
+watch(() => props.initialRequest, applyInitialRequest, { immediate: true })
 
 // Functions
 
@@ -82,17 +112,17 @@ async function submit() {
     isSubmitting.value = true
 
     try {
-        const effectiveDepartureTime = toOffsetDateTime(form.departureTime) ?? new Date().toISOString()
+        const effectiveRouteTime = toOffsetDateTime(form.routeTime) ?? new Date().toISOString()
 
         const payload = {
             origin: toPosition(form.origin),
             destination: toPosition(form.destination),
             waypoints: form.waypoints.filter(Boolean).map(toPosition),
 
-            departureTime: effectiveDepartureTime,
+            routeTime: effectiveRouteTime,
+            timeMode: departureMode.value === 'ARRIVALTIME' ? 'ARRIVAL' : 'DEPARTURE',
 
             mode: form.mode,
-            maxTravelTimeMinutes: form.maxTravelTimeMinutes,
             emptyTrip: form.emptyTrip,
 
             tractorId: form.tractorId,
@@ -149,7 +179,7 @@ onMounted(async () => {
             <div class="flex items-center justify-end gap-3">
                 <button type="button" @click="addWaypoint" :disabled="form.waypoints.length >= MAX_WAYPOINTS"
                     class="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
-                    {{ form.waypoints.length >= MAX_WAYPOINTS ? 'Limite atteinte (4)' : '+ Ajouter une étape' }}
+                    {{ form.waypoints.length >= MAX_WAYPOINTS ? 'Limite atteinte (3)' : '+ Ajouter une étape' }}
                 </button>
             </div>
 
@@ -183,28 +213,6 @@ onMounted(async () => {
                 </option>
 
             </select>
-
-            <!-- MAX TIME -->
-            <div v-if="form.mode === 'CHEAPEST'" class="space-y-3">
-                <div class="flex items-center justify-between">
-                    <label class="block text-sm font-medium">
-                        Temps de trajet maximum
-                    </label>
-
-                    <span class="text-sm font-semibold text-slate-700">
-                        {{ formatDurationMinutes(form.maxTravelTimeMinutes) }}
-                    </span>
-                </div>
-
-                <input v-model.number="form.maxTravelTimeMinutes" type="range" min="0" max="1440" step="15"
-                    class="w-full accent-slate-900" />
-
-                <div class="flex justify-between text-xs text-slate-400">
-                    <span>0 min</span>
-                    <span>24 h</span>
-                </div>
-            </div>
-
         </div>
 
         <!-- TRIP TYPE -->
@@ -221,7 +229,7 @@ onMounted(async () => {
         <div class="space-y-3">
 
             <label class="block text-sm font-medium">
-                Départ
+                Heure
             </label>
 
             <select v-model="departureMode" class="w-full rounded-xl border border-slate-300 p-3">
@@ -232,10 +240,14 @@ onMounted(async () => {
                 <option value="PLANNED">
                     Départ prévu à
                 </option>
+
+                <option value="ARRIVALTIME">
+                    Arrivée à
+                </option>
             </select>
 
-            <input v-if="departureMode === 'PLANNED'" v-model="form.departureTime" type="datetime-local"
-                class="w-full rounded-xl border border-slate-300 p-3" />
+            <input v-if="departureMode === 'PLANNED' || departureMode === 'ARRIVALTIME'" v-model="form.routeTime"
+                type="datetime-local" class="w-full rounded-xl border border-slate-300 p-3" />
 
         </div>
 
