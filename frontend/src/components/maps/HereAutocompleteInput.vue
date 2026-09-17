@@ -128,12 +128,12 @@ async function selectPlace(item: any) {
 <template>
     <div class="relative">
 
-        <label class="block text-sm font-medium mb-2">
+        <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
             {{ label }}
         </label>
 
         <input v-model="inputValue" type="text" :disabled="props.disabled"
-            class="w-full rounded-xl border border-slate-300 p-3 disabled:cursor-not-allowed disabled:bg-slate-100"
+            class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:bg-slate-100"
             :placeholder="label" />
 
         <!-- RESULTS -->

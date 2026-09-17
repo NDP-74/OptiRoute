@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue'
-import { ArrowUpDown } from 'lucide-vue-next'
+import { ArrowUpDown, Clock, SlidersHorizontal } from 'lucide-vue-next'
 import HereAutocompleteInput from './HereAutocompleteInput.vue'
 
 import { calculateRoute } from '@/api/here/mapsApi'
@@ -182,13 +182,15 @@ function toOffsetDateTime(value: string) {
         </div>
 
         <!-- MODE -->
-        <div class="space-y-3">
+        <div class="space-y-1.5">
 
-            <label class="block text-sm font-medium">
+            <label class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <SlidersHorizontal :size="14" />
                 Mode
             </label>
 
-            <select v-model="form.mode" class="w-full rounded-xl border border-slate-300 p-3">
+            <select v-model="form.mode"
+                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
                 <option value="FASTEST">
                     Plus rapide
                 </option>
@@ -201,13 +203,15 @@ function toOffsetDateTime(value: string) {
         </div>
 
         <!-- DEPARTURE TIME -->
-        <div class="space-y-3">
+        <div class="space-y-1.5">
 
-            <label class="block text-sm font-medium">
+            <label class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <Clock :size="14" />
                 Heure
             </label>
 
-            <select v-model="departureMode" class="w-full rounded-xl border border-slate-300 p-3">
+            <select v-model="departureMode"
+                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
                 <option value="NOW">
                     Départ maintenant
                 </option>
@@ -222,7 +226,8 @@ function toOffsetDateTime(value: string) {
             </select>
 
             <input v-if="departureMode === 'PLANNED' || departureMode === 'ARRIVALTIME'" v-model="form.routeTime"
-                type="datetime-local" class="w-full rounded-xl border border-slate-300 p-3" />
+                type="datetime-local"
+                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20" />
 
         </div>
 
