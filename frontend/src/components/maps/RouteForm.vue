@@ -1,26 +1,23 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, watch } from 'vue'
 import { ArrowUpDown } from 'lucide-vue-next'
 import HereAutocompleteInput from './HereAutocompleteInput.vue'
 
 import { calculateRoute } from '@/api/here/mapsApi'
-import { getTractors } from "@/api/vehicle/tractorApi"
-import { getSemiTrailers } from "@/api/vehicle/semiTrailerApi"
 
 import type { Position } from '@/models/route/Position'
 import type { RouteRequest } from '@/models/route/Route'
-import type { TractorSummary } from "@/models/vehicle/Tractor"
-import type { SemiTrailerSummary } from "@/models/vehicle/SemiTrailer"
-import { formatVehicleLabel } from "@/utils/vehicleUtils"
 
 const props = defineProps<{
     initialRequest?: RouteRequest | null
 }>()
 
+const tractorId = defineModel<number | null>('tractorId', { default: null })
+const semiTrailerId = defineModel<number | null>('semiTrailerId', { default: null })
+const emptyTrip = defineModel<boolean>('emptyTrip', { default: false })
+
 //Variables
 const departureMode = ref('NOW')
-const tractors = ref<TractorSummary[]>([])
-const semiTrailers = ref<SemiTrailerSummary[]>([])
 const isSubmitting = ref(false)
 const MAX_WAYPOINTS = 3
 
@@ -34,10 +31,6 @@ const form = reactive({
     routeTime: null as any,
 
     mode: 'FASTEST',
-    emptyTrip: false,
-
-    tractorId: null as number | null,
-    semiTrailerId: null as number | null,
 })
 
 function toPlace(position: Position) {
@@ -59,9 +52,6 @@ function applyInitialRequest(request: RouteRequest | null | undefined) {
     form.waypoints = (request.waypoints ?? []).map(toPlace)
     form.routeTime = request.routeTime ? request.routeTime.slice(0, 16) : null
     form.mode = request.mode
-    form.emptyTrip = request.emptyTrip
-    form.tractorId = request.tractorId
-    form.semiTrailerId = request.semiTrailerId ?? null
     departureMode.value = request.timeMode === 'ARRIVAL' ? 'ARRIVALTIME' : 'PLANNED'
 }
 
@@ -101,7 +91,7 @@ function addWaypoint() {
 
 async function submit() {
 
-    if (!form.origin || !form.destination || !form.tractorId || isSubmitting.value) {
+    if (!form.origin || !form.destination || !tractorId.value || isSubmitting.value) {
         return
     }
 
@@ -123,10 +113,10 @@ async function submit() {
             timeMode: departureMode.value === 'ARRIVALTIME' ? 'ARRIVAL' : 'DEPARTURE',
 
             mode: form.mode,
-            emptyTrip: form.emptyTrip,
+            emptyTrip: emptyTrip.value,
 
-            tractorId: form.tractorId,
-            semiTrailerId: form.semiTrailerId,
+            tractorId: tractorId.value,
+            semiTrailerId: semiTrailerId.value,
         }
 
         const response = await calculateRoute(payload)
@@ -148,11 +138,6 @@ function toOffsetDateTime(value: string) {
 
     return new Date(value).toISOString()
 }
-
-onMounted(async () => {
-    tractors.value = await getTractors()
-    semiTrailers.value = await getSemiTrailers()
-})
 
 </script>
 
@@ -215,16 +200,6 @@ onMounted(async () => {
             </select>
         </div>
 
-        <!-- TRIP TYPE -->
-        <label class="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
-            <input v-model="form.emptyTrip" type="checkbox"
-                class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
-
-            <span class="text-sm font-medium text-slate-700">
-                Trajet à vide
-            </span>
-        </label>
-
         <!-- DEPARTURE TIME -->
         <div class="space-y-3">
 
@@ -248,43 +223,6 @@ onMounted(async () => {
 
             <input v-if="departureMode === 'PLANNED' || departureMode === 'ARRIVALTIME'" v-model="form.routeTime"
                 type="datetime-local" class="w-full rounded-xl border border-slate-300 p-3" />
-
-        </div>
-
-        <!-- VEHICULE -->
-        <div class="space-y-3">
-
-            <label class="block text-sm font-medium">
-                Tracteur
-            </label>
-
-            <select v-model="form.tractorId" class="w-full rounded-xl border border-slate-300 p-3">
-                <option :value="null">
-                    Sélectionner un tracteur
-                </option>
-
-                <option v-for="tractor in tractors" :key="tractor.id" :value="tractor.id">
-                    {{ tractor.registration }} - {{ formatVehicleLabel(tractor.brand, tractor.model) }}
-                </option>
-            </select>
-
-        </div>
-
-        <div class="space-y-3">
-
-            <label class="block text-sm font-medium">
-                Semi-remorque
-            </label>
-
-            <select v-model="form.semiTrailerId" class="w-full rounded-xl border border-slate-300 p-3">
-                <option :value="null">
-                    Sélectionner une semi-remorque
-                </option>
-
-                <option v-for="semiTrailer in semiTrailers" :key="semiTrailer.id" :value="semiTrailer.id">
-                    {{ semiTrailer.registration }} - {{ formatVehicleLabel(semiTrailer.brand, semiTrailer.model) }}
-                </option>
-            </select>
 
         </div>
 

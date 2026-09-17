@@ -7,16 +7,21 @@ import RouteForm from '@/components/maps/RouteForm.vue'
 
 import { createTransportFromRoute } from '@/api/transportApi'
 import { getCustomers } from '@/api/customerApi'
-import { getDrivers } from '@/api/driver/driverApi'
+import { getDriver, getDrivers } from '@/api/driver/driverApi'
+import { getTractors } from '@/api/vehicle/tractorApi'
+import { getSemiTrailers } from '@/api/vehicle/semiTrailerApi'
 import { getApiErrorMessage } from '@/api/utils'
 import { useNotification } from '@/composables/useNotification'
 
 import type { Customer } from '@/models/Customer'
 import type { DriverSummary } from '@/models/driver/Driver'
+import type { TractorSummary } from '@/models/vehicle/Tractor'
+import type { SemiTrailerSummary } from '@/models/vehicle/SemiTrailer'
 import type { RouteRequest, RouteResponse } from '@/models/route/Route'
 import type { CreateTransportFromRouteRequest } from '@/models/transport/TransportRequest'
 
 import { formatCurrency, formatDateTime, formatDistance, formatDurationSeconds } from '@/utils/formatters'
+import { formatVehicleLabel } from '@/utils/vehicleUtils'
 
 const props = defineProps<{
     show: boolean
@@ -37,8 +42,13 @@ const routeRequest = ref<RouteRequest | null>(null)
 const selectedRouteIndex = ref(0)
 const driverId = ref<number>()
 const customerId = ref<number>()
+const tractorId = ref<number | null>(null)
+const semiTrailerId = ref<number | null>(null)
+const emptyTrip = ref(false)
 const drivers = ref<DriverSummary[]>([])
 const customers = ref<Customer[]>([])
+const tractors = ref<TractorSummary[]>([])
+const semiTrailers = ref<SemiTrailerSummary[]>([])
 const isSaving = ref(false)
 
 const selectedRoute = computed(() => routeResponse.value?.routes[selectedRouteIndex.value])
@@ -106,6 +116,9 @@ async function initializeFromProps() {
     routeRequest.value = props.initialRouteRequest ?? null
     routeResponse.value = props.initialRouteResponse ?? null
     selectedRouteIndex.value = props.initialSelectedRouteIndex ?? 0
+    tractorId.value = props.initialRouteRequest?.tractorId ?? null
+    semiTrailerId.value = props.initialRouteRequest?.semiTrailerId ?? null
+    emptyTrip.value = props.initialRouteRequest?.emptyTrip ?? false
 
     await nextTick()
 
@@ -165,10 +178,25 @@ watch(() => props.show, (show) => {
     void initializeFromProps()
 })
 
+watch(driverId, async (id) => {
+    if (id === undefined) return
+
+    const driver = await getDriver(id)
+    tractorId.value = driver.tractorId
+    semiTrailerId.value = driver.semiTrailerId
+})
+
 onMounted(async () => {
-    const [loadedDrivers, loadedCustomers] = await Promise.all([getDrivers(), getCustomers()])
+    const [loadedDrivers, loadedCustomers, loadedTractors, loadedSemiTrailers] = await Promise.all([
+        getDrivers(),
+        getCustomers(),
+        getTractors(),
+        getSemiTrailers(),
+    ])
     drivers.value = loadedDrivers
     customers.value = loadedCustomers
+    tractors.value = loadedTractors
+    semiTrailers.value = loadedSemiTrailers
 })
 </script>
 
@@ -185,9 +213,58 @@ onMounted(async () => {
                     aria-label="Fermer" @click="close">×</button>
             </div>
 
-            <div class="grid min-h-0 flex-1 gap-6 overflow-hidden lg:grid-cols-[360px_minmax(0,1fr)]">
+            <div class="grid min-h-0 flex-1 gap-6 overflow-hidden lg:grid-cols-[260px_360px_minmax(0,1fr)]">
                 <section class="min-h-0 space-y-4 overflow-y-auto pr-2">
-                    <RouteForm :initial-request="props.initialRouteRequest" @route-calculated="handleRouteCalculated" />
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium">Chauffeur</label>
+                        <select v-model="driverId" class="w-full rounded-xl border border-slate-300 p-3">
+                            <option :value="undefined">Sélectionner un chauffeur</option>
+                            <option v-for="driver in drivers" :key="driver.id" :value="driver.id">{{ driver.firstName
+                            }} {{ driver.lastName }}</option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium">Tracteur</label>
+                        <select v-model="tractorId" class="w-full rounded-xl border border-slate-300 p-3">
+                            <option :value="null">Sélectionner un tracteur</option>
+                            <option v-for="tractor in tractors" :key="tractor.id" :value="tractor.id">
+                                {{ tractor.registration }} - {{ formatVehicleLabel(tractor.brand, tractor.model) }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium">Semi-remorque</label>
+                        <select v-model="semiTrailerId" class="w-full rounded-xl border border-slate-300 p-3">
+                            <option :value="null">Sélectionner une semi-remorque</option>
+                            <option v-for="semiTrailer in semiTrailers" :key="semiTrailer.id" :value="semiTrailer.id">
+                                {{ semiTrailer.registration }} - {{ formatVehicleLabel(semiTrailer.brand,
+                                    semiTrailer.model) }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium">Donneur d’ordre</label>
+                        <select v-model="customerId" class="w-full rounded-xl border border-slate-300 p-3">
+                            <option :value="undefined">Aucun donneur d’ordre</option>
+                            <option v-for="customer in customers" :key="customer.id" :value="customer.id">{{
+                                customer.name }}</option>
+                        </select>
+                    </div>
+
+                    <label class="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                        <input v-model="emptyTrip" type="checkbox"
+                            class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+                        <span class="text-sm font-medium text-slate-700">Trajet à vide</span>
+                    </label>
+                </section>
+
+                <section class="min-h-0 space-y-4 overflow-y-auto pr-2">
+                    <RouteForm :initial-request="props.initialRouteRequest" v-model:tractor-id="tractorId"
+                        v-model:semi-trailer-id="semiTrailerId" v-model:empty-trip="emptyTrip"
+                        @route-calculated="handleRouteCalculated" />
 
                     <div v-if="routeResponse?.routes?.length" class="space-y-2 border-t border-slate-200 pt-4">
                         <h3 class="font-semibold text-slate-800">Itinéraires trouvés</h3>
@@ -239,19 +316,6 @@ onMounted(async () => {
                         </p>
                     </div>
                 </section>
-            </div>
-
-            <div class="mt-5 grid gap-4 border-t border-slate-200 pt-5 lg:grid-cols-[1fr_1fr_1fr]">
-                <select v-model="driverId" class="rounded-lg border border-slate-300 p-3">
-                    <option :value="undefined">Sélectionner un chauffeur</option>
-                    <option v-for="driver in drivers" :key="driver.id" :value="driver.id">{{ driver.firstName }} {{
-                        driver.lastName }}</option>
-                </select>
-                <select v-model="customerId" class="rounded-lg border border-slate-300 p-3 lg:col-span-2">
-                    <option :value="undefined">Aucun donneur d’ordre</option>
-                    <option v-for="customer in customers" :key="customer.id" :value="customer.id">{{ customer.name }}
-                    </option>
-                </select>
             </div>
 
             <div v-if="routeRequest && selectedRoute" class="mt-3 flex flex-wrap gap-4 text-xs text-slate-500">

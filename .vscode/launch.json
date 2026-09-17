@@ -16,7 +16,8 @@
             "request": "launch",
             "mainClass": "com.optiroute.backend.OptiRouteApplication",
             "env": {
-                
+                "HERE_API_KEY": "HqU8SGT6rni_-RM3NkfvYHJVVrzWhefEmG2j1swtzIo",
+                "PTV_API_KEY": "RVVfNmQ0NDQwYjZmMDQ2NDk5ZWI0NzRkNzgxZTAzN2Y4Y2M6OTEyYmRlZTYtMTRlMS00ZjJhLWI3MTUtYWFhZGJkZGU3Yzhl"
             },
             "projectName": "backend"
         }
