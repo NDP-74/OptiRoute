@@ -10,6 +10,7 @@ import {
     Tag,
     Gauge,
     Trash2,
+    Fuel,
 } from "lucide-vue-next"
 
 import type { SemiTrailerDetails } from "@/models/vehicle/SemiTrailer"
@@ -216,6 +217,11 @@ watch(
                 <DetailRow label="Modèle" :value="semiTrailer.model ?? 'Non renseigné'" />
 
                 <DetailRow label="Type" :value="semiTrailer.trailerType ?? 'Non renseigné'" />
+            </DetailSection>
+
+            <!-- Motorisation -->
+            <DetailSection title="Motorisation" :icon="Fuel">
+                <DetailRow label="Vitesse maximale" :value="formatNumber(semiTrailer.maxSpeed, ' km/h', 0)" />
             </DetailSection>
 
             <!-- Configuration -->

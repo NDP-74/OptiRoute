@@ -236,7 +236,7 @@ onMounted(async () => {
             <div class="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden">
 
                 <!-- TOP ROW : ASSIGNMENT & SEARCH -->
-                <div class="grid min-h-0 flex-1 gap-5 lg:grid-cols-2">
+                <div class="grid h-[520px] min-h-0 gap-5 lg:grid-cols-2">
 
                     <!-- COLUMN 1 : ASSIGNMENT -->
                     <section class="min-h-0 pr-1">
@@ -376,8 +376,9 @@ onMounted(async () => {
                 </div>
 
                 <!-- MAP & SUMMARY -->
-                <section class="flex min-h-0 min-w-0 shrink-0 flex-col gap-4">
-                    <div class="h-80 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-inner">
+                <section class="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
+                    <div
+                        class="min-h-0 flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-inner">
                         <HereMap ref="mapRef" />
                     </div>
 
@@ -388,44 +389,44 @@ onMounted(async () => {
                                     <MapPinned :size="16" class="shrink-0 text-slate-400" />
                                     <div>
                                         <p class="text-slate-500">Distance</p>
-                                        <p class="font-semibold">{{ formatDistance(selectedRoute.distanceMeters) }}
-                                        </p>
+                                        <p class="font-semibold">{{ formatDistance(selectedRoute.distanceMeters) }}</p>
                                     </div>
                                 </div>
+
                                 <div class="flex items-center gap-2">
                                     <Clock :size="16" class="shrink-0 text-slate-400" />
                                     <div>
                                         <p class="text-slate-500">Durée</p>
-                                        <p class="font-semibold">{{ formatDurationSeconds(selectedRoute.duration) }}
-                                        </p>
+                                        <p class="font-semibold">{{ formatDurationSeconds(selectedRoute.duration) }}</p>
                                     </div>
                                 </div>
+
                                 <div class="flex items-center gap-2">
                                     <Fuel :size="16" class="shrink-0 text-slate-400" />
                                     <div>
                                         <p class="text-slate-500">Carburant</p>
-                                        <p class="font-semibold">{{ formatCurrency(selectedRoute.costs.fuelCost) }}
-                                        </p>
+                                        <p class="font-semibold">{{ formatCurrency(selectedRoute.costs.fuelCost) }}</p>
                                     </div>
                                 </div>
+
                                 <div class="flex items-center gap-2">
                                     <Landmark :size="16" class="shrink-0 text-slate-400" />
                                     <div>
                                         <p class="text-slate-500">Péage</p>
-                                        <p class="font-semibold">{{ formatCurrency(selectedRoute.costs.tollCost) }}
-                                        </p>
+                                        <p class="font-semibold">{{ formatCurrency(selectedRoute.costs.tollCost) }}</p>
                                     </div>
                                 </div>
+
                                 <div class="flex items-center gap-2">
                                     <Wallet :size="16" class="shrink-0 text-slate-400" />
                                     <div>
                                         <p class="text-slate-500">Coût total</p>
-                                        <p class="font-semibold">{{ formatCurrency(selectedRoute.costs.totalCost) }}
-                                        </p>
+                                        <p class="font-semibold">{{ formatCurrency(selectedRoute.costs.totalCost) }}</p>
                                     </div>
                                 </div>
                             </div>
                         </template>
+
                         <p v-else class="text-sm text-slate-500">
                             Rechercher un itinéraire pour l'attribuer
                         </p>
