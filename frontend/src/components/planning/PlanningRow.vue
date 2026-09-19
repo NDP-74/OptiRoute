@@ -1,7 +1,7 @@
 <template>
     <div class="grid min-w-0 border-b border-slate-200 bg-white" :style="gridStyle">
-        <InfoCell :driver-name="driver.name" :transport-count="transportCount"
-            :vehicle-registrations="driver.vehicleRegistrations" />
+        <InfoCell :driver-name="driver.name" :vehicle-registrations="driver.vehicleRegistrations"
+            :is-unassigned="driver.id === -1" />
 
         <CostCell :total-cost="driver.totalCost" />
 
@@ -29,10 +29,6 @@ const props = defineProps<{
     driver: PlanningDriver;
     days: PlanningDay[];
 }>();
-
-const transportCount = computed<number>(() => {
-    return Object.values(props.driver.days).reduce((total, dayTransports) => total + dayTransports.length, 0);
-});
 
 const gridStyle = computed(() =>
     createPlanningGridStyle(props.days.length)

@@ -223,7 +223,7 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
     if (unassignedVehicles.value.registrations.length > 0) {
         sortedDrivers.push({
             id: UNASSIGNED_VEHICLES_ROW_ID,
-            name: "Véhicules sans conducteur",
+            name: "Véhicules non utilisés",
             vehicleRegistrations: unassignedVehicles.value.registrations,
             totalCost: unassignedVehicles.value.depreciationCost,
             days: {},

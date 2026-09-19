@@ -1,65 +1,43 @@
+<script setup lang="ts">
+import { Container, Truck, UserRound } from "lucide-vue-next";
+
+const props = defineProps<{
+  driverName: string;
+  vehicleRegistrations: string[];
+  isUnassigned: boolean;
+}>();
+
+</script>
+
 <template>
   <div class="sticky left-0 z-20 flex min-h-[140px] items-start border-r border-slate-300 bg-white p-4">
     <div class="min-w-0">
       <div class="flex items-center gap-3">
-        <div
-          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-600">
-          {{ initials }}
-        </div>
-
         <div class="min-w-0">
-          <p class="truncate text-sm font-semibold text-slate-800">
-            {{ driverName }}
+          <span class="flex min-w-0 items-center gap-1.5">
+            <Truck v-if="isUnassigned" :size="16" class="shrink-0 text-slate-400" />
+            <UserRound v-else :size="16" class="shrink-0 text-slate-400" />
+            <span class="truncate text-sm font-semibold text-slate-800">{{ driverName }}</span>
+          </span>
+
+          <p v-if="isUnassigned" class="mt-3 truncate text-xs text-slate-500">
+            {{ vehicleRegistrations.length }} véhicule{{ vehicleRegistrations.length > 1 ? "s" : "" }} sans trajet.{{
+              vehicleRegistrations.length > 1 ? "s" : "" }}
           </p>
 
-          <p class="mt-0.5 text-xs text-slate-500">
-            {{ transportCountLabel }}
-          </p>
+          <div v-else-if="vehicleRegistrations.length" class="mt-3 flex items-center gap-3 text-xs text-slate-600">
+            <span v-if="vehicleRegistrations[0]" class="flex min-w-0 items-center gap-1.5">
+              <Truck :size="14" class="shrink-0 text-slate-400" />
+              <span class="truncate">{{ vehicleRegistrations[0] }}</span>
+            </span>
 
-          <p class="mt-1 truncate text-xs text-slate-500">
-            {{ vehiclesLabel }}
-          </p>
+            <span v-if="vehicleRegistrations[1]" class="flex min-w-0 items-center gap-1.5">
+              <Container :size="14" class="shrink-0 text-slate-400" />
+              <span class="truncate">{{ vehicleRegistrations[1] }}</span>
+            </span>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { computed } from "vue";
-
-const props = defineProps<{
-  driverName: string;
-  transportCount: number;
-  vehicleRegistrations: string[];
-}>();
-
-const initials = computed<string>(() => {
-  return props.driverName
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join("");
-});
-
-const vehiclesLabel = computed<string>(() => {
-  if (props.vehicleRegistrations.length === 0) {
-    return "Aucun véhicule assigné";
-  }
-
-  return props.vehicleRegistrations.join(" — ");
-});
-
-const transportCountLabel = computed<string>(() => {
-  if (props.transportCount === 0) {
-    return "Aucun transport";
-  }
-
-  if (props.transportCount === 1) {
-    return "1 transport";
-  }
-
-  return `${props.transportCount} transports`;
-});
-</script>
