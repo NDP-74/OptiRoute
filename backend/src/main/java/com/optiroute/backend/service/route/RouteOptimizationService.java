@@ -34,10 +34,14 @@ public class RouteOptimizationService {
 
     public RoutesResponse calculateRoute(RouteRequest request) {
 
-        // Get Truck Configuration
-        Tractor tractor = tractorService.getEntityById(request.getTractorId());
-        SemiTrailer semiTrailer = semiTrailerService.getEntityById(request.getSemiTrailerId());
-        TruckConfiguration truckConfiguration = truckConfigurationFactory.create(tractor,semiTrailer,request.isEmptyTrip());
+        TruckConfiguration truckConfiguration;
+        if (request.getTractorId() != null && request.getSemiTrailerId() != null) {
+            Tractor tractor = tractorService.getEntityById(request.getTractorId());
+            SemiTrailer semiTrailer = semiTrailerService.getEntityById(request.getSemiTrailerId());
+            truckConfiguration = truckConfigurationFactory.create(tractor,semiTrailer,request.isEmptyTrip());
+        } else {
+            truckConfiguration = truckConfigurationFactory.createDefault();
+        }
 
         // PTV Routing API + Parsing
         String raw = routingService.calculateRoutes(request,truckConfiguration);

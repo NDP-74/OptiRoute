@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, reactive, watch } from 'vue'
-import { ArrowUpDown, Clock, SlidersHorizontal } from 'lucide-vue-next'
+import { computed, ref, reactive, watch } from 'vue'
+import { ArrowUpDown, Clock, Plus, SlidersHorizontal, X } from 'lucide-vue-next'
 import HereAutocompleteInput from './HereAutocompleteInput.vue'
 
 import { calculateRoute } from '@/api/here/mapsApi'
@@ -19,7 +19,7 @@ const emptyTrip = defineModel<boolean>('emptyTrip', { default: false })
 //Variables
 const departureMode = ref('NOW')
 const isSubmitting = ref(false)
-const MAX_WAYPOINTS = 3
+const MAX_WAYPOINTS = 10
 
 const emit = defineEmits(['route-calculated'])
 
@@ -75,10 +75,49 @@ function toPosition(place: {
     }
 }
 
-function swapLocations() {
-    const origin = form.origin
-    form.origin = form.destination
-    form.destination = origin
+function swapWithPrevious(index: number) {
+    if (index <= 0) return
+
+    const current = getRowValue(index)
+    const previous = getRowValue(index - 1)
+
+    setRowValue(index, previous)
+    setRowValue(index - 1, current)
+}
+
+const rowCount = computed(() => form.waypoints.length + 2)
+const lastRowIndex = computed(() => rowCount.value - 1)
+
+function getRowValue(index: number) {
+    if (index === 0) return form.origin
+    if (index === lastRowIndex.value) return form.destination
+
+    return form.waypoints[index - 1]
+}
+
+function setRowValue(index: number, value: any) {
+    if (index === 0) {
+        form.origin = value
+        return
+    }
+
+    if (index === lastRowIndex.value) {
+        form.destination = value
+        return
+    }
+
+    form.waypoints[index - 1] = value
+}
+
+function rowLabel(index: number) {
+    if (index === 0) return 'Départ'
+    if (index === lastRowIndex.value) return 'Arrivée'
+
+    return `Étape ${index}`
+}
+
+function removeWaypointAt(index: number) {
+    form.waypoints.splice(index - 1, 1)
 }
 
 function addWaypoint() {
@@ -91,7 +130,7 @@ function addWaypoint() {
 
 async function submit() {
 
-    if (!form.origin || !form.destination || !tractorId.value || isSubmitting.value) {
+    if (!form.origin || !form.destination || isSubmitting.value) {
         return
     }
 
@@ -113,10 +152,10 @@ async function submit() {
             timeMode: departureMode.value === 'ARRIVALTIME' ? 'ARRIVAL' : 'DEPARTURE',
 
             mode: form.mode,
-            emptyTrip: emptyTrip.value,
 
-            tractorId: tractorId.value,
-            semiTrailerId: semiTrailerId.value,
+            tractorId: tractorId.value ?? undefined,
+            semiTrailerId: semiTrailerId.value ?? undefined,
+            emptyTrip: emptyTrip.value,
         }
 
         const response = await calculateRoute(payload)
@@ -145,40 +184,36 @@ function toOffsetDateTime(value: string) {
     <div class="space-y-5">
 
         <!-- LOCATIONS -->
-        <div class="relative">
-            <HereAutocompleteInput v-model="form.origin" label="Départ" />
-            <div class="mt-5">
-                <HereAutocompleteInput v-model="form.destination" label="Arrivée" />
-            </div>
-
-            <!-- SWAP -->
-            <button type="button" @click="swapLocations"
-                class="absolute right-0 top-[58%] z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-600 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-900"
-                aria-label="Inverser le départ et l'arrivée" title="Inverser le départ et l'arrivée">
-                <ArrowUpDown :size="16" :stroke-width="2" aria-hidden="true" />
-            </button>
-        </div>
-
-        <!-- WAYPOINTS -->
-        <div class="space-y-3">
-            <div class="flex items-center justify-end gap-3">
-                <button type="button" @click="addWaypoint" :disabled="form.waypoints.length >= MAX_WAYPOINTS"
-                    class="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
-                    {{ form.waypoints.length >= MAX_WAYPOINTS ? 'Limite atteinte (3)' : '+ Ajouter une étape' }}
-                </button>
-            </div>
-
-            <div v-for="(waypoint, index) in form.waypoints" :key="index" class="flex items-start gap-2">
+        <div class="relative grid gap-2" :style="{ gridTemplateRows: `repeat(${rowCount}, auto)` }">
+            <div v-for="index in rowCount" :key="index - 1" class="flex items-center gap-2" :style="{ gridRow: index }">
                 <div class="flex-1">
-                    <HereAutocompleteInput v-model="form.waypoints[index]" :label="`Étape ${index + 1}`" />
+                    <HereAutocompleteInput :model-value="getRowValue(index - 1)"
+                        @update:model-value="setRowValue(index - 1, $event)" :label="rowLabel(index - 1)" hide-label />
                 </div>
 
-                <button type="button" @click="form.waypoints.splice(index, 1)"
-                    class="mt-8 rounded-lg border border-red-200 bg-red-50 px-2 py-2 text-sm text-red-600 transition hover:bg-red-100"
-                    aria-label="Supprimer cette étape" title="Supprimer cette étape">
-                    ×
-                </button>
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center">
+                    <button v-if="index - 1 === 0" type="button" @click="addWaypoint"
+                        :disabled="form.waypoints.length >= MAX_WAYPOINTS"
+                        :title="form.waypoints.length >= MAX_WAYPOINTS ? `Limite de ${MAX_WAYPOINTS} étapes atteinte` : 'Ajouter une étape'"
+                        class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-600 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-300 disabled:shadow-none"
+                        aria-label="Ajouter une étape">
+                        <Plus :size="16" :stroke-width="2" aria-hidden="true" />
+                    </button>
+
+                    <button v-else-if="index - 1 !== lastRowIndex" type="button" @click="removeWaypointAt(index - 1)"
+                        class="flex h-9 w-9 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 shadow-sm transition hover:bg-red-100"
+                        aria-label="Supprimer cette étape" title="Supprimer cette étape">
+                        <X :size="16" :stroke-width="2" aria-hidden="true" />
+                    </button>
+                </div>
             </div>
+
+            <button v-for="index in rowCount - 1" :key="`swap-${index}`" type="button" @click="swapWithPrevious(index)"
+                :style="{ gridRow: `${index} / span 2`, top: '50%' }"
+                class="absolute right-11 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-600 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-900"
+                aria-label="Inverser avec le champ précédent" title="Inverser avec le champ précédent">
+                <ArrowUpDown :size="16" :stroke-width="2" aria-hidden="true" />
+            </button>
         </div>
 
         <!-- MODE -->

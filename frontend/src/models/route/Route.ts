@@ -5,7 +5,7 @@ export interface RouteRequest {
     destination: Position
     waypoints?: Position[]
 
-    tractorId: number
+    tractorId?: number
     semiTrailerId?: number
 
     mode: 'FASTEST' | 'CHEAPEST'

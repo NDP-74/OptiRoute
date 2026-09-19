@@ -21,13 +21,11 @@ import type { RouteRequest, RouteResponse } from '@/models/route/Route'
 import type { CreateTransportFromRouteRequest } from '@/models/transport/TransportRequest'
 
 import { formatCurrency, formatDateTime, formatDistance, formatDurationSeconds } from '@/utils/formatters'
-import { formatVehicleLabel } from '@/utils/vehicleUtils'
 
 import {
     Building2,
     Clock,
     Fuel,
-    Landmark,
     ListChecks,
     MapPinned,
     PackageX,
@@ -36,7 +34,8 @@ import {
     User,
     Wallet,
     X,
-    Euro
+    Euro,
+    Receipt,
 } from 'lucide-vue-next'
 
 const props = defineProps<{
@@ -122,13 +121,6 @@ function handleRouteCalculated(data: { response: RouteResponse; request: RouteRe
     }
 }
 
-function selectRoute(index: number) {
-    selectedRouteIndex.value = index
-    if (routeResponse.value) {
-        mapRef.value?.displayRoutes(routeResponse.value.routes, routeResponse.value.routes[index])
-    }
-}
-
 async function initializeFromProps() {
     routeRequest.value = props.initialRouteRequest ?? null
     routeResponse.value = props.initialRouteResponse ?? null
@@ -149,7 +141,7 @@ async function initializeFromProps() {
 }
 
 async function saveRoute() {
-    if (!routeRequest.value || !selectedRoute.value || driverId.value === undefined || isSaving.value) {
+    if (!routeRequest.value || !selectedRoute.value || driverId.value === undefined || tractorId.value === null || isSaving.value) {
         return
     }
 
@@ -158,8 +150,8 @@ async function saveRoute() {
             name: transportTitle.value,
             customerId: customerId.value,
             driverId: driverId.value,
-            tractorId: routeRequest.value.tractorId,
-            semiTrailerId: routeRequest.value.semiTrailerId,
+            tractorId: tractorId.value,
+            semiTrailerId: semiTrailerId.value ?? undefined,
             emptyTrip: routeRequest.value.emptyTrip,
             plannedStart: plannedStart.value,
             plannedEnd: plannedEnd.value,
@@ -328,7 +320,7 @@ onMounted(async () => {
                                     Revenu (€)
                                 </label>
 
-                                <input v-model.number="revenue" type="number" min="0" step="0.01"
+                                <input v-model.number="revenue" type="number" placeholder="0" min="0" step="0.01"
                                     class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20" />
                             </div>
                         </div>
@@ -341,7 +333,7 @@ onMounted(async () => {
                                 <RouteIcon :size="16" class="text-slate-400" />
                                 Recherche d'itinéraire
                             </h3>
-                            <div class="flex-1 overflow-auto">
+                            <div class="custom-scrollbar min-h-0 flex-1 overflow-auto pr-2">
                                 <RouteForm :initial-request="props.initialRouteRequest" v-model:tractor-id="tractorId"
                                     v-model:semi-trailer-id="semiTrailerId" v-model:empty-trip="emptyTrip"
                                     @route-calculated="handleRouteCalculated" />
@@ -410,7 +402,7 @@ onMounted(async () => {
                                 </div>
 
                                 <div class="flex items-center gap-2">
-                                    <Landmark :size="16" class="shrink-0 text-slate-400" />
+                                    <Receipt :size="16" class="shrink-0 text-slate-400" />
                                     <div>
                                         <p class="text-slate-500">Péage</p>
                                         <p class="font-semibold">{{ formatCurrency(selectedRoute.costs.tollCost) }}</p>
@@ -446,7 +438,7 @@ onMounted(async () => {
                         :disabled="isSaving" @click="close">Annuler</button>
                     <button type="button"
                         class="rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                        :disabled="!selectedRoute || !routeRequest || driverId === undefined || isSaving"
+                        :disabled="!selectedRoute || !routeRequest || driverId === undefined || tractorId === null || isSaving"
                         @click="saveRoute">
                         {{ isSaving ? 'Enregistrement...' : "Valider l'itinéraire" }}
                     </button>

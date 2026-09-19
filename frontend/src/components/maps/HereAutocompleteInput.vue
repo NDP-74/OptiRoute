@@ -9,6 +9,7 @@ const props = defineProps<{
     label?: string
     modelValue?: any
     disabled?: boolean
+    hideLabel?: boolean
 }>()
 
 const emit = defineEmits(['selected', 'update:modelValue'])
@@ -128,7 +129,7 @@ async function selectPlace(item: any) {
 <template>
     <div class="relative">
 
-        <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <label v-if="!hideLabel" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
             {{ label }}
         </label>
 

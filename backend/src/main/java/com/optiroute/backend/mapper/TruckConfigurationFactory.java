@@ -5,10 +5,19 @@ import com.optiroute.backend.entity.vehicle.SemiTrailer;
 import com.optiroute.backend.model.TruckConfiguration;
 import com.optiroute.backend.utils.CommonUtils;
 
+import java.math.BigDecimal;
+
 import org.springframework.stereotype.Component;
 
 @Component
 public class TruckConfigurationFactory {
+
+    // Ensemble générique tracteur + semi-remorque EU, calé sur le profil PTV
+    // EUR_TRAILER_TRUCK
+    public TruckConfiguration createDefault() {
+        return TruckConfiguration.builder().weightKg(40000).heightCm(400).widthCm(255).lengthCm(1650).axleCount(5).maxSpeed(CommonUtils.kmhToMs(90))
+            .averageConsumption(new BigDecimal("32")).build();
+    }
 
     public TruckConfiguration create(Tractor tractor, SemiTrailer semiTrailer) {
         return create(tractor,semiTrailer,false);
