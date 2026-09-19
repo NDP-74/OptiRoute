@@ -25,8 +25,40 @@ function clearRoute() {
     routePolylines = []
 }
 
+function createLineString(polyline: string) {
+    let parsedPolyline: any
+
+    try {
+        parsedPolyline = JSON.parse(polyline)
+    } catch {
+        return H.geo.LineString.fromFlexiblePolyline(polyline)
+    }
+
+    const geometry = parsedPolyline.type === 'Feature' ? parsedPolyline.geometry : parsedPolyline
+
+    if (geometry?.type === 'LineString' && Array.isArray(geometry.coordinates)) {
+        const lineString = new H.geo.LineString()
+
+        for (const coordinate of geometry.coordinates) {
+            if (Array.isArray(coordinate) && coordinate.length >= 2) {
+                lineString.pushLatLngAlt(coordinate[1], coordinate[0], coordinate[2] ?? 0)
+            }
+        }
+
+        if (lineString.getPointCount() > 1) {
+            return lineString
+        }
+    }
+
+    return H.geo.LineString.fromFlexiblePolyline(polyline)
+}
+
 function displayRoute() {
-    if (!map || !props.polyline) return
+    if (!map) return
+
+    clearRoute()
+
+    if (!props.polyline) return
 
     let encodedPolylines: string[]
 
@@ -39,13 +71,11 @@ function displayRoute() {
         encodedPolylines = [props.polyline]
     }
 
-    clearRoute()
-
     for (const encodedPolyline of encodedPolylines) {
-        const lineString = H.geo.LineString.fromFlexiblePolyline(encodedPolyline)
+        const lineString = createLineString(encodedPolyline)
         const routePolyline = new H.map.Polyline(lineString, {
             style: {
-                strokeColor: '#059669',
+                strokeColor: '#2563eb',
                 lineWidth: 5,
                 lineCap: 'round',
                 lineJoin: 'round'

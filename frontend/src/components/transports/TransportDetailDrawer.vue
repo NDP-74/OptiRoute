@@ -216,9 +216,9 @@ watch(
 
                     <TransportDetailItem label="Fin prévue" :value="formatDateTime(transport.plannedEnd)" />
 
-                    <TransportDetailItem label="Début réel" :value="formatDateTime(transport.actualStart)" />
+                    <!--<TransportDetailItem label="Début réel" :value="formatDateTime(transport.actualStart)" />
 
-                    <TransportDetailItem label="Fin réelle" :value="formatDateTime(transport.actualEnd)" />
+                    <TransportDetailItem label="Fin réelle" :value="formatDateTime(transport.actualEnd)" /> -->
                 </div>
             </section>
 
@@ -294,7 +294,8 @@ watch(
                 <div class="mt-5 grid grid-cols-2 gap-3">
                     <TransportMetricCard label="Distance" :value="formatDistance(transport.distanceMeters)" />
 
-                    <TransportMetricCard label="Durée estimée" :value="formatDurationSeconds(transport.durationSeconds)" />
+                    <TransportMetricCard label="Durée estimée"
+                        :value="formatDurationSeconds(transport.durationSeconds)" />
                 </div>
             </section>
 
@@ -419,17 +420,57 @@ watch(
                             </div>
                         </div>
                     </details>
+
+                    <!-- Total général -->
+                    <div class="mt-4 flex items-center justify-between rounded-lg bg-slate-900 px-4 py-3 text-white">
+                        <span class="text-sm font-medium">
+                            Coût total estimé
+                        </span>
+
+                        <span class="text-xl font-semibold">
+                            {{ formatCurrency(transport.costs.totalCost) }}
+                        </span>
+                    </div>
                 </div>
+            </section>
 
-                <!-- Total général -->
-                <div class="mt-4 flex items-center justify-between rounded-lg bg-slate-900 px-4 py-3 text-white">
-                    <span class="text-sm font-medium">
-                        Coût total estimé
-                    </span>
+            <!-- Synthèse financière -->
+            <section class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <h3 class="text-sm font-semibold text-slate-900">
+                    Synthèse financière
+                </h3>
 
-                    <span class="text-xl font-semibold">
-                        {{ formatCurrency(transport.costs.totalCost) }}
-                    </span>
+                <div class="mt-3 space-y-2">
+                    <!-- Chiffre d'affaires -->
+                    <div
+                        class="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                        <span class="text-sm font-medium text-slate-700">
+                            Chiffre d'affaires
+                        </span>
+
+                        <span class="text-base font-semibold text-slate-900">
+                            {{ formatCurrency(transport.revenue) }}
+                        </span>
+                    </div>
+
+                    <!-- Résultat -->
+                    <div class="mt-2 flex items-center justify-between rounded-lg border px-4 py-3" :class="transport.revenue - transport.costs.totalCost < 0
+                        ? 'border-red-200 bg-red-50'
+                        : 'border-emerald-200 bg-emerald-50'">
+                        <div>
+                            <p class="text-sm font-semibold" :class="transport.revenue - transport.costs.totalCost < 0
+                                ? 'text-red-700'
+                                : 'text-emerald-700'">
+                                Résultat
+                            </p>
+                        </div>
+
+                        <span class="text-xl font-bold" :class="transport.revenue - transport.costs.totalCost < 0
+                            ? 'text-red-600'
+                            : 'text-emerald-600'">
+                            {{ formatCurrency(transport.revenue - transport.costs.totalCost) }}
+                        </span>
+                    </div>
                 </div>
             </section>
         </div>

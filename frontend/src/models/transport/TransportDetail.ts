@@ -64,4 +64,5 @@ export interface TransportDetail {
     polyline: string | null;
 
     costs: TransportCosts;
+    revenue: number;
 }

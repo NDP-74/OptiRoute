@@ -84,6 +84,6 @@ public class TransportDetailService {
 
             estimate != null ? estimate.getPolyline() : null,
 
-            costs);
+            costs, transport.getRevenue());
     }
 }

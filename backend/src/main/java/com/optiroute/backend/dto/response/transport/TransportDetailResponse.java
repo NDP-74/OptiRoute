@@ -1,5 +1,6 @@
 package com.optiroute.backend.dto.response.transport;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 import com.optiroute.backend.dto.response.cost.TransportCostDetailsResponse;
@@ -33,5 +34,5 @@ public record TransportDetailResponse(Long id, String name, String status, boole
 
         String polyline,
 
-        TransportCostDetailsResponse costs) {
+        TransportCostDetailsResponse costs, BigDecimal revenue) {
 }
