@@ -4,13 +4,16 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+
+import com.optiroute.backend.entity.EntityUtils;
 
 @Entity
 @Getter
 @Setter
 @Table(name = "transport")
-public class Transport {
+public class Transport extends EntityUtils {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,17 +48,6 @@ public class Transport {
 
     private boolean emptyTrip;
 
-    private OffsetDateTime createdAt;
-    private OffsetDateTime updatedAt;
-
-    @PrePersist
-    public void prePersist() {
-        createdAt = OffsetDateTime.now();
-        updatedAt = createdAt;
-    }
-
-    @PreUpdate
-    public void preUpdate() {
-        updatedAt = OffsetDateTime.now();
-    }
+    @Column(precision = 12, scale = 2)
+    private BigDecimal revenue;
 }

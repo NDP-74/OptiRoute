@@ -36,6 +36,7 @@ import {
     User,
     Wallet,
     X,
+    Euro
 } from 'lucide-vue-next'
 
 const props = defineProps<{
@@ -60,6 +61,7 @@ const customerId = ref<number>()
 const tractorId = ref<number | null>(null)
 const semiTrailerId = ref<number | null>(null)
 const emptyTrip = ref(false)
+const revenue = ref<number | null>(null)
 const drivers = ref<DriverSummary[]>([])
 const customers = ref<Customer[]>([])
 const tractors = ref<TractorSummary[]>([])
@@ -169,6 +171,7 @@ async function saveRoute() {
             destinationAddress: routeRequest.value.destination.address,
             destinationLat: routeRequest.value.destination.lat,
             destinationLng: routeRequest.value.destination.lng,
+            revenue: revenue.value,
         },
         selectedRoute: selectedRoute.value,
     }
@@ -190,6 +193,7 @@ watch(() => props.show, (show) => {
 
     driverId.value = undefined
     customerId.value = undefined
+    revenue.value = null
     void initializeFromProps()
 })
 
@@ -217,14 +221,10 @@ onMounted(async () => {
 
 <template>
     <AppModal :show="show" panel-class="max-w-7xl" @close="close">
-        <div class="flex h-[85vh] max-h-[85vh] flex-col">
+        <div class="flex h-[90vh] max-h-[90vh] flex-col">
             <!-- HEADER -->
             <div class="flex shrink-0 items-start justify-between gap-4 border-b border-slate-100 pb-4">
-                <div>
-                    <h2 class="text-xl font-bold text-slate-900">Créer et assigner un itinéraire</h2>
-                    <p class="mt-1 text-sm text-slate-500">Recherchez un trajet, sélectionnez-le puis assignez-le au
-                        planning.</p>
-                </div>
+                <h2 class="text-xl font-bold text-slate-900">Créer et assigner un itinéraire</h2>
                 <button type="button"
                     class="rounded-full p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
                     aria-label="Fermer" @click="close">
@@ -233,14 +233,15 @@ onMounted(async () => {
             </div>
 
             <!-- BODY -->
-            <div class="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden pt-5">
+            <div class="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden">
 
                 <!-- TOP ROW : ASSIGNMENT & SEARCH -->
                 <div class="grid min-h-0 flex-1 gap-5 lg:grid-cols-2">
 
                     <!-- COLUMN 1 : ASSIGNMENT -->
-                    <section class="min-h-0 overflow-y-auto pr-1">
-                        <div class="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+                    <section class="min-h-0 pr-1">
+                        <div
+                            class="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 h-full overflow-auto">
                             <h3 class="flex items-center gap-2 text-sm font-semibold text-slate-700">
                                 <ListChecks :size="16" class="text-slate-400" />
                                 Affectation
@@ -270,8 +271,7 @@ onMounted(async () => {
                                     class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
                                     <option :value="null">Sélectionner un tracteur</option>
                                     <option v-for="tractor in tractors" :key="tractor.id" :value="tractor.id">
-                                        {{ tractor.registration }} - {{ formatVehicleLabel(tractor.brand, tractor.model)
-                                        }}
+                                        {{ tractor.registration }}
                                     </option>
                                 </select>
                             </div>
@@ -287,8 +287,7 @@ onMounted(async () => {
                                     <option :value="null">Sélectionner une semi-remorque</option>
                                     <option v-for="semiTrailer in semiTrailers" :key="semiTrailer.id"
                                         :value="semiTrailer.id">
-                                        {{ semiTrailer.registration }} - {{ formatVehicleLabel(semiTrailer.brand,
-                                            semiTrailer.model) }}
+                                        {{ semiTrailer.registration }}
                                     </option>
                                 </select>
                             </div>
@@ -321,22 +320,35 @@ onMounted(async () => {
                                         class="absolute left-0.5 h-4 w-4 rounded-full bg-white shadow transition peer-checked:translate-x-4"></span>
                                 </span>
                             </label>
+
+                            <div>
+                                <label
+                                    class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                    <Euro :size="14" />
+                                    Revenu (€)
+                                </label>
+
+                                <input v-model.number="revenue" type="number" min="0" step="0.01"
+                                    class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20" />
+                            </div>
                         </div>
                     </section>
 
                     <!-- COLUMN 2 : SEARCH -->
-                    <section class="min-h-0 space-y-4 overflow-y-auto pr-1">
-                        <div class="rounded-2xl border border-slate-200 p-4">
+                    <section class="min-h-0 pr-1">
+                        <div class="rounded-2xl border border-slate-200 p-4 h-full flex flex-col">
                             <h3 class="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-700">
                                 <RouteIcon :size="16" class="text-slate-400" />
                                 Recherche d'itinéraire
                             </h3>
-                            <RouteForm :initial-request="props.initialRouteRequest" v-model:tractor-id="tractorId"
-                                v-model:semi-trailer-id="semiTrailerId" v-model:empty-trip="emptyTrip"
-                                @route-calculated="handleRouteCalculated" />
+                            <div class="flex-1 overflow-auto">
+                                <RouteForm :initial-request="props.initialRouteRequest" v-model:tractor-id="tractorId"
+                                    v-model:semi-trailer-id="semiTrailerId" v-model:empty-trip="emptyTrip"
+                                    @route-calculated="handleRouteCalculated" />
+                            </div>
                         </div>
 
-                        <div v-if="routeResponse?.routes?.length" class="rounded-2xl border border-slate-200 p-4">
+                        <!-- <div v-if="routeResponse?.routes?.length" class="rounded-2xl border border-slate-200 p-4">
                             <h3 class="mb-3 flex items-center justify-between text-sm font-semibold text-slate-700">
                                 <span>Itinéraires trouvés</span>
                                 <span
@@ -359,13 +371,13 @@ onMounted(async () => {
                                             formatDurationSeconds(route.duration) }}</div>
                                 </button>
                             </div>
-                        </div>
+                        </div>-->
                     </section>
                 </div>
 
                 <!-- MAP & SUMMARY -->
                 <section class="flex min-h-0 min-w-0 shrink-0 flex-col gap-4">
-                    <div class="h-64 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-inner">
+                    <div class="h-80 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-inner">
                         <HereMap ref="mapRef" />
                     </div>
 

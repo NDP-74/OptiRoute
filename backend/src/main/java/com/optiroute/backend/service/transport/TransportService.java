@@ -41,6 +41,8 @@ public class TransportService {
         transport.setDestinationLat(req.destinationLat());
         transport.setDestinationLng(req.destinationLng());
 
+        transport.setRevenue(req.revenue());
+
         return transportRepository.save(transport);
     }
 }

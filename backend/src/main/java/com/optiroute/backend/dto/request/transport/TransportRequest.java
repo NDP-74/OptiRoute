@@ -1,5 +1,6 @@
 package com.optiroute.backend.dto.request.transport;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 public record TransportRequest(String name,
@@ -12,5 +13,7 @@ public record TransportRequest(String name,
 
         String originName, String originAddress, double originLat, double originLng,
 
-        String destinationName, String destinationAddress, double destinationLat, double destinationLng) {
+        String destinationName, String destinationAddress, double destinationLat, double destinationLng,
+
+        BigDecimal revenue) {
 }

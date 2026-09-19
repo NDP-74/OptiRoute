@@ -22,6 +22,8 @@ export interface CreateTransportRequest {
     destinationAddress: string
     destinationLat: number
     destinationLng: number
+
+    revenue?: number | null
 }
 
 export interface CreateTransportFromRouteRequest {
