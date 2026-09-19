@@ -20,9 +20,6 @@ public class TransportEstimate {
     @Column(name = "transport_id", nullable = false, unique = true)
     private Long transportId;
 
-    @Column(name = "departure_time")
-    private OffsetDateTime departureTime;
-
     @Column(name = "distance_meters", nullable = false)
     private Long distanceMeters;
 

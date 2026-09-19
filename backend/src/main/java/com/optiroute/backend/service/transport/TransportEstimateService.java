@@ -27,7 +27,6 @@ public class TransportEstimateService {
 
 		TransportEstimate estimate = new TransportEstimate();
 		estimate.setTransportId(transport.getId());
-		estimate.setDepartureTime(transport.getPlannedStart());
 		estimate.setDistanceMeters(fasterRoute.getDistanceMeters());
 		estimate.setDurationSeconds(fasterRoute.getDuration());
 		estimate.setPolyline(fasterRoute.getPolyline());
@@ -44,7 +43,6 @@ public class TransportEstimateService {
 		TransportEstimate estimate = new TransportEstimate();
 
 		estimate.setTransportId(transport.getId());
-		estimate.setDepartureTime(transport.getPlannedStart());
 
 		estimate.setDistanceMeters(route.getDistanceMeters());
 		estimate.setDurationSeconds(route.getDuration());
