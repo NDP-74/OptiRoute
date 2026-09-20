@@ -18,5 +18,7 @@ public record TransportPlanningResponse(
 
         double totalCost,
 
+        double driverCost, double structureCost, double vehicleCost,
+
         double revenue) {
 }

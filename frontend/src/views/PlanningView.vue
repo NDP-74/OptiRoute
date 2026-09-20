@@ -4,7 +4,11 @@
             @today-range="applyTodayRange" @create-route="openRouteModal" @create-event="showEventModal = true" />
 
         <PlanningGrid :drivers="planningDrivers" :days="days" :loading="loading" :error="error"
-            @retry="loadCurrentPeriod" @transport-select="openTransport" @event-select="openVehicleEvent" />
+            @retry="loadCurrentPeriod" @transport-select="openTransport" @event-select="openVehicleEvent"
+            @cost-detail-select="selectedCostDetailDriverId = $event" />
+
+        <CostDetailDrawer :open="selectedCostDetailDriverId !== null" :driver="selectedCostDetailDriver"
+            @close="selectedCostDetailDriverId = null" />
 
         <TransportDetailDrawer :open="selectedTransportId !== null" :transport-id="selectedTransportId"
             @close="closeTransport" @deleted="handleTransportDeleted" @edit="openEditModal" />
@@ -29,6 +33,7 @@ import PlanningToolbar from "@/components/planning/PlanningToolbar.vue";
 import PlanningRouteModal from "@/components/planning/PlanningRouteModal.vue";
 import CreateVehicleEventModal from "@/components/planning/CreateVehicleEventModal.vue";
 import VehicleEventDetailDrawer from "@/components/planning/VehicleEventDetailDrawer.vue";
+import CostDetailDrawer from "@/components/planning/CostDetailDrawer.vue";
 import TransportDetailDrawer from "@/components/transports/TransportDetailDrawer.vue";
 
 import { getVehicleEventsByDateRange } from "@/api/vehicleEventApi";
@@ -41,6 +46,7 @@ import type { VehicleEventResponse } from "@/models/vehicle/VehicleEvent";
 
 const selectedTransportId = ref<number | null>(null);
 const selectedVehicleEventId = ref<number | null>(null);
+const selectedCostDetailDriverId = ref<number | null>(null);
 const showRouteModal = ref(false);
 const showEventModal = ref(false);
 const editingTransport = ref<TransportDetail | null>(null);
@@ -231,6 +237,10 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
             ),
             totalCost: driverSummary.salaryForNonTransportDays,
             totalRevenue: 0,
+            driverCost: driverSummary.salaryForNonTransportDays,
+            structureCost: 0,
+            vehicleCost: 0,
+            eventCost: 0,
             days: {},
             events: {},
         });
@@ -257,6 +267,9 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
 
         driver.totalCost += transport.totalCost;
         driver.totalRevenue += transport.revenue;
+        driver.driverCost += transport.driverCost;
+        driver.structureCost += transport.structureCost;
+        driver.vehicleCost += transport.vehicleCost;
     });
 
     const sortedDrivers = Array.from(driversMap.values()).sort((first, second) => {
@@ -283,6 +296,7 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
         matchingDayEvents.push(event);
         matchingDriver.events[event.eventDate] = matchingDayEvents;
         matchingDriver.totalCost += event.cost;
+        matchingDriver.eventCost += event.cost;
     });
 
     if (unassignedVehicles.value.registrations.length > 0 || eventsWithoutTransport.length > 0) {
@@ -302,6 +316,10 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
             vehicleRegistrations,
             totalCost: unassignedVehicles.value.depreciationCost,
             totalRevenue: 0,
+            driverCost: 0,
+            structureCost: 0,
+            vehicleCost: unassignedVehicles.value.depreciationCost,
+            eventCost: 0,
             days: {},
             events: {},
         };
@@ -311,6 +329,7 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
             unassignedDayEvents.push(event);
             unassignedDriver.events[event.eventDate] = unassignedDayEvents;
             unassignedDriver.totalCost += event.cost;
+            unassignedDriver.vehicleCost += event.cost;
         });
 
         sortedDrivers.push({
@@ -319,6 +338,14 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
     }
 
     return sortedDrivers;
+});
+
+const selectedCostDetailDriver = computed<PlanningDriver | null>(() => {
+    if (selectedCostDetailDriverId.value === null) {
+        return null;
+    }
+
+    return planningDrivers.value.find((driver) => driver.id === selectedCostDetailDriverId.value) ?? null;
 });
 
 async function loadCurrentPeriod(): Promise<void> {

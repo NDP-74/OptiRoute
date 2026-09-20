@@ -69,7 +69,8 @@ public class TransportPlanningService {
 
             return new TransportPlanningResponse(transport.getId(), transport.getName(), driver.getId(), driver.getFirstName() + " " + driver.getLastName(), tractorRegistration,
                 semiTrailerRegistration, transport.getPlannedStart(), transport.getPlannedEnd(), transport.getOriginName(), transport.getDestinationName(), transport.isEmptyTrip(),
-                costs.totalCost(), transport.getRevenue() == null ? 0 : transport.getRevenue().doubleValue());
+                costs.totalCost(), costs.driver().totalCost(), costs.structure().totalCost(), costs.vehicle().totalCost(),
+                transport.getRevenue() == null ? 0 : transport.getRevenue().doubleValue());
         }).toList();
 
         Map<Long, Set<LocalDate>> transportDatesByDriver = transportEntities.stream().collect(Collectors.groupingBy(Transport::getDriverId,

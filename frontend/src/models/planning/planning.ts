@@ -17,6 +17,9 @@ export interface PlanningTransport {
     destinationName: string;
 
     totalCost: number;
+    driverCost: number;
+    structureCost: number;
+    vehicleCost: number;
     revenue: number;
 }
 
@@ -51,6 +54,10 @@ export interface PlanningDriver {
     vehicleRegistrations: string[];
     totalCost: number;
     totalRevenue: number;
+    driverCost: number;
+    structureCost: number;
+    vehicleCost: number;
+    eventCost: number;
     days: Record<string, PlanningTransport[]>;
     events: Record<string, import("@/models/vehicle/VehicleEvent").VehicleEventResponse[]>;
 }

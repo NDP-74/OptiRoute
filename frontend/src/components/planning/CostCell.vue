@@ -1,5 +1,7 @@
 <template>
-  <div class="sticky left-[240px] z-20 flex min-h-[140px] items-center border-r border-slate-300 bg-white px-3 py-4">
+  <button type="button"
+    class="sticky left-[240px] z-20 flex min-h-[140px] items-center border-r border-slate-300 bg-white px-3 py-4 text-left transition hover:bg-slate-50"
+    @click="emit('select')">
     <div class="w-full space-y-3 text-center">
       <div v-if="!isUnassigned">
         <p class="text-[11px] text-slate-400">Coûts</p>
@@ -18,7 +20,7 @@
         </p>
       </div>
     </div>
-  </div>
+  </button>
 </template>
 
 <script setup lang="ts">
@@ -28,6 +30,10 @@ const props = defineProps<{
   totalCost: number;
   totalRevenue: number;
   isUnassigned: boolean;
+}>();
+
+const emit = defineEmits<{
+  select: [];
 }>();
 
 const currencyFormatter = new Intl.NumberFormat("fr-FR", {
