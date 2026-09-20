@@ -256,7 +256,7 @@ watch(
 
             <!-- Synchronisation -->
             <DetailSection title="Synchronisation" :icon="Tag">
-                <DetailRow label="Source externe" :value="semiTrailer.externalSource ?? 'Non renseignée'" />
+                <DetailRow label="Source" :value="semiTrailer.externalSource ?? 'Non renseignée'" />
 
                 <DetailRow label="Identifiant externe" :value="semiTrailer.externalId ?? 'Non renseigné'" />
 

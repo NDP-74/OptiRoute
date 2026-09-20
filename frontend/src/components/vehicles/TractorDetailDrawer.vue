@@ -220,9 +220,11 @@ watch(
             <DetailSection title="Motorisation" :icon="Fuel">
                 <DetailRow label="Type de carburant" :value="formatFuelType(tractor.fuelType)" />
 
-                <DetailRow label="Consommation moyenne en charge" :value="formatConsumption(tractor.averageConsumption)" />
+                <DetailRow label="Consommation moyenne en charge"
+                    :value="formatConsumption(tractor.averageConsumption)" />
 
-                <DetailRow label="Consommation moyenne à vide" :value="formatConsumption(tractor.averageConsumptionEmpty)" />
+                <DetailRow label="Consommation moyenne à vide"
+                    :value="formatConsumption(tractor.averageConsumptionEmpty)" />
 
                 <DetailRow label="Vitesse maximale" :value="formatNumber(tractor.maxSpeed, ' km/h', 0)" />
             </DetailSection>
@@ -259,7 +261,7 @@ watch(
 
             <!-- Synchronisation -->
             <DetailSection title="Synchronisation" :icon="Tag">
-                <DetailRow label="Source externe" :value="tractor.externalSource ?? 'Non renseignée'" />
+                <DetailRow label="Source" :value="tractor.externalSource ?? 'Non renseignée'" />
 
                 <DetailRow label="Identifiant externe" :value="tractor.externalId
                     || 'Aucun identifiant externe'
