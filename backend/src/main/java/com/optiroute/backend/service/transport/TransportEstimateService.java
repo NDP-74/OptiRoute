@@ -54,4 +54,21 @@ public class TransportEstimateService {
 		return transportEstimateRepository.save(estimate);
 	}
 
+	@Transactional
+	public TransportEstimate upsertEstimate(Transport transport, RouteDto route) {
+
+		TransportEstimate estimate = transportEstimateRepository.findByTransportId(transport.getId()).orElseGet(TransportEstimate::new);
+
+		estimate.setTransportId(transport.getId());
+
+		estimate.setDistanceMeters(route.getDistanceMeters());
+		estimate.setDurationSeconds(route.getDuration());
+		estimate.setPolyline(route.getPolyline());
+
+		estimate.setEstimatedFuelCost(BigDecimal.valueOf(route.getCosts().getFuelCost()));
+		estimate.setEstimatedTollCost(BigDecimal.valueOf(route.getCosts().getTollCost()));
+
+		return transportEstimateRepository.save(estimate);
+	}
+
 }

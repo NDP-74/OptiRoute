@@ -7,9 +7,10 @@
             @retry="loadCurrentPeriod" @transport-select="openTransport" />
 
         <TransportDetailDrawer :open="selectedTransportId !== null" :transport-id="selectedTransportId"
-            @close="closeTransport" @deleted="handleTransportDeleted" />
+            @close="closeTransport" @deleted="handleTransportDeleted" @edit="openEditModal" />
 
-        <PlanningRouteModal :show="showRouteModal" @close="closeRouteModal" @saved="handleRouteSaved" />
+        <PlanningRouteModal :show="showRouteModal" :editing-transport="editingTransport" @close="closeRouteModal"
+            @saved="handleRouteSaved" />
     </div>
 </template>
 
@@ -25,15 +26,25 @@ import TransportDetailDrawer from "@/components/transports/TransportDetailDrawer
 import { usePlanning } from "@/utils/planningUtils";
 
 import type { PlanningDay, PlanningDriver, PlanningTransport, } from "@/models/planning/planning";
+import type { TransportDetail } from "@/models/transport/TransportDetail";
 
 
 const selectedTransportId = ref<number | null>(null);
 const showRouteModal = ref(false);
+const editingTransport = ref<TransportDetail | null>(null);
 
 function openTransport(transportId: number): void { selectedTransportId.value = transportId; }
 function closeTransport(): void { selectedTransportId.value = null; }
 function openRouteModal(): void { showRouteModal.value = true; }
-function closeRouteModal(): void { showRouteModal.value = false; }
+function closeRouteModal(): void {
+    showRouteModal.value = false;
+    editingTransport.value = null;
+}
+function openEditModal(transport: TransportDetail): void {
+    editingTransport.value = transport;
+    closeTransport();
+    showRouteModal.value = true;
+}
 
 
 const { transports, drivers, unassignedVehicles, loading, error, loadPlanning } = usePlanning();

@@ -56,6 +56,14 @@ public class TransportFacadeService {
     }
 
     @Transactional
+    public Transport updateFromRoute(Long id, TransportFromRouteRequest request) {
+        Transport transport = transportService.update(id,request.transport());
+        transportEstimateService.upsertEstimate(transport,request.selectedRoute());
+
+        return transport;
+    }
+
+    @Transactional
     public void deleteTransport(Long id) {
         if (!transportRepository.existsById(id)) {
             throw new EntityNotFoundException("Transport not found with id " + id);

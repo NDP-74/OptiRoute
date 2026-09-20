@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 
-import { Trash2 } from "lucide-vue-next"
-
+import { Trash2, Edit3 } from "lucide-vue-next";
 import { getTransportById } from "@/api/planningApi";
 
 import type { TransportDetail } from "@/models/transport/TransportDetail";
@@ -39,6 +38,14 @@ const handleTransportDeleted = () => {
     emit('close')
 }
 
+const handleEdit = () => {
+    if (!transport.value) {
+        return
+    }
+
+    emit('edit', transport.value)
+}
+
 const props = defineProps<{
     open: boolean;
     transportId: number | null;
@@ -46,7 +53,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     close: [];
-    deleted: []
+    deleted: [];
+    edit: [TransportDetail]
 }>();
 
 const transport = ref<TransportDetail | null>(null);
@@ -483,6 +491,14 @@ watch(
                     @click="askDeleteTransport">
                     <Trash2 class="h-4 w-4" />
                     Supprimer
+                </button>
+
+                <button type="button"
+                    class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+                    @click="handleEdit">
+                    <Edit3 class="h-4 w-4" />
+
+                    Modifier
                 </button>
             </div>
         </template>

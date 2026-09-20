@@ -13,6 +13,12 @@ export const createTransportFromRoute = async (request: CreateTransportFromRoute
     return response.data
 }
 
+export const updateTransportFromRoute = async (id: number, request: CreateTransportFromRouteRequest) => {
+    const response = await api.put(`/transports/${id}/from-route`, request)
+
+    return response.data
+}
+
 export const deleteTransport = async (id: number) => {
     await api.delete(`/transports/${id}`)
 }

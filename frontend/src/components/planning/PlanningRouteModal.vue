@@ -5,7 +5,7 @@ import AppModal from '@/components/ui/AppModal.vue'
 import HereMap from '@/components/maps/HereMap.vue'
 import RouteForm from '@/components/maps/RouteForm.vue'
 
-import { createTransportFromRoute } from '@/api/transportApi'
+import { createTransportFromRoute, updateTransportFromRoute } from '@/api/transportApi'
 import { getCustomers } from '@/api/customerApi'
 import { getDriver, getDrivers } from '@/api/driver/driverApi'
 import { getTractors } from '@/api/vehicle/tractorApi'
@@ -17,8 +17,9 @@ import type { Customer } from '@/models/Customer'
 import type { DriverSummary } from '@/models/driver/Driver'
 import type { TractorSummary } from '@/models/vehicle/Tractor'
 import type { SemiTrailerSummary } from '@/models/vehicle/SemiTrailer'
-import type { RouteRequest, RouteResponse } from '@/models/route/Route'
+import type { RouteDto, RouteRequest, RouteResponse } from '@/models/route/Route'
 import type { CreateTransportFromRouteRequest } from '@/models/transport/TransportRequest'
+import type { TransportDetail } from '@/models/transport/TransportDetail'
 
 import { formatCurrency, formatDateTime, formatDistance, formatDurationSeconds } from '@/utils/formatters'
 
@@ -43,6 +44,7 @@ const props = defineProps<{
     initialRouteRequest?: RouteRequest | null
     initialRouteResponse?: RouteResponse | null
     initialSelectedRouteIndex?: number
+    editingTransport?: TransportDetail | null
 }>()
 
 const emit = defineEmits<{
@@ -69,6 +71,32 @@ const isSaving = ref(false)
 
 const selectedRoute = computed(() => routeResponse.value?.routes[selectedRouteIndex.value])
 
+// Route de l'estimation existante, utilisée tant qu'aucun nouveau calcul n'a été fait en modification
+const fallbackRoute = computed<RouteDto | null>(() => {
+    const transport = props.editingTransport
+
+    if (!transport || transport.distanceMeters == null || transport.durationSeconds == null) {
+        return null
+    }
+
+    const findCost = (label: string) =>
+        transport.costs.vehicle.costs.find(cost => cost.label === label)?.amount ?? 0
+
+    return {
+        duration: transport.durationSeconds,
+        baseDuration: transport.durationSeconds,
+        distanceMeters: transport.distanceMeters,
+        polyline: transport.polyline ?? undefined,
+        costs: {
+            fuelCost: findCost('Carburant'),
+            tollCost: findCost('Péages'),
+            totalCost: findCost('Carburant') + findCost('Péages'),
+        },
+    }
+})
+
+const effectiveRoute = computed<RouteDto | null>(() => selectedRoute.value ?? fallbackRoute.value)
+
 const transportTitle = computed(() => {
     const customerName = customers.value.find(customer => customer.id === customerId.value)?.name?.trim()
 
@@ -89,8 +117,8 @@ const plannedStart = computed(() => {
     if (!routeRequest.value?.routeTime) return ''
 
     const value = new Date(routeRequest.value.routeTime)
-    if (routeRequest.value.timeMode === 'ARRIVAL' && selectedRoute.value) {
-        value.setSeconds(value.getSeconds() - selectedRoute.value.duration)
+    if (routeRequest.value.timeMode === 'ARRIVAL' && effectiveRoute.value) {
+        value.setSeconds(value.getSeconds() - effectiveRoute.value.duration)
     }
 
     return value.toISOString()
@@ -101,7 +129,7 @@ const plannedEnd = computed(() => {
     if (routeRequest.value.timeMode === 'ARRIVAL') return routeRequest.value.routeTime
 
     const value = new Date(routeRequest.value.routeTime)
-    value.setSeconds(value.getSeconds() + (selectedRoute.value?.duration ?? 0))
+    value.setSeconds(value.getSeconds() + (effectiveRoute.value?.duration ?? 0))
     return value.toISOString()
 })
 
@@ -121,13 +149,51 @@ function handleRouteCalculated(data: { response: RouteResponse; request: RouteRe
     }
 }
 
+function routeRequestFromTransport(transport: TransportDetail): RouteRequest {
+    return {
+        origin: {
+            name: transport.originName,
+            address: transport.originAddress ?? '',
+            lat: transport.originLat,
+            lng: transport.originLng,
+        },
+        destination: {
+            name: transport.destinationName,
+            address: transport.destinationAddress ?? '',
+            lat: transport.destinationLat,
+            lng: transport.destinationLng,
+        },
+        waypoints: [],
+        mode: 'FASTEST',
+        emptyTrip: transport.emptyTrip,
+        routeTime: transport.plannedStart,
+        timeMode: 'DEPARTURE',
+        driverHourlyRate: 0,
+    }
+}
+
 async function initializeFromProps() {
-    routeRequest.value = props.initialRouteRequest ?? null
-    routeResponse.value = props.initialRouteResponse ?? null
-    selectedRouteIndex.value = props.initialSelectedRouteIndex ?? 0
-    tractorId.value = props.initialRouteRequest?.tractorId ?? null
-    semiTrailerId.value = props.initialRouteRequest?.semiTrailerId ?? null
-    emptyTrip.value = props.initialRouteRequest?.emptyTrip ?? false
+    if (props.editingTransport) {
+        const transport = props.editingTransport
+
+        routeRequest.value = routeRequestFromTransport(transport)
+        routeResponse.value = null
+        selectedRouteIndex.value = 0
+
+        driverId.value = transport.driverId ?? undefined
+        customerId.value = transport.customerId ?? undefined
+        tractorId.value = transport.tractorId
+        semiTrailerId.value = transport.semiTrailerId
+        emptyTrip.value = transport.emptyTrip
+        revenue.value = transport.revenue
+    } else {
+        routeRequest.value = props.initialRouteRequest ?? null
+        routeResponse.value = props.initialRouteResponse ?? null
+        selectedRouteIndex.value = props.initialSelectedRouteIndex ?? 0
+        tractorId.value = props.initialRouteRequest?.tractorId ?? null
+        semiTrailerId.value = props.initialRouteRequest?.semiTrailerId ?? null
+        emptyTrip.value = props.initialRouteRequest?.emptyTrip ?? false
+    }
 
     await nextTick()
 
@@ -137,11 +203,18 @@ async function initializeFromProps() {
         selectedRouteIndex.value = index
         mapRef.value?.displayRoutes(routes, routes[index])
         mapRef.value?.setMarkers(routeRequest.value.origin, routeRequest.value.destination, routeRequest.value.waypoints)
+    } else if (routeRequest.value) {
+        mapRef.value?.setMarkers(routeRequest.value.origin, routeRequest.value.destination, routeRequest.value.waypoints)
+
+        if (props.editingTransport?.polyline) {
+            const existingRoute = { polyline: props.editingTransport.polyline }
+            mapRef.value?.displayRoutes([existingRoute], existingRoute)
+        }
     }
 }
 
 async function saveRoute() {
-    if (!routeRequest.value || !selectedRoute.value || driverId.value === undefined || tractorId.value === null || isSaving.value) {
+    if (!routeRequest.value || !effectiveRoute.value || driverId.value === undefined || tractorId.value === null || isSaving.value) {
         return
     }
 
@@ -152,7 +225,7 @@ async function saveRoute() {
             driverId: driverId.value,
             tractorId: tractorId.value,
             semiTrailerId: semiTrailerId.value ?? undefined,
-            emptyTrip: routeRequest.value.emptyTrip,
+            emptyTrip: emptyTrip.value,
             plannedStart: plannedStart.value,
             plannedEnd: plannedEnd.value,
             originName: routeRequest.value.origin.name,
@@ -165,16 +238,23 @@ async function saveRoute() {
             destinationLng: routeRequest.value.destination.lng,
             revenue: revenue.value,
         },
-        selectedRoute: selectedRoute.value,
+        selectedRoute: effectiveRoute.value,
     }
 
     try {
         isSaving.value = true
-        await createTransportFromRoute(request)
-        notification.success('Planning enregistré', `Le transport « ${transportTitle.value} » a bien été ajouté.`)
+
+        if (props.editingTransport) {
+            await updateTransportFromRoute(props.editingTransport.id, request)
+            notification.success('Planning mis à jour', `Le transport « ${transportTitle.value} » a bien été modifié.`)
+        } else {
+            await createTransportFromRoute(request)
+            notification.success('Planning enregistré', `Le transport « ${transportTitle.value} » a bien été ajouté.`)
+        }
+
         emit('saved')
     } catch (error) {
-        notification.error('Enregistrement impossible', getApiErrorMessage(error, 'Le transport n’a pas pu être ajouté au planning.'))
+        notification.error('Enregistrement impossible', getApiErrorMessage(error, 'Le transport n’a pas pu être enregistré.'))
     } finally {
         isSaving.value = false
     }
@@ -216,7 +296,8 @@ onMounted(async () => {
         <div class="flex h-[90vh] max-h-[90vh] flex-col">
             <!-- HEADER -->
             <div class="flex shrink-0 items-start justify-between gap-4 border-b border-slate-100 pb-4">
-                <h2 class="text-xl font-bold text-slate-900">Créer et assigner un itinéraire</h2>
+                <h2 class="text-xl font-bold text-slate-900">{{ props.editingTransport ? "Modifier l'itinéraire" :
+                    'Créer et assigner un itinéraire' }}</h2>
                 <button type="button"
                     class="rounded-full p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
                     aria-label="Fermer" @click="close">
@@ -334,7 +415,7 @@ onMounted(async () => {
                                 Recherche d'itinéraire
                             </h3>
                             <div class="custom-scrollbar min-h-0 flex-1 overflow-auto pr-2">
-                                <RouteForm :initial-request="props.initialRouteRequest" v-model:tractor-id="tractorId"
+                                <RouteForm :initial-request="routeRequest" v-model:tractor-id="tractorId"
                                     v-model:semi-trailer-id="semiTrailerId" v-model:empty-trip="emptyTrip"
                                     @route-calculated="handleRouteCalculated" />
                             </div>
@@ -375,13 +456,13 @@ onMounted(async () => {
                     </div>
 
                     <div class="shrink-0 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 text-sm">
-                        <template v-if="selectedRoute && routeRequest">
+                        <template v-if="effectiveRoute && routeRequest">
                             <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
                                 <div class="flex items-center gap-2">
                                     <MapPinned :size="16" class="shrink-0 text-slate-400" />
                                     <div>
                                         <p class="text-slate-500">Distance</p>
-                                        <p class="font-semibold">{{ formatDistance(selectedRoute.distanceMeters) }}</p>
+                                        <p class="font-semibold">{{ formatDistance(effectiveRoute.distanceMeters) }}</p>
                                     </div>
                                 </div>
 
@@ -389,7 +470,8 @@ onMounted(async () => {
                                     <Clock :size="16" class="shrink-0 text-slate-400" />
                                     <div>
                                         <p class="text-slate-500">Durée</p>
-                                        <p class="font-semibold">{{ formatDurationSeconds(selectedRoute.duration) }}</p>
+                                        <p class="font-semibold">{{ formatDurationSeconds(effectiveRoute.duration) }}
+                                        </p>
                                     </div>
                                 </div>
 
@@ -397,7 +479,7 @@ onMounted(async () => {
                                     <Fuel :size="16" class="shrink-0 text-slate-400" />
                                     <div>
                                         <p class="text-slate-500">Carburant</p>
-                                        <p class="font-semibold">{{ formatCurrency(selectedRoute.costs.fuelCost) }}</p>
+                                        <p class="font-semibold">{{ formatCurrency(effectiveRoute.costs.fuelCost) }}</p>
                                     </div>
                                 </div>
 
@@ -405,7 +487,7 @@ onMounted(async () => {
                                     <Receipt :size="16" class="shrink-0 text-slate-400" />
                                     <div>
                                         <p class="text-slate-500">Péage</p>
-                                        <p class="font-semibold">{{ formatCurrency(selectedRoute.costs.tollCost) }}</p>
+                                        <p class="font-semibold">{{ formatCurrency(effectiveRoute.costs.tollCost) }}</p>
                                     </div>
                                 </div>
 
@@ -413,7 +495,8 @@ onMounted(async () => {
                                     <Wallet :size="16" class="shrink-0 text-slate-400" />
                                     <div>
                                         <p class="text-slate-500">Coût total</p>
-                                        <p class="font-semibold">{{ formatCurrency(selectedRoute.costs.totalCost) }}</p>
+                                        <p class="font-semibold">{{ formatCurrency(effectiveRoute.costs.totalCost) }}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -428,7 +511,7 @@ onMounted(async () => {
 
             <!-- FOOTER -->
             <div class="mt-5 flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
-                <div v-if="routeRequest && selectedRoute" class="flex flex-wrap gap-4 text-xs text-slate-500">
+                <div v-if="routeRequest && effectiveRoute" class="flex flex-wrap gap-4 text-xs text-slate-500">
                     <span>Départ : {{ formatDateTime(plannedStart) }}</span>
                     <span>Arrivée : {{ formatDateTime(plannedEnd) }}</span>
                 </div>
@@ -438,9 +521,10 @@ onMounted(async () => {
                         :disabled="isSaving" @click="close">Annuler</button>
                     <button type="button"
                         class="rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                        :disabled="!selectedRoute || !routeRequest || driverId === undefined || tractorId === null || isSaving"
+                        :disabled="!effectiveRoute || !routeRequest || driverId === undefined || tractorId === null || isSaving"
                         @click="saveRoute">
-                        {{ isSaving ? 'Enregistrement...' : "Valider l'itinéraire" }}
+                        {{ isSaving ? 'Enregistrement...' : (props.editingTransport ? "Mettre à jour l'itinéraire" :
+                            "Valider l'itinéraire") }}
                     </button>
                 </div>
             </div>

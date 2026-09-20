@@ -51,6 +51,13 @@ public class TransportController {
         return ResponseEntity.ok(transport);
     }
 
+    @PutMapping("/{id}/from-route")
+    public ResponseEntity<Transport> updateFromRoute(@PathVariable Long id, @RequestBody TransportFromRouteRequest request) {
+        Transport transport = transportFacadeService.updateFromRoute(id,request);
+
+        return ResponseEntity.ok(transport);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTransport(@PathVariable Long id) {
         transportFacadeService.deleteTransport(id);
