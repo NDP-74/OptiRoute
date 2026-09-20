@@ -113,7 +113,7 @@ watch(
                 Ajouter un tracteur
             </h2>
 
-            <div class="max-h-[70vh] overflow-y-auto pr-2">
+            <div class="max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
                 <TractorForm v-model="form" :disabled="loading" />
             </div>
 

@@ -150,7 +150,7 @@ watch(
                 Enregistrez un coût ponctuel lié à un véhicule.
             </p>
 
-            <div class="mt-6 max-h-[65vh] space-y-6 overflow-y-auto pr-2">
+            <div class="mt-6 max-h-[65vh] space-y-6 overflow-y-auto pr-2 custom-scrollbar">
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-slate-700">Date</label>

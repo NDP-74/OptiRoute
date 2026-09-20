@@ -102,7 +102,7 @@ watch(
                 Ajouter un conducteur
             </h2>
 
-            <div class="max-h-[70vh] overflow-y-auto pr-2">
+            <div class="max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
                 <DriverForm v-model="form" :disabled="loading" />
             </div>
 
