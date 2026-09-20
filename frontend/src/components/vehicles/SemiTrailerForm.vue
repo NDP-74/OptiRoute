@@ -15,11 +15,16 @@ withDefaults(
 </script>
 
 <template>
-    <div class="space-y-6">
+    <div class="space-y-8">
         <section class="space-y-4">
-            <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                Identification
-            </h3>
+            <div>
+                <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                    Identification
+                </h3>
+                <p class="mt-1 text-sm text-slate-500">
+                    Informations générales de la semi-remorque.
+                </p>
+            </div>
 
             <div>
                 <label class="mb-1 block text-sm font-medium text-slate-700">
@@ -53,10 +58,15 @@ withDefaults(
             </div>
         </section>
 
-        <section class="space-y-4">
-            <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                Caractéristiques
-            </h3>
+        <section class="space-y-4 border-t border-slate-200 pt-6">
+            <div>
+                <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                    Caractéristiques
+                </h3>
+                <p class="mt-1 text-sm text-slate-500">
+                    Éléments techniques de la semi-remorque.
+                </p>
+            </div>
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
                     <label class="mb-1 block text-sm font-medium text-slate-700">
@@ -101,10 +111,15 @@ withDefaults(
             </div>
         </section>
 
-        <section class="space-y-4">
-            <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                Poids
-            </h3>
+        <section class="space-y-4 border-t border-slate-200 pt-6">
+            <div>
+                <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                    Poids
+                </h3>
+                <p class="mt-1 text-sm text-slate-500">
+                    Limites de charge et masse à vide.
+                </p>
+            </div>
 
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
@@ -137,10 +152,15 @@ withDefaults(
             </div>
         </section>
 
-        <section class="space-y-4">
-            <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                Dimensions
-            </h3>
+        <section class="space-y-4 border-t border-slate-200 pt-6">
+            <div>
+                <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                    Dimensions
+                </h3>
+                <p class="mt-1 text-sm text-slate-500">
+                    Gabarit du véhicule pour la planification.
+                </p>
+            </div>
 
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
@@ -187,10 +207,15 @@ withDefaults(
             </div>
         </section>
 
-        <section class="space-y-4">
-            <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                Achat et amortissement
-            </h3>
+        <section class="space-y-4 border-t border-slate-200 pt-6">
+            <div>
+                <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                    Achat et amortissement
+                </h3>
+                <p class="mt-1 text-sm text-slate-500">
+                    Données utilisées pour calculer les coûts fixes.
+                </p>
+            </div>
 
             <div>
                 <label class="mb-1 block text-sm font-medium text-slate-700">
