@@ -1,14 +1,15 @@
 ```vue
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref } from "vue"
 
-import AppModal from '@/components/ui/AppModal.vue'
+import AppModal from "@/components/ui/AppModal.vue"
+import CustomerForm from "@/components/customers/CustomerForm.vue"
 
-import api from '@/api/axios'
-import { getApiErrorMessage } from '@/api/utils'
+import { createCustomer } from "@/api/customerApi"
+import { getApiErrorMessage } from "@/api/utils"
 
-import type { CustomerCreateRequest } from '@/models/Customer'
-import { useNotification } from '@/composables/useNotification'
+import type { CustomerCreateRequest, CustomerFormData } from "@/models/Customer"
+import { useNotification } from "@/composables/useNotification"
 
 const notification = useNotification()
 
@@ -16,46 +17,43 @@ const props = defineProps<{
     show: boolean
 }>()
 
-const emit = defineEmits([
-    'close',
-    'created'
-])
+const emit = defineEmits<{
+    close: []
+    created: []
+}>()
 
-const name = ref('')
-const code = ref('')
-const address = ref('')
-const city = ref('')
-const country = ref('France')
+const initialForm = (): CustomerFormData => ({
+    name: "",
+    code: null,
+    address: null,
+    city: null,
+    country: "France",
+})
 
-const contactName = ref('')
-const deliveryInstructions = ref('')
+const form = ref<CustomerFormData>(initialForm())
 
 const loading = ref(false)
 
-const createCustomer = async () => {
+const submitCustomer = async () => {
 
     try {
         loading.value = true
 
         const payload: CustomerCreateRequest = {
             externalId: null,
-            externalSource: 'MANUAL',
-
-            name: name.value.trim(),
-
-            code: code.value.trim() || null,
-            address: address.value.trim() || null,
-            city: city.value.trim() || null,
-            country: country.value.trim() || null,
-
-            metadata: null
+            externalSource: "MANUAL",
+            name: form.value.name.trim(),
+            code: form.value.code?.trim() || null,
+            address: form.value.address?.trim() || null,
+            city: form.value.city?.trim() || null,
+            country: form.value.country?.trim() || null
         }
 
-        await api.post('/customers', payload)
+        await createCustomer(payload)
 
         notification.success(
             'Donneur d’ordre créé',
-            `Le donneur d’ordre « ${name.value.trim()} » a bien été créé.`
+            `Le donneur d’ordre « ${form.value.name.trim()} » a bien été créé.`
         )
 
         emit('created')
@@ -70,14 +68,7 @@ const createCustomer = async () => {
 }
 
 const resetForm = () => {
-    name.value = ''
-    code.value = ''
-    address.value = ''
-    city.value = ''
-    country.value = 'France'
-
-    contactName.value = ''
-    deliveryInstructions.value = ''
+    form.value = initialForm()
 }
 </script>
 
@@ -89,67 +80,17 @@ const resetForm = () => {
             Ajouter un nouveau donneur d’ordre
         </h2>
 
-        <div class="space-y-4">
-
-            <div>
-                <label class="mb-1 block text-sm font-medium text-gray-700">
-                    Nom
-                </label>
-
-                <input v-model="name" type="text" required
-                    class="w-full rounded-xl border px-4 py-3 outline-none focus:border-blue-500" />
-            </div>
-
-            <div>
-                <label class="mb-1 block text-sm font-medium text-gray-700">
-                    Code
-                </label>
-
-                <input v-model="code" type="text"
-                    class="w-full rounded-xl border px-4 py-3 outline-none focus:border-blue-500" />
-            </div>
-
-            <div>
-                <label class="mb-1 block text-sm font-medium text-gray-700">
-                    Adresse
-                </label>
-
-                <input v-model="address" type="text"
-                    class="w-full rounded-xl border px-4 py-3 outline-none focus:border-blue-500" />
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-
-                <div>
-                    <label class="mb-1 block text-sm font-medium text-gray-700">
-                        Ville
-                    </label>
-
-                    <input v-model="city" type="text"
-                        class="w-full rounded-xl border px-4 py-3 outline-none focus:border-blue-500" />
-                </div>
-
-                <div>
-                    <label class="mb-1 block text-sm font-medium text-gray-700">
-                        Pays
-                    </label>
-
-                    <input v-model="country" type="text"
-                        class="w-full rounded-xl border px-4 py-3 outline-none focus:border-blue-500" />
-                </div>
-
-            </div>
-
-        </div>
+        <CustomerForm v-model="form" :disabled="loading" />
 
         <div class="flex justify-end gap-3 mt-6">
 
-            <button @click="emit('close')" class="px-4 py-2 rounded-xl border">
+            <button type="button" :disabled="loading" class="rounded-xl border px-4 py-2 disabled:opacity-50"
+                @click="emit('close')">
                 Annuler
             </button>
 
-            <button @click="createCustomer" :disabled="loading"
-                class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-2 rounded-xl transition">
+            <button type="button" :disabled="loading || !form.name.trim()" @click="submitCustomer"
+                class="rounded-xl bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 disabled:opacity-50">
                 {{ loading ? 'Enregistrement' : 'Enregistrer' }}
             </button>
 

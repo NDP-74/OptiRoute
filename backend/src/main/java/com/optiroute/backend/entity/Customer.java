@@ -2,11 +2,6 @@ package com.optiroute.backend.entity;
 
 import jakarta.persistence.*;
 
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
-
-import com.fasterxml.jackson.databind.JsonNode;
-
 @Entity
 @Table(name = "customer")
 public class Customer extends EntityUtils {
@@ -35,10 +30,6 @@ public class Customer extends EntityUtils {
 
     @Column(length = 100)
     private String country;
-
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "metadata", columnDefinition = "jsonb")
-    private JsonNode metadata;
 
     // getters / setters
 
@@ -100,13 +91,5 @@ public class Customer extends EntityUtils {
 
     public void setCountry(String country) {
         this.country = country;
-    }
-
-    public JsonNode getMetadata() {
-        return metadata;
-    }
-
-    public void setMetadata(JsonNode metadata) {
-        this.metadata = metadata;
     }
 }

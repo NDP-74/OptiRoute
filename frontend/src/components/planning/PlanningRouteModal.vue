@@ -13,7 +13,7 @@ import { getSemiTrailers } from '@/api/vehicle/semiTrailerApi'
 import { getApiErrorMessage } from '@/api/utils'
 import { useNotification } from '@/composables/useNotification'
 
-import type { Customer } from '@/models/Customer'
+import type { CustomerSummary } from '@/models/Customer'
 import type { DriverSummary } from '@/models/driver/Driver'
 import type { TractorSummary } from '@/models/vehicle/Tractor'
 import type { SemiTrailerSummary } from '@/models/vehicle/SemiTrailer'
@@ -64,7 +64,7 @@ const semiTrailerId = ref<number | null>(null)
 const emptyTrip = ref(false)
 const revenue = ref<number | null>(null)
 const drivers = ref<DriverSummary[]>([])
-const customers = ref<Customer[]>([])
+const customers = ref<CustomerSummary[]>([])
 const tractors = ref<TractorSummary[]>([])
 const semiTrailers = ref<SemiTrailerSummary[]>([])
 const isSaving = ref(false)

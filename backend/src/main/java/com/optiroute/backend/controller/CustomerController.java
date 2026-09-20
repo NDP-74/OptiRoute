@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.optiroute.backend.dto.request.CustomerRequest;
+import com.optiroute.backend.dto.response.CustomerLightResponse;
 import com.optiroute.backend.dto.response.CustomerResponse;
 import com.optiroute.backend.service.CustomerService;
 
@@ -30,7 +31,7 @@ public class CustomerController {
     }
 
     @GetMapping({ "", "/" })
-    public ResponseEntity<List<CustomerResponse>> getAll() {
+    public ResponseEntity<List<CustomerLightResponse>> getAll() {
         return ResponseEntity.ok(customerService.getAll());
     }
 
@@ -48,7 +49,7 @@ public class CustomerController {
 
     @PutMapping("/{id}")
     public ResponseEntity<CustomerResponse> updateCustomer(@PathVariable Long id, @Valid @RequestBody CustomerRequest request) {
-        CustomerResponse updatedCustomer = customerService.updateCustomer(id, request);
+        CustomerResponse updatedCustomer = customerService.updateCustomer(id,request);
 
         return ResponseEntity.ok(updatedCustomer);
     }

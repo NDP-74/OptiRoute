@@ -4,7 +4,7 @@ import { ref } from 'vue'
 import { deleteCustomer } from '@/api/customerApi'
 import { getApiErrorMessage } from '@/api/utils'
 
-import type { Customer } from '@/models/Customer'
+import type { CustomerSummary } from '@/models/Customer'
 
 import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal.vue'
 import { useNotification } from '@/composables/useNotification'
@@ -13,7 +13,7 @@ const notification = useNotification()
 
 const props = defineProps<{
     show: boolean
-    customer: Customer | null
+    customer: CustomerSummary | null
 }>()
 
 const emit = defineEmits<{

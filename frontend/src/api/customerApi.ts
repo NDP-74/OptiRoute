@@ -1,27 +1,27 @@
 import api from "./axios";
 
-import type { Customer, CustomerCreateRequest, CustomerUpdateRequest } from "@/models/Customer";
+import type { CustomerCreateRequest, CustomerDetails, CustomerSummary, CustomerUpdateRequest } from "@/models/Customer";
 
-export const getCustomers = async (): Promise<Customer[]> => {
-    const response = await api.get<Customer[]>("/customers");
-
-    return response.data;
-};
-
-export const getCustomer = async (id: number): Promise<Customer> => {
-    const response = await api.get<Customer>(`/customers/${id}`);
+export const getCustomers = async (): Promise<CustomerSummary[]> => {
+    const response = await api.get<CustomerSummary[]>("/customers");
 
     return response.data;
 };
 
-export const createCustomer = async (customer: CustomerCreateRequest): Promise<Customer> => {
-    const response = await api.post<Customer>("/customers", customer);
+export const getCustomer = async (id: number): Promise<CustomerDetails> => {
+    const response = await api.get<CustomerDetails>(`/customers/${id}`);
 
     return response.data;
 };
 
-export const updateCustomer = async (id: number, customer: CustomerUpdateRequest): Promise<Customer> => {
-    const response = await api.put<Customer>(`/customers/${id}`, customer);
+export const createCustomer = async (customer: CustomerCreateRequest): Promise<CustomerDetails> => {
+    const response = await api.post<CustomerDetails>("/customers", customer);
+
+    return response.data;
+};
+
+export const updateCustomer = async (id: number, customer: CustomerUpdateRequest): Promise<CustomerDetails> => {
+    const response = await api.put<CustomerDetails>(`/customers/${id}`, customer);
 
     return response.data;
 };

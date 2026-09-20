@@ -1,11 +1,11 @@
-export interface CustomerMetadata {
-    contactName: string;
-    deliveryInstructions: string;
-
-    [key: string]: unknown;
+export interface CustomerSummary {
+    id: number;
+    name: string;
+    code: string | null;
+    city: string | null;
 }
 
-export interface Customer {
+export interface CustomerDetails {
     id: number;
 
     externalId: string | null;
@@ -18,33 +18,24 @@ export interface Customer {
     city: string | null;
     country: string | null;
 
-    metadata: CustomerMetadata | null;
-
     createdAt: string;
     updatedAt: string;
 }
 
-export interface CustomerCreateRequest {
-    externalId: string | null;
-    externalSource: string;
-
+export interface CustomerFormData {
     name: string;
     code: string | null;
-
     address: string | null;
     city: string | null;
     country: string | null;
-
-    metadata: CustomerMetadata | null;
 }
 
-export interface CustomerUpdateRequest {
-    name: string;
-    code: string | null;
+export interface CustomerUpdateRequest extends CustomerFormData {
+    externalId: string | null;
+    externalSource: string;
+}
 
-    address: string | null;
-    city: string | null;
-    country: string | null;
-
-    metadata: CustomerMetadata | null;
+export interface CustomerCreateRequest extends CustomerFormData {
+    externalId: string | null;
+    externalSource: string;
 }
