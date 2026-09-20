@@ -230,6 +230,7 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
                 (registration): registration is string => !!registration
             ),
             totalCost: driverSummary.salaryForNonTransportDays,
+            totalRevenue: 0,
             days: {},
             events: {},
         });
@@ -255,6 +256,7 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
         driver.days[dayKey].push(transport);
 
         driver.totalCost += transport.totalCost;
+        driver.totalRevenue += transport.revenue;
     });
 
     const sortedDrivers = Array.from(driversMap.values()).sort((first, second) => {
@@ -299,6 +301,7 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
             name: "Véhicules non utilisés",
             vehicleRegistrations,
             totalCost: unassignedVehicles.value.depreciationCost,
+            totalRevenue: 0,
             days: {},
             events: {},
         };

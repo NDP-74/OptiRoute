@@ -8,8 +8,8 @@
 
         <div
             class="sticky left-[240px] z-20 flex min-h-[56px] items-center justify-center border-r border-slate-300 bg-slate-50 px-3 py-4">
-            <p class="text-sm font-semibold text-emerald-700">
-                {{ formattedTotalCost }}
+            <p class="text-sm font-semibold" :class="totalResult >= 0 ? 'text-emerald-700' : 'text-red-600'">
+                {{ formattedTotalResult }}
             </p>
         </div>
     </div>
@@ -21,7 +21,7 @@ import { computed } from "vue";
 import { createPlanningGridStyle } from "@/utils/planningUtils";
 
 const props = defineProps<{
-    totalCost: number;
+    totalResult: number;
     dayCount: number;
 }>();
 
@@ -34,7 +34,7 @@ const currencyFormatter = new Intl.NumberFormat("fr-FR", {
     maximumFractionDigits: 2,
 });
 
-const formattedTotalCost = computed<string>(() => {
-    return currencyFormatter.format(props.totalCost);
+const formattedTotalResult = computed<string>(() => {
+    return currencyFormatter.format(props.totalResult);
 });
 </script>

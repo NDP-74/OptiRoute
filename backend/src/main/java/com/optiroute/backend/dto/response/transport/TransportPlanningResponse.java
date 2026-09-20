@@ -16,5 +16,7 @@ public record TransportPlanningResponse(
 
         boolean emptyTrip,
 
-        double totalCost) {
+        double totalCost,
+
+        double revenue) {
 }

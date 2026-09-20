@@ -30,17 +30,13 @@ const endTime = computed(() => {
     }).format(new Date(props.transport.plannedEnd));
 });
 
-const formattedCost = computed(() => {
-    const totalCost = props.transport.totalCost;
+const result = computed(() => props.transport.revenue - props.transport.totalCost);
 
-    if (totalCost === null || totalCost === undefined) {
-        return "Coût indisponible";
-    }
-
+const formattedResult = computed(() => {
     return new Intl.NumberFormat("fr-FR", {
         style: "currency",
         currency: "EUR",
-    }).format(totalCost);
+    }).format(result.value);
 });
 </script>
 
@@ -89,9 +85,10 @@ const formattedCost = computed(() => {
         </div>
 
 
-        <div class="mt-2 flex items-center justify-end border-t border-emerald-200 pt-2">
-            <span class="text-xs font-semibold text-emerald-700">
-                {{ formattedCost }}
+        <div class="mt-2 flex items-center justify-end border-t pt-2"
+            :class="props.transport.emptyTrip ? 'border-red-200' : 'border-emerald-200'">
+            <span class="text-xs font-semibold" :class="result >= 0 ? 'text-emerald-700' : 'text-red-600'">
+                {{ formattedResult }}
             </span>
         </div>
     </button>

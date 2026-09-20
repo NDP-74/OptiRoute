@@ -69,7 +69,7 @@ public class TransportPlanningService {
 
             return new TransportPlanningResponse(transport.getId(), transport.getName(), driver.getId(), driver.getFirstName() + " " + driver.getLastName(), tractorRegistration,
                 semiTrailerRegistration, transport.getPlannedStart(), transport.getPlannedEnd(), transport.getOriginName(), transport.getDestinationName(), transport.isEmptyTrip(),
-                costs.totalCost());
+                costs.totalCost(), transport.getRevenue() == null ? 0 : transport.getRevenue().doubleValue());
         }).toList();
 
         Map<Long, Set<LocalDate>> transportDatesByDriver = transportEntities.stream().collect(Collectors.groupingBy(Transport::getDriverId,
@@ -80,7 +80,8 @@ public class TransportPlanningService {
         List<PlanningDriverResponse> drivers = allDrivers.stream()
             .map(driver -> new PlanningDriverResponse(driver.getId(), driver.getFirstName() + " " + driver.getLastName(),
                 driver.getTractor() != null ? driver.getTractor().getRegistration() : null, driver.getSemiTrailer() != null ? driver.getSemiTrailer().getRegistration() : null,
-                driverCostService.calculateSalaryForPeriodExcludingDates(driver,startDate,endDate,transportDatesByDriver.getOrDefault(driver.getId(),Set.of()))))
+                driverCostService.calculateSalaryForPeriodExcludingDates(driver,startDate,endDate,transportDatesByDriver.getOrDefault(driver.getId(),Set.of())),
+                driver.getCostType()))
             .toList();
 
         PlanningUnassignedVehiclesResponse unassignedVehicles = buildUnassignedVehicles(allDrivers,startDate,endDate);

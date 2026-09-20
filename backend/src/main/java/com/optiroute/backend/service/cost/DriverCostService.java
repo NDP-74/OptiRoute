@@ -13,6 +13,7 @@ import com.optiroute.backend.dto.response.cost.AppliedCostResponse;
 import com.optiroute.backend.dto.response.cost.CostCategoryResponse;
 import com.optiroute.backend.entity.driver.Driver;
 import com.optiroute.backend.type.cost.CostParameterCategoryType;
+import com.optiroute.backend.type.driver.DriverCostType;
 
 import lombok.RequiredArgsConstructor;
 
@@ -55,7 +56,7 @@ public class DriverCostService {
 
     public BigDecimal calculateSalaryForPeriodExcludingDates(Driver driver, LocalDate startDate, LocalDate endDateExclusive, Set<LocalDate> excludedDates) {
         BigDecimal annualSalary = driver.getAnnualSalary();
-        if (annualSalary == null || !startDate.isBefore(endDateExclusive)) {
+        if (driver.getCostType() != DriverCostType.FIXED || annualSalary == null || !startDate.isBefore(endDateExclusive)) {
             return BigDecimal.ZERO;
         }
 

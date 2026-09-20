@@ -17,6 +17,7 @@ export interface PlanningTransport {
     destinationName: string;
 
     totalCost: number;
+    revenue: number;
 }
 
 export interface PlanningRequest {
@@ -30,6 +31,7 @@ export interface PlanningDriverSummary {
     tractorRegistration: string | null;
     semiTrailerRegistration: string | null;
     salaryForNonTransportDays: number;
+    costType: "FIXED" | "HOURLY" | null;
 }
 
 export interface PlanningUnassignedVehicles {
@@ -48,6 +50,7 @@ export interface PlanningDriver {
     name: string;
     vehicleRegistrations: string[];
     totalCost: number;
+    totalRevenue: number;
     days: Record<string, PlanningTransport[]>;
     events: Record<string, import("@/models/vehicle/VehicleEvent").VehicleEventResponse[]>;
 }

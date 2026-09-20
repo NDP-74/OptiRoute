@@ -3,7 +3,8 @@
         <InfoCell :driver-name="driver.name" :vehicle-registrations="driver.vehicleRegistrations"
             :is-unassigned="driver.id === -1" />
 
-        <CostCell :total-cost="driver.totalCost" />
+        <CostCell :total-cost="driver.totalCost" :total-revenue="driver.totalRevenue"
+            :is-unassigned="driver.id === -1" />
 
         <DayCell v-for="day in days" :key="day.key" :transports="driver.days[day.key] ?? []"
             :events="driver.events[day.key] ?? []" @transport-select="emit('transport-select', $event)"

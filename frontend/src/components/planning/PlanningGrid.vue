@@ -44,7 +44,7 @@
       <PlanningRow v-for="driver in drivers" :key="driver.id" :driver="driver" :days="days"
         @transport-select="emit('transport-select', $event)" @event-select="emit('event-select', $event)" />
 
-      <PlanningTotalRow :total-cost="totalCost" :day-count="days.length" />
+      <PlanningTotalRow :total-result="totalResult" :day-count="days.length" />
     </div>
   </div>
 </template>
@@ -74,8 +74,8 @@ const emit = defineEmits<{
   "event-select": [eventId: number];
 }>();
 
-const totalCost = computed<number>(() => {
-  return props.drivers.reduce((total, driver) => total + driver.totalCost, 0);
+const totalResult = computed<number>(() => {
+  return props.drivers.reduce((total, driver) => total + driver.totalRevenue - driver.totalCost, 0);
 });
 
 </script>
