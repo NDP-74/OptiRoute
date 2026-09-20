@@ -6,9 +6,6 @@ Frontend
 npm run dev
 http://localhost:5173
 
-18 Rue de la Poste, 69100 Villeurbanne, France
-42 Allée des Reysses, 74370 Annecy, France
-
 ---- Architecture ----
 RouteEstimate / Trajets / EventCost / Chauffeur / Véhicule /
 
@@ -21,151 +18,15 @@ Distances → long
 Consommation → Double
 Dates → OffsetDateTime
 
----- Flux création mission ----
+--- Tables SQL ---
 
-POST /api/missions
-        │
-        ▼
-MissionController
-        │
-        ▼
-MissionFacadeService.createMission()
-        │
-        ├── 1. MissionService.create()
-        │
-        │       ▼
-        │
-        │   mission table
-        │
-        │
-        ├── 2. Récupération :
-        │
-        │       DriverRepository
-        │       VehicleRepository
-        │
-        │
-        ├── 3. RouteRequestFactory
-        │
-        │       Mission
-        │       Driver
-        │       Vehicle
-        │
-        │              ▼
-        │
-        │          RouteRequest
-        │
-        │
-        ├── 4. RouteOptimizationService
-        │
-        │       RouteRequest
-        │              │
-        │              ▼
-        │          HERE API
-        │              │
-        │              ▼
-        │        RouteResponse
-        │
-        │
-        └── 5. MissionRouteEstimateService
-                │
-                ▼
-        MissionRouteEstimate
-                │
-                ▼
-        mission_route_estimate table
+Vérifier lien entre transport et transport estimate:
+    - Unifier ces tables ?
 
----- Responsabilité des classes ----
+--- Recheche d'itinéraire ---
+Vérifier qu'on gere correctement les departureMode:
+departureMode.value = request.timeMode === 'ARRIVAL' ? 'ARRIVALTIME' : 'PLANNED' -> n'a pas l'air bon
 
-MissionController
-    |
-    |-- reçoit les requêtes HTTP
-    |-- retourne les réponses
+Vérifier si il n'est pas possible d'unifier les modals de création et update
 
-MissionFacadeService
-    |
-    |-- orchestre le scénario métier
-    |-- crée mission
-    |-- déclenche calcul route
-    |-- sauvegarde estimation
-
-MissionService
-    |
-    |-- CRUD Mission
-    |-- MissionRepository
-
-RouteRequestFactory
-    |
-    |-- transforme :
-    |
-    |   Mission
-    |   Vehicle
-    |   Driver
-    |
-    |        ↓
-    |
-    |   RouteRequest
-
-RouteOptimizationService
-    |
-    |-- appelle HERE
-    |-- parse la réponse
-    |-- calcule les coûts
-    |
-    |        ↓
-    |
-    |   RouteResponse
-
-MissionRouteEstimateService
-    |
-    |-- transforme :
-    |
-    |   Mission
-    |   RouteResponse
-    |
-    |        ↓
-    |
-    |   MissionRouteEstimate
-    |
-    |-- sauvegarde
-
-Repositories
-    |
-    |-- accès PostgreSQL
-
------ Utilisation ----
-
-Cas 1 : Simulation
-
-L'utilisateur clique sur "Calculer":
-RouteRequest -> routeOptimizationService -> RouteResponse -> Frontend
-Aucune persistance.
-
-Cas 2: Import Dashdoc
-Mission Dashdoc -> Mission -> RouteOptimizationService -> RouteResponse -> MissionRouteEstimate
-
------ Frontend -----
-src/
-├── views/
-│   └── planning/
-│       └── PlanningView.vue
-│
-├── components/
-│   └── planning/
-│       ├── PlanningToolbar.vue
-│       ├── PlanningGrid.vue
-│       ├── PlanningHeader.vue
-│       ├── DriverRow.vue
-│       ├── DriverInfoCell.vue
-│       ├── DriverCostCell.vue
-│       ├── PlanningDayCell.vue
-│       ├── MissionCard.vue
-│       └── MissionDetailDrawer.vue
-│
-├── services/
-│   └── planning.service.ts
-│
-├── types/
-│   └── planning.ts
-│
-└── composables/
-    └── usePlanning.ts
+Optimiser la page PlanningView
