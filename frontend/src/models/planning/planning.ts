@@ -49,6 +49,7 @@ export interface PlanningDriver {
     vehicleRegistrations: string[];
     totalCost: number;
     days: Record<string, PlanningTransport[]>;
+    events: Record<string, import("@/models/vehicle/VehicleEvent").VehicleEventResponse[]>;
 }
 
 export interface PlanningDay {

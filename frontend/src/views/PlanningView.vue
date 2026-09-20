@@ -1,16 +1,22 @@
 <template>
     <div class="relative flex h-full min-h-0 flex-col overflow-hidden bg-slate-100">
         <PlanningToolbar :start-date="selectedStartDate" :end-date="selectedEndDate" @update:range="handleRangeChange"
-            @today-range="applyTodayRange" @create-route="openRouteModal" />
+            @today-range="applyTodayRange" @create-route="openRouteModal" @create-event="showEventModal = true" />
 
         <PlanningGrid :drivers="planningDrivers" :days="days" :loading="loading" :error="error"
-            @retry="loadCurrentPeriod" @transport-select="openTransport" />
+            @retry="loadCurrentPeriod" @transport-select="openTransport" @event-select="openVehicleEvent" />
 
         <TransportDetailDrawer :open="selectedTransportId !== null" :transport-id="selectedTransportId"
             @close="closeTransport" @deleted="handleTransportDeleted" @edit="openEditModal" />
 
+        <VehicleEventDetailDrawer :open="selectedVehicleEventId !== null" :event-id="selectedVehicleEventId"
+            @close="closeVehicleEvent" @updated="handleVehicleEventUpdated" @deleted="handleVehicleEventDeleted" />
+
         <PlanningRouteModal :show="showRouteModal" :editing-transport="editingTransport" @close="closeRouteModal"
             @saved="handleRouteSaved" />
+
+        <CreateVehicleEventModal :show="showEventModal" :start-date="selectedStartDate" :end-date="selectedEndDate"
+            @close="showEventModal = false" @created="handleEventCreated" />
     </div>
 </template>
 
@@ -21,20 +27,29 @@ import { useRoute, useRouter } from "vue-router";
 import PlanningGrid from "@/components/planning/PlanningGrid.vue";
 import PlanningToolbar from "@/components/planning/PlanningToolbar.vue";
 import PlanningRouteModal from "@/components/planning/PlanningRouteModal.vue";
+import CreateVehicleEventModal from "@/components/planning/CreateVehicleEventModal.vue";
+import VehicleEventDetailDrawer from "@/components/planning/VehicleEventDetailDrawer.vue";
 import TransportDetailDrawer from "@/components/transports/TransportDetailDrawer.vue";
 
+import { getVehicleEventsByDateRange } from "@/api/vehicleEventApi";
 import { usePlanning } from "@/utils/planningUtils";
 
 import type { PlanningDay, PlanningDriver, PlanningTransport, } from "@/models/planning/planning";
 import type { TransportDetail } from "@/models/transport/TransportDetail";
+import type { VehicleEventResponse } from "@/models/vehicle/VehicleEvent";
 
 
 const selectedTransportId = ref<number | null>(null);
+const selectedVehicleEventId = ref<number | null>(null);
 const showRouteModal = ref(false);
+const showEventModal = ref(false);
 const editingTransport = ref<TransportDetail | null>(null);
+const vehicleEvents = ref<VehicleEventResponse[]>([]);
 
 function openTransport(transportId: number): void { selectedTransportId.value = transportId; }
 function closeTransport(): void { selectedTransportId.value = null; }
+function openVehicleEvent(eventId: number): void { selectedVehicleEventId.value = eventId; }
+function closeVehicleEvent(): void { selectedVehicleEventId.value = null; }
 function openRouteModal(): void { showRouteModal.value = true; }
 function closeRouteModal(): void {
     showRouteModal.value = false;
@@ -56,6 +71,20 @@ const handleTransportDeleted = async (): Promise<void> => {
 
 const handleRouteSaved = async (): Promise<void> => {
     closeRouteModal();
+    await loadCurrentPeriod();
+};
+
+const handleEventCreated = async (): Promise<void> => {
+    showEventModal.value = false;
+    await loadCurrentPeriod();
+};
+
+const handleVehicleEventUpdated = async (): Promise<void> => {
+    await loadCurrentPeriod();
+};
+
+const handleVehicleEventDeleted = async (): Promise<void> => {
+    closeVehicleEvent();
     await loadCurrentPeriod();
 };
 
@@ -202,6 +231,7 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
             ),
             totalCost: driverSummary.salaryForNonTransportDays,
             days: {},
+            events: {},
         });
     });
 
@@ -231,13 +261,57 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
         return first.name.localeCompare(second.name, "fr", { sensitivity: "base" });
     });
 
-    if (unassignedVehicles.value.registrations.length > 0) {
-        sortedDrivers.push({
+    const eventsWithoutTransport: VehicleEventResponse[] = [];
+
+    vehicleEvents.value.forEach((event) => {
+        const vehicleRegistration = event.tractorRegistration ?? event.semiTrailerRegistration;
+        const matchingDriver = sortedDrivers.find((driver) => {
+            return driver.days[event.eventDate]?.some((transport) => {
+                return transport.tractorRegistration === vehicleRegistration
+                    || transport.semiTrailerRegistration === vehicleRegistration;
+            });
+        });
+
+        if (!matchingDriver) {
+            eventsWithoutTransport.push(event);
+            return;
+        }
+
+        const matchingDayEvents = matchingDriver.events[event.eventDate] ?? [];
+        matchingDayEvents.push(event);
+        matchingDriver.events[event.eventDate] = matchingDayEvents;
+        matchingDriver.totalCost += event.cost;
+    });
+
+    if (unassignedVehicles.value.registrations.length > 0 || eventsWithoutTransport.length > 0) {
+        const vehicleRegistrations = [...unassignedVehicles.value.registrations];
+
+        eventsWithoutTransport.forEach((event) => {
+            const vehicleRegistration = event.tractorRegistration ?? event.semiTrailerRegistration;
+
+            if (vehicleRegistration && !vehicleRegistrations.includes(vehicleRegistration)) {
+                vehicleRegistrations.push(vehicleRegistration);
+            }
+        });
+
+        const unassignedDriver: PlanningDriver = {
             id: UNASSIGNED_VEHICLES_ROW_ID,
             name: "Véhicules non utilisés",
-            vehicleRegistrations: unassignedVehicles.value.registrations,
+            vehicleRegistrations,
             totalCost: unassignedVehicles.value.depreciationCost,
             days: {},
+            events: {},
+        };
+
+        eventsWithoutTransport.forEach((event) => {
+            const unassignedDayEvents = unassignedDriver.events[event.eventDate] ?? [];
+            unassignedDayEvents.push(event);
+            unassignedDriver.events[event.eventDate] = unassignedDayEvents;
+            unassignedDriver.totalCost += event.cost;
+        });
+
+        sortedDrivers.push({
+            ...unassignedDriver,
         });
     }
 
@@ -247,10 +321,18 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
 async function loadCurrentPeriod(): Promise<void> {
     const endDateExclusive = addDays(selectedEndDate.value, 1);
 
-    await loadPlanning({
-        startDate: formatDateKey(selectedStartDate.value),
-        endDate: formatDateKey(endDateExclusive),
-    });
+    const [, events] = await Promise.all([
+        loadPlanning({
+            startDate: formatDateKey(selectedStartDate.value),
+            endDate: formatDateKey(endDateExclusive),
+        }),
+        getVehicleEventsByDateRange(
+            formatDateKey(selectedStartDate.value),
+            formatDateKey(selectedEndDate.value),
+        ),
+    ]);
+
+    vehicleEvents.value = events;
 }
 
 function syncUrlRange(start: Date, end: Date): void {

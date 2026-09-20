@@ -42,7 +42,7 @@
 
     <div v-else>
       <PlanningRow v-for="driver in drivers" :key="driver.id" :driver="driver" :days="days"
-        @transport-select="emit('transport-select', $event)" />
+        @transport-select="emit('transport-select', $event)" @event-select="emit('event-select', $event)" />
 
       <PlanningTotalRow :total-cost="totalCost" :day-count="days.length" />
     </div>
@@ -71,6 +71,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   retry: [];
   "transport-select": [transportId: number];
+  "event-select": [eventId: number];
 }>();
 
 const totalCost = computed<number>(() => {

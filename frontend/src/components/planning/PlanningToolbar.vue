@@ -16,6 +16,7 @@ const emit = defineEmits<{
     "update:range": [value: [Date, Date]];
     "today-range": [startOffset: number, additionalDays: number];
     "create-route": [];
+    "create-event": [];
 }>();
 
 const selectedRange = ref<DateRange>([
@@ -121,11 +122,19 @@ watch(
                 </div>
             </div>
 
-            <button type="button"
-                class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
-                @click="emit('create-route')">
-                Créer et assigner un itinéraire
-            </button>
+            <div class="flex flex-wrap gap-2">
+                <button type="button"
+                    class="rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-50"
+                    @click="emit('create-event')">
+                    Créer un événement
+                </button>
+
+                <button type="button"
+                    class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+                    @click="emit('create-route')">
+                    Créer et assigner un itinéraire
+                </button>
+            </div>
         </div>
     </div>
 </template>

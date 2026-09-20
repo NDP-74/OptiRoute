@@ -6,7 +6,8 @@
         <CostCell :total-cost="driver.totalCost" />
 
         <DayCell v-for="day in days" :key="day.key" :transports="driver.days[day.key] ?? []"
-            @transport-select="emit('transport-select', $event)" />
+            :events="driver.events[day.key] ?? []" @transport-select="emit('transport-select', $event)"
+            @event-select="emit('event-select', $event)" />
     </div>
 </template>
 
@@ -23,6 +24,7 @@ import type { PlanningDay, PlanningDriver } from "@/models/planning/planning";
 
 const emit = defineEmits<{
     "transport-select": [transportId: number];
+    "event-select": [eventId: number];
 }>();
 
 const props = defineProps<{
