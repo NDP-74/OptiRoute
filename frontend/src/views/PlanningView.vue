@@ -5,7 +5,7 @@
 
         <PlanningGrid :drivers="planningDrivers" :days="days" :loading="loading" :error="error"
             @retry="loadCurrentPeriod" @transport-select="openTransport" @event-select="openVehicleEvent"
-            @cost-detail-select="selectedCostDetailDriverId = $event" />
+            @cost-detail-select="openCostDetail" />
 
         <CostDetailDrawer :open="selectedCostDetailDriverId !== null" :driver="selectedCostDetailDriver"
             @close="selectedCostDetailDriverId = null" />
@@ -52,10 +52,26 @@ const showEventModal = ref(false);
 const editingTransport = ref<TransportDetail | null>(null);
 const vehicleEvents = ref<VehicleEventResponse[]>([]);
 
-function openTransport(transportId: number): void { selectedTransportId.value = transportId; }
+function closePlanningDrawers(): void {
+    selectedTransportId.value = null;
+    selectedVehicleEventId.value = null;
+    selectedCostDetailDriverId.value = null;
+}
+
+function openTransport(transportId: number): void {
+    closePlanningDrawers();
+    selectedTransportId.value = transportId;
+}
 function closeTransport(): void { selectedTransportId.value = null; }
-function openVehicleEvent(eventId: number): void { selectedVehicleEventId.value = eventId; }
+function openVehicleEvent(eventId: number): void {
+    closePlanningDrawers();
+    selectedVehicleEventId.value = eventId;
+}
 function closeVehicleEvent(): void { selectedVehicleEventId.value = null; }
+function openCostDetail(driverId: number): void {
+    closePlanningDrawers();
+    selectedCostDetailDriverId.value = driverId;
+}
 function openRouteModal(): void { showRouteModal.value = true; }
 function closeRouteModal(): void {
     showRouteModal.value = false;
