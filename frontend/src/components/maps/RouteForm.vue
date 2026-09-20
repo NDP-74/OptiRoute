@@ -188,7 +188,7 @@ function toOffsetDateTime(value: string) {
             <div v-for="index in rowCount" :key="index - 1" class="flex items-center gap-2" :style="{ gridRow: index }">
                 <div class="flex-1">
                     <HereAutocompleteInput :model-value="getRowValue(index - 1)"
-                        @update:model-value="setRowValue(index - 1, $event)" :label="rowLabel(index - 1)" hide-label />
+                        @update:model-value="setRowValue(index - 1, $event)" :label="rowLabel(index - 1)" />
                 </div>
 
                 <div class="flex h-9 w-9 shrink-0 items-center justify-center">
