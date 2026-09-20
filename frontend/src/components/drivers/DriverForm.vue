@@ -5,7 +5,6 @@ import { getSemiTrailers } from "@/api/vehicle/semiTrailerApi"
 import type { TractorSummary } from "@/models/vehicle/Tractor"
 import type { SemiTrailerSummary } from "@/models/vehicle/SemiTrailer"
 import type { DriverFormData } from "@/models/driver/Driver"
-import { formatVehicleLabel } from "@/utils/vehicleUtils"
 import HereAutocompleteInput from "@/components/maps/HereAutocompleteInput.vue"
 
 const form = defineModel<DriverFormData>({
@@ -137,7 +136,6 @@ onMounted(async () => {
                         </option>
 
                         <option v-for="tractor in tractors" :key="tractor.id" :value="tractor.id">
-                            {{ formatVehicleLabel(tractor.brand, tractor.model) }} -
                             {{ tractor.registration }}
                         </option>
                     </select>
@@ -158,7 +156,6 @@ onMounted(async () => {
                         </option>
 
                         <option v-for="semiTrailer in semiTrailers" :key="semiTrailer.id" :value="semiTrailer.id">
-                            {{ formatVehicleLabel(semiTrailer.brand, semiTrailer.model) }} -
                             {{ semiTrailer.registration }}
                         </option>
                     </select>
