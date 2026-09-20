@@ -229,7 +229,7 @@ watch(
                     : 'Non calculable'" />
 
                 <DetailRow label="Type de coût"
-                    :value="driver.costType === 'HOURLY' ? 'Horaire' : driver.costType === 'FIXED' ? 'Fixe' : 'Non renseigné'" />
+                    :value="driver.costType === 'HOURLY' ? 'Horaire' : driver.costType === 'FIXED' ? 'Forfaitaire' : 'Non renseigné'" />
             </DetailSection>
 
             <DetailSection title="Temps de travail" :icon="Clock3">
