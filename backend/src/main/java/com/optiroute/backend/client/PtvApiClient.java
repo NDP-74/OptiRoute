@@ -28,8 +28,11 @@ public class PtvApiClient {
             .queryParam("vehicle[totalPermittedWeight]",truckConfiguration.getWeightKg()).queryParam("vehicle[height]",truckConfiguration.getHeightCm())
             .queryParam("vehicle[width]",truckConfiguration.getWidthCm()).queryParam("vehicle[length]",truckConfiguration.getLengthCm())
             .queryParam("vehicle[numberOfAxles]",truckConfiguration.getAxleCount()).queryParam("vehicle[averageFuelConsumption]",truckConfiguration.getAverageConsumption())
-            .queryParam("results","POLYLINE,TOLL_COSTS").queryParam("options[routingMode]",GpsModeType.CHEAPEST.equals(mode) ? "MONETARY" : "FAST")
-            .queryParam("vehicle[length]",truckConfiguration.getLengthCm()).queryParam("monetaryCostOptions[workingCostPerHour]",driverHourlyRate);
+            .queryParam("results","POLYLINE,TOLL_COSTS").queryParam("options[routingMode]",GpsModeType.CHEAPEST.equals(mode) ? "MONETARY" : "FAST");
+        
+        if (GpsModeType.CHEAPEST.equals(mode)){
+            uriBuilder.queryParam("monetaryCostOptions[workingCostPerHour]",driverHourlyRate);
+        }
 
         if (routeTime != null && !routeTime.isBlank()) {
             String timeParameter = RouteTimeMode.ARRIVAL.equals(timeMode) ? "options[arrivalTime]" : "options[startTime]";
