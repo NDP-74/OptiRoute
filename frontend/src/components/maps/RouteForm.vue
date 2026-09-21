@@ -14,6 +14,7 @@ const props = defineProps<{
 
 const tractorId = defineModel<number | null>('tractorId', { default: null })
 const semiTrailerId = defineModel<number | null>('semiTrailerId', { default: null })
+const driverId = defineModel<number | null>('driverId', { default: null })
 const emptyTrip = defineModel<boolean>('emptyTrip', { default: false })
 
 //Variables
@@ -165,6 +166,7 @@ async function submit() {
 
             tractorId: tractorId.value ?? undefined,
             semiTrailerId: semiTrailerId.value ?? undefined,
+            driverId: driverId.value ?? undefined,
             emptyTrip: emptyTrip.value,
         }
 

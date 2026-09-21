@@ -7,14 +7,13 @@ export interface RouteRequest {
 
     tractorId?: number
     semiTrailerId?: number
+    driverId?: number
 
     mode: 'FASTEST' | 'CHEAPEST'
     emptyTrip: boolean
 
     routeTime?: string
     timeMode?: 'DEPARTURE' | 'ARRIVAL'
-
-    driverHourlyRate: number
 }
 
 export interface RouteResponse {

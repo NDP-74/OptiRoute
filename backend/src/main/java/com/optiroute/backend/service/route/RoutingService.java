@@ -20,7 +20,7 @@ public class RoutingService {
         this.ptvApiClient = ptvApiClient;
     }
 
-    public String calculateRoutes(RouteRequest request, TruckConfiguration truckConfiguration) {
+    public String calculateRoutes(RouteRequest request, TruckConfiguration truckConfiguration, double driverHourlyRate) {
 
         List<String> waypoints = new java.util.ArrayList<>();
         waypoints.add(request.getOrigin().getLat() + "," + request.getOrigin().getLng());
@@ -32,6 +32,6 @@ public class RoutingService {
         String routeTime = request.getRouteTime() == null ? CommonUtils.formatTime(OffsetDateTime.now()) : CommonUtils.formatTime(request.getRouteTime());
         RouteTimeMode timeMode = request.getTimeMode() == null ? RouteTimeMode.DEPARTURE : request.getTimeMode();
 
-        return ptvApiClient.getRoutes(waypoints,truckConfiguration,routeTime,timeMode,request.getMode());
+        return ptvApiClient.getRoutes(waypoints,truckConfiguration,routeTime,timeMode,request.getMode(),driverHourlyRate);
     }
 }

@@ -23,12 +23,13 @@ public class PtvApiClient {
         this.properties = properties;
     }
 
-    public String getRoutes(List<String> waypoints, TruckConfiguration truckConfiguration, String routeTime, RouteTimeMode timeMode, GpsModeType mode) {
+    public String getRoutes(List<String> waypoints, TruckConfiguration truckConfiguration, String routeTime, RouteTimeMode timeMode, GpsModeType mode, double driverHourlyRate) {
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(properties.getBaseUrl() + "/routes").queryParam("profile",properties.getProfile())
             .queryParam("vehicle[totalPermittedWeight]",truckConfiguration.getWeightKg()).queryParam("vehicle[height]",truckConfiguration.getHeightCm())
             .queryParam("vehicle[width]",truckConfiguration.getWidthCm()).queryParam("vehicle[length]",truckConfiguration.getLengthCm())
             .queryParam("vehicle[numberOfAxles]",truckConfiguration.getAxleCount()).queryParam("vehicle[averageFuelConsumption]",truckConfiguration.getAverageConsumption())
-            .queryParam("results","POLYLINE,TOLL_COSTS").queryParam("options[routingMode]",GpsModeType.CHEAPEST.equals(mode) ? "MONETARY" : "FAST");
+            .queryParam("results","POLYLINE,TOLL_COSTS").queryParam("options[routingMode]",GpsModeType.CHEAPEST.equals(mode) ? "MONETARY" : "FAST")
+            .queryParam("vehicle[length]",truckConfiguration.getLengthCm()).queryParam("monetaryCostOptions[workingCostPerHour]",driverHourlyRate);
 
         if (routeTime != null && !routeTime.isBlank()) {
             String timeParameter = RouteTimeMode.ARRIVAL.equals(timeMode) ? "options[arrivalTime]" : "options[startTime]";

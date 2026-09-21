@@ -168,7 +168,7 @@ function routeRequestFromTransport(transport: TransportDetail): RouteRequest {
         emptyTrip: transport.emptyTrip,
         routeTime: transport.plannedStart,
         timeMode: 'DEPARTURE',
-        driverHourlyRate: 0,
+        driverId: transport.driverId ?? undefined,
     }
 }
 
@@ -416,8 +416,8 @@ onMounted(async () => {
                             </h3>
                             <div class="custom-scrollbar min-h-0 flex-1 overflow-auto pr-2">
                                 <RouteForm :initial-request="routeRequest" v-model:tractor-id="tractorId"
-                                    v-model:semi-trailer-id="semiTrailerId" v-model:empty-trip="emptyTrip"
-                                    @route-calculated="handleRouteCalculated" />
+                                    v-model:semi-trailer-id="semiTrailerId" v-model:driver-id="driverId"
+                                    v-model:empty-trip="emptyTrip" @route-calculated="handleRouteCalculated" />
                             </div>
                         </div>
 

@@ -4,11 +4,14 @@ import com.optiroute.backend.dto.request.route.RouteRequest;
 import com.optiroute.backend.dto.response.route.RouteCostDetailsDto;
 import com.optiroute.backend.dto.response.route.RoutesResponse;
 import com.optiroute.backend.dto.response.route.RouteDto;
+import com.optiroute.backend.entity.driver.Driver;
 import com.optiroute.backend.entity.vehicle.SemiTrailer;
 import com.optiroute.backend.entity.vehicle.Tractor;
 import com.optiroute.backend.service.cost.FuelPriceService;
+import com.optiroute.backend.service.driver.DriverService;
 import com.optiroute.backend.service.vehicle.SemiTrailerService;
 import com.optiroute.backend.service.vehicle.TractorService;
+import com.optiroute.backend.type.driver.DriverCostType;
 
 import lombok.RequiredArgsConstructor;
 
@@ -30,6 +33,7 @@ public class RouteOptimizationService {
     private final FuelPriceService fuelPriceService;
     private final TractorService tractorService;
     private final SemiTrailerService semiTrailerService;
+    private final DriverService driverService;
     private final TruckConfigurationFactory truckConfigurationFactory;
 
     public RoutesResponse calculateRoute(RouteRequest request) {
@@ -43,8 +47,10 @@ public class RouteOptimizationService {
             truckConfiguration = truckConfigurationFactory.createDefault();
         }
 
+        double driverHourlyRate = resolveDriverHourlyRate(request.getDriverId());
+
         // PTV Routing API + Parsing
-        String raw = routingService.calculateRoutes(request,truckConfiguration);
+        String raw = routingService.calculateRoutes(request,truckConfiguration,driverHourlyRate);
         List<RoutePtvParser.ParsedRoute> parsedRoutes = routePtvParser.parseRoutes(raw);
 
         // Cost calculation
@@ -77,5 +83,21 @@ public class RouteOptimizationService {
         response.setRoutes(routes);
 
         return response;
+    }
+
+    // Pas de conducteur (ex: recherche depuis la page itinéraire) ou salaire
+    // forfaitaire => coût horaire nul, sinon salaire horaire du conducteur
+    private double resolveDriverHourlyRate(Long driverId) {
+        if (driverId == null) {
+            return 0;
+        }
+
+        Driver driver = driverService.getEntityById(driverId);
+        if (driver.getCostType() != DriverCostType.HOURLY || driver.getAnnualSalary() == null || driver.getMonthlyWorkingHours() == null
+            || driver.getMonthlyWorkingHours().signum() <= 0) {
+            return 0;
+        }
+
+        return driver.getAnnualSalary().doubleValue() / 12 / driver.getMonthlyWorkingHours().doubleValue();
     }
 }
