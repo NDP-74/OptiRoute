@@ -511,14 +511,31 @@ onMounted(async () => {
 
             <!-- FOOTER -->
             <div class="mt-5 flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
-                <div v-if="routeRequest && effectiveRoute" class="flex flex-wrap gap-4 text-xs text-slate-500">
-                    <span>Départ : {{ formatDateTime(plannedStart) }}</span>
-                    <span>Arrivée : {{ formatDateTime(plannedEnd) }}</span>
+                <div v-if="routeRequest && effectiveRoute" class="flex flex-wrap items-center gap-5 text-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="text-slate-400">Départ</span>
+                        <span class="font-semibold text-slate-700">
+                            {{ formatDateTime(plannedStart) }}
+                        </span>
+                    </div>
+
+                    <div class="h-4 w-px bg-slate-200"></div>
+
+                    <div class="flex items-center gap-2">
+                        <span class="text-slate-400">Arrivée</span>
+                        <span class="font-semibold text-slate-700">
+                            {{ formatDateTime(plannedEnd) }}
+                        </span>
+                    </div>
                 </div>
+
                 <div class="ml-auto flex gap-3">
                     <button type="button"
                         class="rounded-xl border border-slate-300 px-4 py-2 text-slate-700 hover:bg-slate-50"
-                        :disabled="isSaving" @click="close">Annuler</button>
+                        :disabled="isSaving" @click="close">
+                        Annuler
+                    </button>
+
                     <button type="button"
                         class="rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                         :disabled="!effectiveRoute || !routeRequest || driverId === undefined || tractorId === null || isSaving"
@@ -528,6 +545,7 @@ onMounted(async () => {
                     </button>
                 </div>
             </div>
+
         </div>
     </AppModal>
 </template>

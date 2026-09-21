@@ -44,13 +44,23 @@ function toPlace(position: Position) {
     }
 }
 
+// Convertit un ISO string (UTC ou avec offset) en valeur locale attendue par <input type="datetime-local">
+function toDateTimeLocalValue(isoValue: string): string | null {
+    const date = new Date(isoValue)
+    if (Number.isNaN(date.getTime())) return null
+
+    const pad = (n: number) => String(n).padStart(2, '0')
+
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
 function applyInitialRequest(request: RouteRequest | null | undefined) {
     if (!request) return
 
     form.origin = toPlace(request.origin)
     form.destination = toPlace(request.destination)
     form.waypoints = (request.waypoints ?? []).map(toPlace)
-    form.routeTime = request.routeTime ? request.routeTime.slice(0, 16) : null
+    form.routeTime = request.routeTime ? toDateTimeLocalValue(request.routeTime) : null
     form.mode = request.mode
     departureMode.value = request.timeMode === 'ARRIVAL' ? 'ARRIVALTIME' : 'PLANNED'
 }
