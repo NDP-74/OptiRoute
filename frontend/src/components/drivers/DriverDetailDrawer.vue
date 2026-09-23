@@ -215,7 +215,7 @@ watch(
                 <DetailRow label="Type de chauffeur" :value="driver.driverType === 'LONG_HAUL'
                     ? 'Grand routier'
                     : driver.driverType === 'SHORT_DISTANCE'
-                        ? 'Courte distance'
+                        ? 'Grand régional'
                         : driver.driverType === 'REGIONAL' ? 'Régional' : 'Non renseigné'" />
             </DetailSection>
 

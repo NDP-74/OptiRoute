@@ -361,7 +361,7 @@ onMounted(async () => {
                         </option>
 
                         <option value="SHORT_DISTANCE">
-                            Courte distance
+                            Grand régional
                         </option>
 
                         <option value="REGIONAL">
