@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import com.optiroute.backend.dto.response.cost.TransportCostDetailsResponse;
 import com.optiroute.backend.dto.response.transport.PlanningDriverResponse;
 import com.optiroute.backend.dto.response.transport.PlanningResponse;
+import com.optiroute.backend.dto.response.transport.PlanningUnassignedVehicleResponse;
 import com.optiroute.backend.dto.response.transport.PlanningUnassignedVehiclesResponse;
 import com.optiroute.backend.dto.response.transport.TransportPlanningResponse;
 import com.optiroute.backend.entity.driver.Driver;
@@ -99,18 +100,16 @@ public class TransportPlanningService {
         List<Tractor> unassignedTractors = tractorRepository.findAll().stream().filter(tractor -> !assignedTractorIds.contains(tractor.getId())).toList();
         List<SemiTrailer> unassignedSemiTrailers = semiTrailerRepository.findAll().stream().filter(semiTrailer -> !assignedSemiTrailerIds.contains(semiTrailer.getId())).toList();
 
-        List<String> registrations = new java.util.ArrayList<>();
-        registrations.addAll(unassignedTractors.stream().map(Tractor::getRegistration).toList());
-        registrations.addAll(unassignedSemiTrailers.stream().map(SemiTrailer::getRegistration).toList());
+        List<PlanningUnassignedVehicleResponse> vehicles = new java.util.ArrayList<>();
+        unassignedTractors.forEach(tractor -> vehicles.add(new PlanningUnassignedVehicleResponse(tractor.getRegistration(),
+            vehicleCostService.calculateDepreciationForPeriod(tractor.getPurchaseCost(),tractor.getDepreciationStartDate(),tractor.getDepreciationEndDate(),startDate,endDate))));
+        unassignedSemiTrailers.forEach(semiTrailer -> vehicles.add(new PlanningUnassignedVehicleResponse(semiTrailer.getRegistration(), vehicleCostService
+            .calculateDepreciationForPeriod(semiTrailer.getPurchaseCost(),semiTrailer.getDepreciationStartDate(),semiTrailer.getDepreciationEndDate(),startDate,endDate))));
 
-        double depreciationCost = unassignedTractors.stream()
-            .mapToDouble(tractor -> vehicleCostService.calculateDepreciationForPeriod(tractor.getPurchaseCost(),tractor.getDepreciationStartDate(),tractor.getDepreciationEndDate(),
-                startDate,endDate))
-            .sum()
-            + unassignedSemiTrailers.stream().mapToDouble(semiTrailer -> vehicleCostService.calculateDepreciationForPeriod(semiTrailer.getPurchaseCost(),
-                semiTrailer.getDepreciationStartDate(),semiTrailer.getDepreciationEndDate(),startDate,endDate)).sum();
+        List<String> registrations = vehicles.stream().map(PlanningUnassignedVehicleResponse::registration).toList();
+        double depreciationCost = vehicles.stream().mapToDouble(PlanningUnassignedVehicleResponse::depreciationCost).sum();
 
-        return new PlanningUnassignedVehiclesResponse(registrations, depreciationCost);
+        return new PlanningUnassignedVehiclesResponse(registrations, depreciationCost, vehicles);
     }
 
 }

@@ -41,9 +41,9 @@ const result = computed(() => props.driver ? props.driver.totalRevenue - props.d
             </DetailSection>
 
             <DetailSection v-else title="Véhicules non utilisés" :icon="Truck">
-                <DetailRow label="Total coût véhicule" :value="formatCurrency(driver.vehicleCost)" />
-                <DetailRow label="Véhicules" :value="driver.vehicleRegistrations.join(', ') || 'Aucun véhicule'"
-                    :break-value="true" />
+                <DetailRow v-for="registration in driver.vehicleRegistrations" :key="registration" :label="registration"
+                    :value="formatCurrency(driver.vehicleDepreciationCosts?.find(vehicle => vehicle.registration === registration)?.depreciationCost ?? null)" />
+                <DetailRow v-if="driver.vehicleRegistrations.length === 0" label="Véhicules" value="Aucun véhicule" />
             </DetailSection>
 
             <DetailSection v-if="!isUnassigned" title="Résultat de la période" :icon="CircleDollarSign">

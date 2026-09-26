@@ -9,7 +9,7 @@ export function usePlanning() {
     const loading = ref(false);
     const transports = ref<PlanningResponse["transports"]>([]);
     const drivers = ref<PlanningResponse["drivers"]>([]);
-    const unassignedVehicles = ref<PlanningResponse["unassignedVehicles"]>({ registrations: [], depreciationCost: 0 });
+    const unassignedVehicles = ref<PlanningResponse["unassignedVehicles"]>({ registrations: [], depreciationCost: 0, vehicles: [] });
     const error = ref<string | null>(null);
 
     async function loadPlanning(request: PlanningRequest) {

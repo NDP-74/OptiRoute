@@ -335,6 +335,7 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
             driverCost: 0,
             structureCost: 0,
             vehicleCost: unassignedVehicles.value.depreciationCost,
+            vehicleDepreciationCosts: unassignedVehicles.value.vehicles,
             eventCost: 0,
             days: {},
             events: {},
