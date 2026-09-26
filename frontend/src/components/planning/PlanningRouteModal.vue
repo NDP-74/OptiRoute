@@ -292,10 +292,10 @@ onMounted(async () => {
 </script>
 
 <template>
-    <AppModal :show="show" panel-class="max-w-7xl" @close="close">
-        <div class="flex h-[90vh] max-h-[90vh] flex-col">
+    <AppModal :show="show" panel-class="max-w-screen-2xl" @close="close">
+        <div class="flex h-[82vh] max-h-[720px] flex-col">
             <!-- HEADER -->
-            <div class="flex shrink-0 items-start justify-between gap-4 border-b border-slate-100 pb-4">
+            <div class="flex shrink-0 items-start justify-between gap-4 pb-4">
                 <h2 class="text-xl font-bold text-slate-900">{{ props.editingTransport ? "Modifier l'itinéraire" :
                     'Créer et assigner un itinéraire' }}</h2>
                 <button type="button"
@@ -309,7 +309,7 @@ onMounted(async () => {
             <div class="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden">
 
                 <!-- TOP ROW : ASSIGNMENT & SEARCH -->
-                <div class="grid h-[520px] min-h-0 gap-5 lg:grid-cols-2">
+                <div class="grid min-h-0 flex-1 gap-5 lg:grid-cols-3">
 
                     <!-- COLUMN 1 : ASSIGNMENT -->
                     <section class="min-h-0 pr-1">
@@ -446,71 +446,75 @@ onMounted(async () => {
                             </div>
                         </div>-->
                     </section>
+                    <!-- MAP & SUMMARY -->
+                    <section class="flex min-h-0 min-w-0 flex-col gap-4">
+                        <div
+                            class="min-h-0 flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-inner">
+                            <HereMap ref="mapRef" />
+                        </div>
+
+                        <div class="shrink-0 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 text-sm">
+                            <template v-if="effectiveRoute && routeRequest">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="flex items-center gap-2">
+                                        <MapPinned :size="16" class="shrink-0 text-slate-400" />
+                                        <div>
+                                            <p class="text-slate-500">Distance</p>
+                                            <p class="font-semibold">{{ formatDistance(effectiveRoute.distanceMeters) }}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center gap-2">
+                                        <Clock :size="16" class="shrink-0 text-slate-400" />
+                                        <div>
+                                            <p class="text-slate-500">Durée</p>
+                                            <p class="font-semibold">{{ formatDurationSeconds(effectiveRoute.duration)
+                                            }}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center gap-2">
+                                        <Fuel :size="16" class="shrink-0 text-slate-400" />
+                                        <div>
+                                            <p class="text-slate-500">Carburant</p>
+                                            <p class="font-semibold">{{ formatCurrency(effectiveRoute.costs.fuelCost) }}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center gap-2">
+                                        <Receipt :size="16" class="shrink-0 text-slate-400" />
+                                        <div>
+                                            <p class="text-slate-500">Péage</p>
+                                            <p class="font-semibold">{{ formatCurrency(effectiveRoute.costs.tollCost) }}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center gap-2">
+                                        <Wallet :size="16" class="shrink-0 text-slate-400" />
+                                        <div>
+                                            <p class="text-slate-500">Coût total</p>
+                                            <p class="font-semibold">{{ formatCurrency(effectiveRoute.costs.totalCost)
+                                            }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <p v-else class="text-sm text-slate-500">
+                                Rechercher un itinéraire pour l'attribuer
+                            </p>
+                        </div>
+                    </section>
                 </div>
-
-                <!-- MAP & SUMMARY -->
-                <section class="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
-                    <div
-                        class="min-h-0 flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-inner">
-                        <HereMap ref="mapRef" />
-                    </div>
-
-                    <div class="shrink-0 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 text-sm">
-                        <template v-if="effectiveRoute && routeRequest">
-                            <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                                <div class="flex items-center gap-2">
-                                    <MapPinned :size="16" class="shrink-0 text-slate-400" />
-                                    <div>
-                                        <p class="text-slate-500">Distance</p>
-                                        <p class="font-semibold">{{ formatDistance(effectiveRoute.distanceMeters) }}</p>
-                                    </div>
-                                </div>
-
-                                <div class="flex items-center gap-2">
-                                    <Clock :size="16" class="shrink-0 text-slate-400" />
-                                    <div>
-                                        <p class="text-slate-500">Durée</p>
-                                        <p class="font-semibold">{{ formatDurationSeconds(effectiveRoute.duration) }}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div class="flex items-center gap-2">
-                                    <Fuel :size="16" class="shrink-0 text-slate-400" />
-                                    <div>
-                                        <p class="text-slate-500">Carburant</p>
-                                        <p class="font-semibold">{{ formatCurrency(effectiveRoute.costs.fuelCost) }}</p>
-                                    </div>
-                                </div>
-
-                                <div class="flex items-center gap-2">
-                                    <Receipt :size="16" class="shrink-0 text-slate-400" />
-                                    <div>
-                                        <p class="text-slate-500">Péage</p>
-                                        <p class="font-semibold">{{ formatCurrency(effectiveRoute.costs.tollCost) }}</p>
-                                    </div>
-                                </div>
-
-                                <div class="flex items-center gap-2">
-                                    <Wallet :size="16" class="shrink-0 text-slate-400" />
-                                    <div>
-                                        <p class="text-slate-500">Coût total</p>
-                                        <p class="font-semibold">{{ formatCurrency(effectiveRoute.costs.totalCost) }}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-
-                        <p v-else class="text-sm text-slate-500">
-                            Rechercher un itinéraire pour l'attribuer
-                        </p>
-                    </div>
-                </section>
             </div>
 
             <!-- FOOTER -->
-            <div class="mt-5 flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
+            <div class="mt-5 flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-300 pt-4">
                 <div v-if="routeRequest && effectiveRoute" class="flex flex-wrap items-center gap-5 text-sm">
                     <div class="flex items-center gap-2">
                         <span class="text-slate-400">Départ</span>
