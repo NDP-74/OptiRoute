@@ -38,6 +38,16 @@ public class VehicleEventService {
         return vehicleEventRepository.findByEventDateBetween(startDate,endDate).stream().map(this::toResponse).toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<VehicleEventResponse> getByTractorId(Long tractorId) {
+        return vehicleEventRepository.findByTractor_IdOrderByEventDateDescIdDesc(tractorId).stream().map(this::toResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<VehicleEventResponse> getBySemiTrailerId(Long semiTrailerId) {
+        return vehicleEventRepository.findBySemiTrailer_IdOrderByEventDateDescIdDesc(semiTrailerId).stream().map(this::toResponse).toList();
+    }
+
     @Transactional
     public VehicleEventResponse create(VehicleEventRequest request) {
         VehicleEvent vehicleEvent = new VehicleEvent();

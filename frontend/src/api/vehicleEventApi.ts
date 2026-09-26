@@ -10,6 +10,18 @@ export const getVehicleEventsByDateRange = async (startDate: string, endDate: st
     return response.data
 }
 
+export const getVehicleEventsByTractor = async (tractorId: number): Promise<VehicleEventResponse[]> => {
+    const response = await api.get<VehicleEventResponse[]>(`/vehicle-events/by-tractor/${tractorId}`)
+
+    return response.data
+}
+
+export const getVehicleEventsBySemiTrailer = async (semiTrailerId: number): Promise<VehicleEventResponse[]> => {
+    const response = await api.get<VehicleEventResponse[]>(`/vehicle-events/by-semi-trailer/${semiTrailerId}`)
+
+    return response.data
+}
+
 export const getVehicleEvent = async (id: number): Promise<VehicleEventResponse> => {
     const response = await api.get<VehicleEventResponse>(`/vehicle-events/${id}`)
 

@@ -41,6 +41,16 @@ public class VehicleEventController {
         return ResponseEntity.ok(vehicleEventService.getByDateRange(startDate,endDate));
     }
 
+    @GetMapping("/by-tractor/{tractorId}")
+    public ResponseEntity<List<VehicleEventResponse>> getByTractorId(@PathVariable Long tractorId) {
+        return ResponseEntity.ok(vehicleEventService.getByTractorId(tractorId));
+    }
+
+    @GetMapping("/by-semi-trailer/{semiTrailerId}")
+    public ResponseEntity<List<VehicleEventResponse>> getBySemiTrailerId(@PathVariable Long semiTrailerId) {
+        return ResponseEntity.ok(vehicleEventService.getBySemiTrailerId(semiTrailerId));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<VehicleEventResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(vehicleEventService.getById(id));

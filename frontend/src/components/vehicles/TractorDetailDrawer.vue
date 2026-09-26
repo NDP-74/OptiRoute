@@ -24,6 +24,7 @@ import DetailSection from "@/components/ui/DetailSection.vue"
 import DetailRow from "@/components/ui/DetailRow.vue"
 import UpdateTractorModal from "@/components/vehicles/UpdateTractorModal.vue"
 import DeleteTractorModal from "@/components/vehicles/DeleteTractorModal.vue"
+import VehicleEventsSection from "@/components/vehicles/VehicleEventsSection.vue"
 
 import {
     formatCurrency, formatDate, formatDateTime, formatNumber,
@@ -258,6 +259,8 @@ watch(
 
                 <DetailRow label="Fin d’amortissement" :value="formatDate(tractor.depreciationEndDate)" />
             </DetailSection>
+
+            <VehicleEventsSection vehicle-type="tractor" :vehicle-id="tractor.id" />
 
             <!-- Synchronisation -->
             <DetailSection title="Synchronisation" :icon="Tag">
