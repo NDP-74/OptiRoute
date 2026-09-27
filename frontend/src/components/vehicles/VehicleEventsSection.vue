@@ -5,7 +5,7 @@ import { CalendarDays, RefreshCw, Wrench } from "lucide-vue-next"
 import { getVehicleEventsBySemiTrailer, getVehicleEventsByTractor } from "@/api/vehicleEventApi"
 import { getApiErrorMessage } from "@/api/utils"
 import type { VehicleEventResponse } from "@/models/vehicle/VehicleEvent"
-import { formatCurrency, formatDate } from "@/utils/formatters"
+import { formatCurrency, formatParisDateTime } from "@/utils/formatters"
 
 const props = defineProps<{
     vehicleType: "tractor" | "semiTrailer"
@@ -18,7 +18,7 @@ const error = ref<string | null>(null)
 let currentRequestId = 0
 
 const sortedEvents = computed(() => [...events.value].sort((first, second) =>
-    second.eventDate.localeCompare(first.eventDate) || second.id - first.id,
+    new Date(second.eventDate).getTime() - new Date(first.eventDate).getTime() || second.id - first.id,
 ))
 
 async function loadEvents() {
@@ -93,7 +93,7 @@ watch(() => [props.vehicleType, props.vehicleId], () => void loadEvents(), { imm
                         <div class="min-w-0">
                             <p class="truncate text-sm font-semibold text-slate-800">{{ event.supplier || "Fournisseur"
                                 + " non renseigné" }}</p>
-                            <p class="mt-0.5 text-xs text-slate-500">{{ formatDate(event.eventDate) }}</p>
+                            <p class="mt-0.5 text-xs text-slate-500">{{ formatParisDateTime(event.eventDate) }}</p>
                         </div>
                     </div>
                     <span class="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-slate-800">

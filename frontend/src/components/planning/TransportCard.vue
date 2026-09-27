@@ -3,6 +3,7 @@ import { computed } from "vue";
 
 import type { PlanningTransport } from "@/models/planning/planning";
 import { Truck, Container } from 'lucide-vue-next'
+import { formatParisTime } from "@/utils/formatters";
 
 const props = defineProps<{
     transport: PlanningTransport;
@@ -17,17 +18,11 @@ const tripLabel = computed(() => {
 });
 
 const startTime = computed(() => {
-    return new Intl.DateTimeFormat("fr-FR", {
-        hour: "2-digit",
-        minute: "2-digit",
-    }).format(new Date(props.transport.plannedStart));
+    return formatParisTime(props.transport.plannedStart);
 });
 
 const endTime = computed(() => {
-    return new Intl.DateTimeFormat("fr-FR", {
-        hour: "2-digit",
-        minute: "2-digit",
-    }).format(new Date(props.transport.plannedEnd));
+    return formatParisTime(props.transport.plannedEnd);
 });
 
 const result = computed(() => props.transport.revenue - props.transport.totalCost);

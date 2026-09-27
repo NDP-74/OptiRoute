@@ -3,6 +3,7 @@ import { computed } from "vue"
 import { Container, Truck, Wrench } from "lucide-vue-next"
 
 import type { VehicleEventResponse } from "@/models/vehicle/VehicleEvent"
+import { formatParisTime } from "@/utils/formatters"
 
 const props = defineProps<{
     event: VehicleEventResponse
@@ -31,7 +32,7 @@ const formattedCost = computed(() => new Intl.NumberFormat("fr-FR", {
             </div>
             <span
                 class="shrink-0 rounded-full border border-blue-200 bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
-                Événement
+                {{ formatParisTime(event.eventDate) }}
             </span>
         </div>
 

@@ -56,6 +56,91 @@ export const formatDateTime = (value: string | null | undefined,): string => {
     }).format(new Date(value))
 }
 
+export const formatParisDateTime = (value: string | null | undefined): string => {
+    if (!value) {
+        return "Non renseignée"
+    }
+
+    const date = new Date(value)
+
+    if (Number.isNaN(date.getTime())) {
+        return value
+    }
+
+    return new Intl.DateTimeFormat("fr-FR", {
+        timeZone: "Europe/Paris",
+        dateStyle: "medium",
+        timeStyle: "short",
+    }).format(date)
+}
+
+export const formatParisTime = (value: string): string => {
+    const date = new Date(value)
+
+    if (Number.isNaN(date.getTime())) {
+        return "--:--"
+    }
+
+    return new Intl.DateTimeFormat("fr-FR", {
+        timeZone: "Europe/Paris",
+        hour: "2-digit",
+        minute: "2-digit",
+    }).format(date)
+}
+
+export const formatParisDateTimeLocal = (value: string): string => {
+    const parts = new Intl.DateTimeFormat("en", {
+        timeZone: "Europe/Paris",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+    }).formatToParts(new Date(value))
+    const part = (type: string) => parts.find(item => item.type === type)?.value ?? ""
+
+    return `${part("year")}-${part("month")}-${part("day")}T${part("hour")}:${part("minute")}`
+}
+
+export const parisDateTimeLocalToIso = (value: string): string => {
+    const [datePart, timePart] = value.split("T")
+    const [year = 0, month = 0, day = 0] = (datePart ?? "").split("-").map(Number)
+    const [hour = 0, minute = 0] = (timePart ?? "").split(":").map(Number)
+    const targetUtc = Date.UTC(year, month - 1, day, hour, minute)
+    let instant = targetUtc
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+        const parisParts = new Intl.DateTimeFormat("en", {
+            timeZone: "Europe/Paris",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            hourCycle: "h23",
+        }).formatToParts(new Date(instant))
+        const part = (type: string) => Number(parisParts.find(item => item.type === type)?.value ?? 0)
+        const parisAsUtc = Date.UTC(part("year"), part("month") - 1, part("day"), part("hour"), part("minute"))
+
+        instant += targetUtc - parisAsUtc
+    }
+
+    return new Date(instant).toISOString()
+}
+
+export const formatParisDateKey = (value: string): string => {
+    const parts = new Intl.DateTimeFormat("en", {
+        timeZone: "Europe/Paris",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    }).formatToParts(new Date(value))
+    const part = (type: string) => parts.find(item => item.type === type)?.value ?? ""
+
+    return `${part("year")}-${part("month")}-${part("day")}`
+}
+
 export const formatDurationSeconds = (value: number | null): string => {
     if (value === null) {
         return "Non renseignée";

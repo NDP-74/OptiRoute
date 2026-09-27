@@ -42,6 +42,7 @@ import { usePlanning } from "@/utils/planningUtils";
 import type { PlanningDay, PlanningDriver, PlanningTransport, } from "@/models/planning/planning";
 import type { TransportDetail } from "@/models/transport/TransportDetail";
 import type { VehicleEventResponse } from "@/models/vehicle/VehicleEvent";
+import { formatParisDateKey } from "@/utils/formatters";
 
 
 const selectedTransportId = ref<number | null>(null);
@@ -273,7 +274,7 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
             return;
         }
 
-        const dayKey = formatDateKey(new Date(transport.plannedStart));
+        const dayKey = formatParisDateKey(transport.plannedStart);
 
         if (!driver.days[dayKey]) {
             driver.days[dayKey] = [];
@@ -296,8 +297,9 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
 
     vehicleEvents.value.forEach((event) => {
         const vehicleRegistration = event.tractorRegistration ?? event.semiTrailerRegistration;
+        const eventDay = formatParisDateKey(event.eventDate);
         const matchingDriver = sortedDrivers.find((driver) => {
-            return driver.days[event.eventDate]?.some((transport) => {
+            return driver.days[eventDay]?.some((transport) => {
                 return transport.tractorRegistration === vehicleRegistration
                     || transport.semiTrailerRegistration === vehicleRegistration;
             });
@@ -308,9 +310,9 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
             return;
         }
 
-        const matchingDayEvents = matchingDriver.events[event.eventDate] ?? [];
+        const matchingDayEvents = matchingDriver.events[eventDay] ?? [];
         matchingDayEvents.push(event);
-        matchingDriver.events[event.eventDate] = matchingDayEvents;
+        matchingDriver.events[eventDay] = matchingDayEvents;
         matchingDriver.totalCost += event.cost;
         matchingDriver.eventCost += event.cost;
     });
@@ -342,9 +344,10 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
         };
 
         eventsWithoutTransport.forEach((event) => {
-            const unassignedDayEvents = unassignedDriver.events[event.eventDate] ?? [];
+            const eventDay = formatParisDateKey(event.eventDate);
+            const unassignedDayEvents = unassignedDriver.events[eventDay] ?? [];
             unassignedDayEvents.push(event);
-            unassignedDriver.events[event.eventDate] = unassignedDayEvents;
+            unassignedDriver.events[eventDay] = unassignedDayEvents;
             unassignedDriver.totalCost += event.cost;
             unassignedDriver.vehicleCost += event.cost;
         });

@@ -10,7 +10,7 @@ import AppDetailDrawer from "@/components/ui/AppDetailDrawer.vue"
 import DetailRow from "@/components/ui/DetailRow.vue"
 import DetailSection from "@/components/ui/DetailSection.vue"
 import { useNotification } from "@/composables/useNotification"
-import { formatCurrency, formatDate } from "@/utils/formatters"
+import { formatCurrency, formatParisDateTime } from "@/utils/formatters"
 
 import type { VehicleEventResponse } from "@/models/vehicle/VehicleEvent"
 
@@ -145,7 +145,7 @@ watch(
             </section>
 
             <DetailSection title="Informations" :icon="CalendarDays">
-                <DetailRow label="Date" :value="formatDate(event.eventDate)" />
+                <DetailRow label="Date" :value="formatParisDateTime(event.eventDate)" />
                 <DetailRow label="Fournisseur" :value="event.supplier || 'Non renseigné'" />
                 <DetailRow label="Coût" :value="formatCurrency(event.cost)" />
             </DetailSection>

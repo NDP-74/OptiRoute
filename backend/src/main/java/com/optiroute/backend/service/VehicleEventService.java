@@ -1,6 +1,8 @@
 package com.optiroute.backend.service;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -17,6 +19,8 @@ import jakarta.persistence.EntityNotFoundException;
 
 @Service
 public class VehicleEventService {
+
+    private static final ZoneId PLANNING_ZONE = ZoneId.of("Europe/Paris");
 
     private final VehicleEventRepository vehicleEventRepository;
     private final TractorService tractorService;
@@ -35,7 +39,10 @@ public class VehicleEventService {
 
     @Transactional(readOnly = true)
     public List<VehicleEventResponse> getByDateRange(LocalDate startDate, LocalDate endDate) {
-        return vehicleEventRepository.findByEventDateBetween(startDate,endDate).stream().map(this::toResponse).toList();
+        OffsetDateTime start = startDate.atStartOfDay(PLANNING_ZONE).toOffsetDateTime();
+        OffsetDateTime endExclusive = endDate.plusDays(1).atStartOfDay(PLANNING_ZONE).toOffsetDateTime();
+
+        return vehicleEventRepository.findByEventDateGreaterThanEqualAndEventDateLessThan(start,endExclusive).stream().map(this::toResponse).toList();
     }
 
     @Transactional(readOnly = true)

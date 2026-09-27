@@ -7,6 +7,7 @@ import { createVehicleEvent, updateVehicleEvent } from "@/api/vehicleEventApi"
 import { getApiErrorMessage } from "@/api/utils"
 import AppModal from "@/components/ui/AppModal.vue"
 import { useNotification } from "@/composables/useNotification"
+import { formatParisDateTimeLocal, parisDateTimeLocalToIso } from "@/utils/formatters"
 
 import type { TractorSummary } from "@/models/vehicle/Tractor"
 import type { SemiTrailerSummary } from "@/models/vehicle/SemiTrailer"
@@ -29,16 +30,8 @@ const semiTrailers = ref<SemiTrailerSummary[]>([])
 const loadingOptions = ref(false)
 const loading = ref(false)
 
-const formatDate = (date: Date): string => {
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, "0")
-    const day = String(date.getDate()).padStart(2, "0")
-
-    return `${year}-${month}-${day}`
-}
-
 const createEmptyForm = (): VehicleEventRequest => ({
-    eventDate: formatDate(new Date()),
+    eventDate: formatParisDateTimeLocal(new Date().toISOString()),
     supplier: null,
     cost: null,
     tractorId: null,
@@ -57,7 +50,7 @@ const resetForm = () => {
 
 const populateForm = (event: VehicleEventResponse) => {
     form.value = {
-        eventDate: event.eventDate,
+        eventDate: formatParisDateTimeLocal(event.eventDate),
         supplier: event.supplier,
         cost: event.cost,
         tractorId: event.tractorId,
@@ -105,6 +98,7 @@ const submitEvent = async () => {
         loading.value = true
         const payload = {
             ...form.value,
+            eventDate: parisDateTimeLocalToIso(form.value.eventDate),
             supplier: form.value.supplier?.trim() || null,
         }
 
@@ -153,8 +147,8 @@ watch(
             <div class="mt-6 max-h-[65vh] space-y-6 overflow-y-auto pr-2 custom-scrollbar">
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
-                        <label class="mb-1.5 block text-sm font-medium text-slate-700">Date</label>
-                        <input v-model="form.eventDate" type="date" required :disabled="loading"
+                        <label class="mb-1.5 block text-sm font-medium text-slate-700">Date et heure</label>
+                        <input v-model="form.eventDate" type="datetime-local" required :disabled="loading"
                             class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100" />
                     </div>
                     <div>

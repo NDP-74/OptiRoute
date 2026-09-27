@@ -22,6 +22,10 @@ Dates → OffsetDateTime
 
 Vérifier lien entre transport et transport estimate:
     - Unifier ces tables ?
+    - modif vehicle_event:
+        ALTER TABLE vehicle_event
+        ALTER COLUMN event_date TYPE timestamptz
+        USING event_date::timestamp AT TIME ZONE 'Europe/Paris';
 
 --- Recheche d'itinéraire ---
 Vérifier qu'on gere correctement les departureMode:
@@ -30,3 +34,11 @@ departureMode.value = request.timeMode === 'ARRIVAL' ? 'ARRIVALTIME' : 'PLANNED'
 Vérifier si il n'est pas possible d'unifier les modals de création et update
 
 Optimiser la page PlanningView
+
+----- TODO -----
+Filtre / Vue sur planning
+Retirer la possibilité de gérer plus routes alternative (backend et frontend)
+
+Formulaire dynamique avec verification des données (ok pour les couts)
+Retirer les champs "externalId" et "Source" des tables véhicules et customer (ou uniformiser) -> idem avec les champs "is_Active"
+DB -> créer un systeme de dataset -> répartie par entreprise + admin

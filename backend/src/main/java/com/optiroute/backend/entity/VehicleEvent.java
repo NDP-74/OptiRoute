@@ -1,7 +1,7 @@
 package com.optiroute.backend.entity;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
 import com.optiroute.backend.entity.vehicle.SemiTrailer;
 import com.optiroute.backend.entity.vehicle.Tractor;
@@ -28,7 +28,7 @@ public class VehicleEvent extends EntityUtils {
     private Long id;
 
     @Column(name = "event_date", nullable = false)
-    private LocalDate eventDate;
+    private OffsetDateTime eventDate;
 
     @Column(length = 255)
     private String supplier;
