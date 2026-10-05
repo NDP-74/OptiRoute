@@ -104,6 +104,63 @@ function setMarkers(origin: any, destination: any, waypoints: any[] = []) {
     }
 }
 
+let pointMarker: any = null
+let poiGroup: any = null
+
+const labelCanvas = document.createElement('canvas').getContext('2d')!
+
+function createPoiIcon(label: string) {
+    const font = '600 12px sans-serif'
+    labelCanvas.font = font
+    const textWidth = Math.ceil(labelCanvas.measureText(label).width)
+
+    const width = Math.max(textWidth + 12, 28)
+    const height = 28 + 20
+    const cx = width / 2
+    const escaped = label.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+    const svg =
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">` +
+        `<circle cx="${cx}" cy="14" r="11" fill="#10b981" stroke="#065f46" stroke-width="3"/>` +
+        `<circle cx="${cx}" cy="14" r="4" fill="#ecfdf5"/>` +
+        `<text x="${cx}" y="42" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="600" ` +
+        `fill="#064e3b" stroke="#ffffff" stroke-width="3" paint-order="stroke">${escaped}</text>` +
+        '</svg>'
+
+    return new H.map.Icon('data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg), { size: { w: width, h: height }, anchor: { x: cx, y: 14 } })
+}
+
+function setPointsOfInterest(points: { label: string, latitude: number, longitude: number }[]) {
+    if (!map) return
+
+    if (poiGroup) {
+        map.removeObject(poiGroup)
+    }
+
+    poiGroup = new H.map.Group()
+
+    for (const point of points) {
+        poiGroup.addObject(new H.map.Marker({ lat: Number(point.latitude), lng: Number(point.longitude) }, { icon: createPoiIcon(point.label) }))
+    }
+
+    map.addObject(poiGroup)
+}
+
+function setPointMarker(position: { lat: number, lng: number } | null) {
+    if (!map) return
+
+    if (pointMarker) {
+        map.removeObject(pointMarker)
+        pointMarker = null
+    }
+
+    if (!position) return
+
+    pointMarker = new H.map.Marker(position)
+    map.addObject(pointMarker)
+    map.getViewModel().setLookAtData({ position, zoom: 15 })
+}
+
 function displayRoutes(routes: any[], selectedRoute: any) {
     if (!map) return
     clearRoutes()
@@ -184,7 +241,9 @@ function displayRoutes(routes: any[], selectedRoute: any) {
 
 defineExpose({
     displayRoutes,
-    setMarkers
+    setMarkers,
+    setPointMarker,
+    setPointsOfInterest
 })
 
 onMounted(() => {

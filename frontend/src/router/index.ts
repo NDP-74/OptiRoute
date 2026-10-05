@@ -7,6 +7,7 @@ import AccountView from '@/views/users/AccountView.vue'
 import ChangePasswordView from '@/views/users/ChangePasswordView.vue'
 import DriversView from '@/views/DriversView.vue'
 import MapsView from '@/views/MapsView.vue'
+import PointOfInterestView from '@/views/PointOfInterestView.vue'
 import PlanningView from '@/views/PlanningView.vue'
 import CustomersView from '@/views/CustomersView.vue'
 import TractorsView from '@/views/vehicle/TractorsView.vue'
@@ -133,6 +134,11 @@ const routes = [
                         path: '',
                         name: 'routes',
                         component: MapsView
+                    },
+                    {
+                        path: 'pointsOfInterest',
+                        name: 'pointsOfInterest',
+                        component: PointOfInterestView
                     }
                 ]
             }

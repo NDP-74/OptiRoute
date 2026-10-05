@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { ChevronDown, KeyRound, LogOut, CircleUser, Coins, Users, Truck, Container, Building2, CalendarDays, Route, House } from 'lucide-vue-next'
+import { ChevronDown, KeyRound, LogOut, CircleUser, Coins, Users, Truck, Container, Building2, CalendarDays, Route, House, MapPin } from 'lucide-vue-next'
 import SidebarLink from '@/components/layout/SidebarLink.vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
@@ -64,6 +64,7 @@ watch(isVehiclesSection, (isActive) => {
             <!-- ROUTES SECTION -->
             <template v-if="isRoutesSection">
                 <SidebarLink to="/routes" label="Rechercher un itinéraire" :icon="Route" />
+                <SidebarLink to="/routes/pointsOfInterest" label="Points d'intérêt" :icon="MapPin" />
             </template>
 
             <!-- HOMEPAGE SECTION -->
