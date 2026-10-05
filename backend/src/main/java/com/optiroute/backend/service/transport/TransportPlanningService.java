@@ -15,16 +15,13 @@ import com.optiroute.backend.dto.response.transport.PlanningUnassignedVehicleRes
 import com.optiroute.backend.dto.response.transport.PlanningUnassignedVehiclesResponse;
 import com.optiroute.backend.dto.response.transport.TransportPlanningResponse;
 import com.optiroute.backend.entity.driver.Driver;
-import com.optiroute.backend.entity.transport.TransportEstimate;
-import com.optiroute.backend.entity.transport.Transport;
+import com.optiroute.backend.entity.transport.Route;
 import com.optiroute.backend.entity.vehicle.SemiTrailer;
 import com.optiroute.backend.entity.vehicle.Tractor;
 import com.optiroute.backend.repository.driver.DriverRepository;
-import com.optiroute.backend.repository.transport.TransportEstimateRepository;
-import com.optiroute.backend.repository.transport.TransportRepository;
+import com.optiroute.backend.repository.transport.RouteRepository;
 import com.optiroute.backend.repository.vehicle.SemiTrailerRepository;
 import com.optiroute.backend.repository.vehicle.TractorRepository;
-import com.optiroute.backend.service.cost.TransportCostService;
 import com.optiroute.backend.service.cost.DriverCostService;
 import com.optiroute.backend.service.cost.VehicleCostService;
 
@@ -36,10 +33,9 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class TransportPlanningService {
 
-    private final TransportRepository transportRepository;
+    private final RouteRepository routeRepository;
     private final DriverRepository driverRepository;
-    private final TransportEstimateRepository transportEstimateRepository;
-    private final TransportCostService transportCostService;
+    private final EmptyCostDetailsFactory emptyCostDetailsFactory;
     private final DriverCostService driverCostService;
     private final TractorRepository tractorRepository;
     private final SemiTrailerRepository semiTrailerRepository;
@@ -57,25 +53,25 @@ public class TransportPlanningService {
         OffsetDateTime start = startDate.atStartOfDay(PLANNING_ZONE).toOffsetDateTime();
         OffsetDateTime end = endDate.atStartOfDay(PLANNING_ZONE).toOffsetDateTime();
 
-        List<Transport> transportEntities = transportRepository.findByPlannedStartGreaterThanEqualAndPlannedStartLessThan(start,end);
+        List<Route> routes = routeRepository.findByStartDateGreaterThanEqualAndStartDateLessThan(start,end);
 
-        List<TransportPlanningResponse> transports = transportEntities.stream().map(transport -> {
-            Driver driver = driverRepository.findById(transport.getDriverId()).orElseThrow();
-            TransportEstimate estimate = transportEstimateRepository.findByTransportId(transport.getId()).orElse(null);
-            TransportCostDetailsResponse costs = transportCostService.calculateCosts(transport,estimate);
+        List<TransportPlanningResponse> transports = routes.stream().map(route -> {
+            var service = route.getService();
+            TransportCostDetailsResponse costs = emptyCostDetailsFactory.create();
 
-            String tractorRegistration = transport.getTractorId() == null ? null : tractorRepository.findById(transport.getTractorId()).map(Tractor::getRegistration).orElse(null);
-            String semiTrailerRegistration = transport.getSemiTrailerId() == null ? null
-                : semiTrailerRepository.findById(transport.getSemiTrailerId()).map(SemiTrailer::getRegistration).orElse(null);
+            Driver driver = route.getDriverId() == null ? null : driverRepository.findById(route.getDriverId()).orElse(null);
+            String tractorRegistration = route.getTractorId() == null ? null : tractorRepository.findById(route.getTractorId()).map(Tractor::getRegistration).orElse(null);
+            String semiTrailerRegistration = route.getSemiTrailerId() == null ? null
+                : semiTrailerRepository.findById(route.getSemiTrailerId()).map(SemiTrailer::getRegistration).orElse(null);
 
-            return new TransportPlanningResponse(transport.getId(), transport.getName(), driver.getId(), driver.getFirstName() + " " + driver.getLastName(), tractorRegistration,
-                semiTrailerRegistration, transport.getPlannedStart(), transport.getPlannedEnd(), transport.getOriginName(), transport.getDestinationName(), transport.isEmptyTrip(),
-                costs.totalCost(), costs.driver().totalCost(), costs.structure().totalCost(), costs.vehicle().totalCost(),
-                transport.getRevenue() == null ? 0 : transport.getRevenue().doubleValue());
+            return new TransportPlanningResponse(service.getId(), service.getName(), driver != null ? driver.getId() : null,
+                driver != null ? driver.getFirstName() + " " + driver.getLastName() : null, tractorRegistration, semiTrailerRegistration, route.getStartDate(), route.getEndDate(),
+                route.getOriginName(), route.getDestinationName(), route.isEmptyTrip(), costs.totalCost(), costs.driver().totalCost(), costs.structure().totalCost(),
+                costs.vehicle().totalCost(), service.getRevenue() == null ? 0 : service.getRevenue().doubleValue());
         }).toList();
 
-        Map<Long, Set<LocalDate>> transportDatesByDriver = transportEntities.stream().collect(Collectors.groupingBy(Transport::getDriverId,
-            Collectors.mapping(transport -> transport.getPlannedStart().atZoneSameInstant(PLANNING_ZONE).toLocalDate(),Collectors.toSet())));
+        Map<Long, Set<LocalDate>> transportDatesByDriver = routes.stream().filter(route -> route.getDriverId() != null)
+            .collect(Collectors.groupingBy(Route::getDriverId,Collectors.mapping(route -> route.getStartDate().atZoneSameInstant(PLANNING_ZONE).toLocalDate(),Collectors.toSet())));
 
         List<Driver> allDrivers = driverRepository.findAll();
 

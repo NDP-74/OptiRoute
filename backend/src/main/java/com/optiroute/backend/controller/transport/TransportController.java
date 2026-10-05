@@ -8,7 +8,7 @@ import com.optiroute.backend.dto.request.transport.TransportFromRouteRequest;
 import com.optiroute.backend.dto.request.transport.TransportRequest;
 import com.optiroute.backend.dto.response.transport.TransportDetailResponse;
 import com.optiroute.backend.dto.response.transport.PlanningResponse;
-import com.optiroute.backend.entity.transport.Transport;
+import com.optiroute.backend.entity.transport.Service;
 import com.optiroute.backend.service.transport.TransportDetailService;
 import com.optiroute.backend.service.transport.TransportFacadeService;
 import com.optiroute.backend.service.transport.TransportPlanningService;
@@ -28,10 +28,10 @@ public class TransportController {
     }
 
     @PostMapping
-    public ResponseEntity<Transport> create(@RequestBody TransportRequest request) {
-        Transport transport = transportFacadeService.createTransport(request);
+    public ResponseEntity<Service> create(@RequestBody TransportRequest request) {
+        Service service = transportFacadeService.createTransport(request);
 
-        return ResponseEntity.ok(transport);
+        return ResponseEntity.ok(service);
     }
 
     @GetMapping("/planning")
@@ -45,17 +45,17 @@ public class TransportController {
     }
 
     @PostMapping("/from-route")
-    public ResponseEntity<Transport> createFromRoute(@RequestBody TransportFromRouteRequest request) {
-        Transport transport = transportFacadeService.createFromRoute(request);
+    public ResponseEntity<Service> createFromRoute(@RequestBody TransportFromRouteRequest request) {
+        Service service = transportFacadeService.createFromRoute(request);
 
-        return ResponseEntity.ok(transport);
+        return ResponseEntity.ok(service);
     }
 
     @PutMapping("/{id}/from-route")
-    public ResponseEntity<Transport> updateFromRoute(@PathVariable Long id, @RequestBody TransportFromRouteRequest request) {
-        Transport transport = transportFacadeService.updateFromRoute(id,request);
+    public ResponseEntity<Service> updateFromRoute(@PathVariable Long id, @RequestBody TransportFromRouteRequest request) {
+        Service service = transportFacadeService.updateFromRoute(id,request);
 
-        return ResponseEntity.ok(transport);
+        return ResponseEntity.ok(service);
     }
 
     @DeleteMapping("/{id}")

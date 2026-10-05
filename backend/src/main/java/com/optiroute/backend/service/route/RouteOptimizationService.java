@@ -29,6 +29,7 @@ public class RouteOptimizationService {
 
     private final RoutingService routingService;
     private final RoutePtvParser routePtvParser;
+    private final RouteHereParser routeHereParser;
     private final RouteCostService routeCostService;
     private final FuelPriceService fuelPriceService;
     private final TractorService tractorService;
@@ -49,9 +50,12 @@ public class RouteOptimizationService {
 
         double driverHourlyRate = resolveDriverHourlyRate(request.getDriverId());
 
-        // PTV Routing API + Parsing
+        // Routing API (HERE temporairement, PTV sinon) + Parsing
         String raw = routingService.calculateRoutes(request,truckConfiguration,driverHourlyRate);
-        List<RoutePtvParser.ParsedRoute> parsedRoutes = routePtvParser.parseRoutes(raw);
+        List<RoutePtvParser.ParsedRoute> parsedRoutes = routingService.isHere()
+            ? routeHereParser.parseRoutes(raw).stream()
+                .map(here -> new RoutePtvParser.ParsedRoute(here.duration, here.baseDuration, here.distanceMeters, here.polyline, here.tollCost, here.rawJson)).toList()
+            : routePtvParser.parseRoutes(raw);
 
         // Cost calculation
         double fuelPrice = fuelPriceService.getAverageDieselPrice();
