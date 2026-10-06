@@ -23,7 +23,6 @@ import DetailRow from "@/components/ui/DetailRow.vue"
 import AppDetailDrawer from "@/components/ui/AppDetailDrawer.vue"
 import DeleteSemiTrailerModal from "@/components/vehicles/DeleteSemiTrailerModal.vue"
 import UpdateSemiTrailerModal from "@/components/vehicles/UpdateSemiTrailerModal.vue"
-import VehicleEventsSection from "@/components/vehicles/VehicleEventsSection.vue"
 
 import {
     formatCurrency, formatDate, formatDateTime, formatNumber,
@@ -254,8 +253,6 @@ watch(
 
                 <DetailRow label="Fin d’amortissement" :value="formatDate(semiTrailer.depreciationEndDate)" />
             </DetailSection>
-
-            <VehicleEventsSection vehicle-type="semiTrailer" :vehicle-id="semiTrailer.id" />
 
             <!-- Synchronisation -->
             <DetailSection title="Synchronisation" :icon="Tag">

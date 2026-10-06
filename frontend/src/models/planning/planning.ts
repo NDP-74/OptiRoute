@@ -64,9 +64,7 @@ export interface PlanningDriver {
     structureCost: number;
     vehicleCost: number;
     vehicleDepreciationCosts?: PlanningUnassignedVehicle[];
-    eventCost: number;
     days: Record<string, PlanningTransport[]>;
-    events: Record<string, import("@/models/vehicle/VehicleEvent").VehicleEventResponse[]>;
 }
 
 export interface PlanningDay {

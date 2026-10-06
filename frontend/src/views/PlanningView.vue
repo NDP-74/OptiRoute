@@ -1,11 +1,10 @@
 <template>
     <div class="relative flex h-full min-h-0 flex-col overflow-hidden bg-slate-100">
         <PlanningToolbar :start-date="selectedStartDate" :end-date="selectedEndDate" @update:range="handleRangeChange"
-            @today-range="applyTodayRange" @create-route="openRouteModal" @create-event="showEventModal = true" />
+            @today-range="applyTodayRange" @create-route="openRouteModal" />
 
         <PlanningGrid :drivers="planningDrivers" :days="days" :loading="loading" :error="error"
-            @retry="loadCurrentPeriod" @transport-select="openTransport" @event-select="openVehicleEvent"
-            @cost-detail-select="openCostDetail" />
+            @retry="loadCurrentPeriod" @transport-select="openTransport" @cost-detail-select="openCostDetail" />
 
         <CostDetailDrawer :open="selectedCostDetailDriverId !== null" :driver="selectedCostDetailDriver"
             @close="selectedCostDetailDriverId = null" />
@@ -13,14 +12,8 @@
         <TransportDetailDrawer :open="selectedTransportId !== null" :transport-id="selectedTransportId"
             @close="closeTransport" @deleted="handleTransportDeleted" @edit="openEditModal" />
 
-        <VehicleEventDetailDrawer :open="selectedVehicleEventId !== null" :event-id="selectedVehicleEventId"
-            @close="closeVehicleEvent" @updated="handleVehicleEventUpdated" @deleted="handleVehicleEventDeleted" />
-
         <PlanningRouteModal :show="showRouteModal" :editing-transport="editingTransport" @close="closeRouteModal"
             @saved="handleRouteSaved" />
-
-        <CreateVehicleEventModal :show="showEventModal" :start-date="selectedStartDate" :end-date="selectedEndDate"
-            @close="showEventModal = false" @created="handleEventCreated" />
     </div>
 </template>
 
@@ -31,31 +24,23 @@ import { useRoute, useRouter } from "vue-router";
 import PlanningGrid from "@/components/planning/PlanningGrid.vue";
 import PlanningToolbar from "@/components/planning/PlanningToolbar.vue";
 import PlanningRouteModal from "@/components/planning/PlanningRouteModal.vue";
-import CreateVehicleEventModal from "@/components/planning/CreateVehicleEventModal.vue";
-import VehicleEventDetailDrawer from "@/components/planning/VehicleEventDetailDrawer.vue";
 import CostDetailDrawer from "@/components/planning/CostDetailDrawer.vue";
 import TransportDetailDrawer from "@/components/transports/TransportDetailDrawer.vue";
 
-import { getVehicleEventsByDateRange } from "@/api/vehicleEventApi";
 import { usePlanning } from "@/utils/planningUtils";
 
 import type { PlanningDay, PlanningDriver, PlanningTransport, } from "@/models/planning/planning";
 import type { TransportDetail } from "@/models/transport/TransportDetail";
-import type { VehicleEventResponse } from "@/models/vehicle/VehicleEvent";
 import { formatParisDateKey } from "@/utils/formatters";
 
 
 const selectedTransportId = ref<number | null>(null);
-const selectedVehicleEventId = ref<number | null>(null);
 const selectedCostDetailDriverId = ref<number | null>(null);
 const showRouteModal = ref(false);
-const showEventModal = ref(false);
 const editingTransport = ref<TransportDetail | null>(null);
-const vehicleEvents = ref<VehicleEventResponse[]>([]);
 
 function closePlanningDrawers(): void {
     selectedTransportId.value = null;
-    selectedVehicleEventId.value = null;
     selectedCostDetailDriverId.value = null;
 }
 
@@ -64,11 +49,6 @@ function openTransport(transportId: number): void {
     selectedTransportId.value = transportId;
 }
 function closeTransport(): void { selectedTransportId.value = null; }
-function openVehicleEvent(eventId: number): void {
-    closePlanningDrawers();
-    selectedVehicleEventId.value = eventId;
-}
-function closeVehicleEvent(): void { selectedVehicleEventId.value = null; }
 function openCostDetail(driverId: number): void {
     closePlanningDrawers();
     selectedCostDetailDriverId.value = driverId;
@@ -94,20 +74,6 @@ const handleTransportDeleted = async (): Promise<void> => {
 
 const handleRouteSaved = async (): Promise<void> => {
     closeRouteModal();
-    await loadCurrentPeriod();
-};
-
-const handleEventCreated = async (): Promise<void> => {
-    showEventModal.value = false;
-    await loadCurrentPeriod();
-};
-
-const handleVehicleEventUpdated = async (): Promise<void> => {
-    await loadCurrentPeriod();
-};
-
-const handleVehicleEventDeleted = async (): Promise<void> => {
-    closeVehicleEvent();
     await loadCurrentPeriod();
 };
 
@@ -257,9 +223,7 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
             driverCost: driverSummary.salaryForNonTransportDays,
             structureCost: 0,
             vehicleCost: 0,
-            eventCost: 0,
             days: {},
-            events: {},
         });
     });
 
@@ -293,68 +257,21 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
         return first.name.localeCompare(second.name, "fr", { sensitivity: "base" });
     });
 
-    const eventsWithoutTransport: VehicleEventResponse[] = [];
-
-    vehicleEvents.value.forEach((event) => {
-        const vehicleRegistration = event.tractorRegistration ?? event.semiTrailerRegistration;
-        const eventDay = formatParisDateKey(event.eventDate);
-        const matchingDriver = sortedDrivers.find((driver) => {
-            return driver.days[eventDay]?.some((transport) => {
-                return transport.tractorRegistration === vehicleRegistration
-                    || transport.semiTrailerRegistration === vehicleRegistration;
-            });
-        });
-
-        if (!matchingDriver) {
-            eventsWithoutTransport.push(event);
-            return;
-        }
-
-        const matchingDayEvents = matchingDriver.events[eventDay] ?? [];
-        matchingDayEvents.push(event);
-        matchingDriver.events[eventDay] = matchingDayEvents;
-        matchingDriver.totalCost += event.cost;
-        matchingDriver.eventCost += event.cost;
-    });
-
-    if (unassignedVehicles.value.registrations.length > 0 || eventsWithoutTransport.length > 0) {
-        const vehicleRegistrations = [...unassignedVehicles.value.registrations];
-
-        eventsWithoutTransport.forEach((event) => {
-            const vehicleRegistration = event.tractorRegistration ?? event.semiTrailerRegistration;
-
-            if (vehicleRegistration && !vehicleRegistrations.includes(vehicleRegistration)) {
-                vehicleRegistrations.push(vehicleRegistration);
-            }
-        });
-
+    if (unassignedVehicles.value.registrations.length > 0) {
         const unassignedDriver: PlanningDriver = {
             id: UNASSIGNED_VEHICLES_ROW_ID,
             name: "Véhicules non utilisés",
-            vehicleRegistrations,
+            vehicleRegistrations: [...unassignedVehicles.value.registrations],
             totalCost: unassignedVehicles.value.depreciationCost,
             totalRevenue: 0,
             driverCost: 0,
             structureCost: 0,
             vehicleCost: unassignedVehicles.value.depreciationCost,
             vehicleDepreciationCosts: unassignedVehicles.value.vehicles,
-            eventCost: 0,
             days: {},
-            events: {},
         };
 
-        eventsWithoutTransport.forEach((event) => {
-            const eventDay = formatParisDateKey(event.eventDate);
-            const unassignedDayEvents = unassignedDriver.events[eventDay] ?? [];
-            unassignedDayEvents.push(event);
-            unassignedDriver.events[eventDay] = unassignedDayEvents;
-            unassignedDriver.totalCost += event.cost;
-            unassignedDriver.vehicleCost += event.cost;
-        });
-
-        sortedDrivers.push({
-            ...unassignedDriver,
-        });
+        sortedDrivers.push(unassignedDriver);
     }
 
     return sortedDrivers;
@@ -371,18 +288,10 @@ const selectedCostDetailDriver = computed<PlanningDriver | null>(() => {
 async function loadCurrentPeriod(): Promise<void> {
     const endDateExclusive = addDays(selectedEndDate.value, 1);
 
-    const [, events] = await Promise.all([
-        loadPlanning({
-            startDate: formatDateKey(selectedStartDate.value),
-            endDate: formatDateKey(endDateExclusive),
-        }),
-        getVehicleEventsByDateRange(
-            formatDateKey(selectedStartDate.value),
-            formatDateKey(selectedEndDate.value),
-        ),
-    ]);
-
-    vehicleEvents.value = events;
+    await loadPlanning({
+        startDate: formatDateKey(selectedStartDate.value),
+        endDate: formatDateKey(endDateExclusive),
+    });
 }
 
 function syncUrlRange(start: Date, end: Date): void {

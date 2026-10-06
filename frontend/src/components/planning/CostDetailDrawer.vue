@@ -37,7 +37,6 @@ const result = computed(() => props.driver ? props.driver.totalRevenue - props.d
                 <DetailRow label="Total coût chauffeur" :value="formatCurrency(driver.driverCost)" />
                 <DetailRow label="Total coût structure" :value="formatCurrency(driver.structureCost)" />
                 <DetailRow label="Total coût véhicule" :value="formatCurrency(driver.vehicleCost)" />
-                <DetailRow label="Total coûts événements" :value="formatCurrency(driver.eventCost)" />
             </DetailSection>
 
             <DetailSection v-else title="Véhicules non utilisés" :icon="Truck">

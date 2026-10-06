@@ -7,8 +7,7 @@
             @select="emit('cost-detail-select', driver.id)" />
 
         <DayCell v-for="day in days" :key="day.key" :transports="driver.days[day.key] ?? []"
-            :events="driver.events[day.key] ?? []" @transport-select="emit('transport-select', $event)"
-            @event-select="emit('event-select', $event)" />
+            @transport-select="emit('transport-select', $event)" />
     </div>
 </template>
 
@@ -25,7 +24,6 @@ import type { PlanningDay, PlanningDriver } from "@/models/planning/planning";
 
 const emit = defineEmits<{
     "transport-select": [transportId: number];
-    "event-select": [eventId: number];
     "cost-detail-select": [driverId: number];
 }>();
 
