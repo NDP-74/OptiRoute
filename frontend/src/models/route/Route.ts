@@ -21,6 +21,7 @@ export interface RouteResponse {
 }
 
 export interface RouteDto {
+    type?: 'FASTEST' | 'CHEAPEST'
     duration: number
     baseDuration: number
     distanceMeters: number

@@ -1,10 +1,13 @@
 package com.optiroute.backend.dto.response.route;
 
+import com.optiroute.backend.type.GpsModeType;
+
 public class RouteDto {
 
     private long duration;
     private long baseDuration;
     private long distanceMeters;
+    private GpsModeType type;
 
     private double originLat;
     private double originLng;
@@ -85,5 +88,13 @@ public class RouteDto {
 
     public void setBaseDuration(long baseDuration) {
         this.baseDuration = baseDuration;
+    }
+
+    public GpsModeType getType() {
+        return type;
+    }
+
+    public void setType(GpsModeType type) {
+        this.type = type;
     }
 }

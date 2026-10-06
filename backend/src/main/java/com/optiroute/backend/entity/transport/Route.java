@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 import com.optiroute.backend.entity.EntityUtils;
+import com.optiroute.backend.type.GpsModeType;
 
 @Entity
 @Getter
@@ -41,6 +42,10 @@ public class Route extends EntityUtils {
     private double destinationLng;
 
     private boolean emptyTrip;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private GpsModeType routeType;
 
     @Column(nullable = false)
     private Long distanceMeters;

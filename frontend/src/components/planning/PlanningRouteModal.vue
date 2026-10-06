@@ -149,6 +149,14 @@ function handleRouteCalculated(data: { response: RouteResponse; request: RouteRe
     }
 }
 
+function selectRoute(index: number) {
+    const routes = routeResponse.value?.routes
+    if (!routes?.[index]) return
+
+    selectedRouteIndex.value = index
+    mapRef.value?.displayRoutes(routes, routes[index])
+}
+
 function routeRequestFromTransport(transport: TransportDetail): RouteRequest {
     return {
         origin: {
@@ -408,8 +416,8 @@ onMounted(async () => {
                     </section>
 
                     <!-- COLUMN 2 : SEARCH -->
-                    <section class="min-h-0 pr-1">
-                        <div class="rounded-2xl border border-slate-200 p-4 h-full flex flex-col">
+                    <section class="flex min-h-0 flex-col pr-1">
+                        <div class="min-h-0 flex-1 rounded-2xl border border-slate-200 p-4 flex flex-col">
                             <h3 class="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-700">
                                 <RouteIcon :size="16" class="text-slate-400" />
                                 Recherche d'itinéraire
@@ -421,36 +429,31 @@ onMounted(async () => {
                             </div>
                         </div>
 
-                        <!-- <div v-if="routeResponse?.routes?.length" class="rounded-2xl border border-slate-200 p-4">
-                            <h3 class="mb-3 flex items-center justify-between text-sm font-semibold text-slate-700">
-                                <span>Itinéraires trouvés</span>
+                        <div v-if="routeResponse?.routes?.length" class="mt-4 space-y-2">
+                            <button v-for="(route, index) in routeResponse.routes" :key="index" type="button"
+                                class="w-full rounded-xl border p-3 text-left transition"
+                                :class="index === selectedRouteIndex ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:bg-slate-50'"
+                                @click="selectRoute(index)">
                                 <span
-                                    class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">{{
-                                        routeResponse.routes.length }}</span>
-                            </h3>
-                            <div class="space-y-2">
-                                <button v-for="(route, index) in routeResponse.routes" :key="index" type="button"
-                                    class="w-full rounded-xl border p-3 text-left transition"
-                                    :class="index === selectedRouteIndex ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:bg-slate-50'"
-                                    @click="selectRoute(Number(index))">
-                                    <div class="flex items-center justify-between gap-3">
-                                        <span class="font-semibold">Option {{ Number(index) + 1 }}</span>
-                                        <span class="text-sm font-semibold">{{ formatCurrency(route.costs.totalCost)
-                                        }}</span>
-                                    </div>
-                                    <div class="mt-1 text-xs text-slate-500">{{ formatDistance(route.distanceMeters) }}
-                                        ·
-                                        {{
-                                            formatDurationSeconds(route.duration) }}</div>
-                                </button>
-                            </div>
-                        </div>-->
+                                    class="rounded-md bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">
+                                    {{ route.type === 'CHEAPEST' ? 'Route la plus économique' : 'Route la plus rapide'
+                                    }}
+                                </span>
+                                <div class="mt-2 flex items-center justify-between gap-3">
+                                    <span class="font-semibold">{{ formatCurrency(route.costs.totalCost) }}</span>
+                                    <span class="text-sm font-semibold">{{ formatDurationSeconds(route.duration)
+                                    }}</span>
+                                </div>
+                                <div class="mt-1 text-xs text-slate-500">{{ formatDistance(route.distanceMeters) }}
+                                </div>
+                            </button>
+                        </div>
                     </section>
                     <!-- MAP & SUMMARY -->
                     <section class="flex min-h-0 min-w-0 flex-col gap-4">
                         <div
                             class="min-h-0 flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-inner">
-                            <HereMap ref="mapRef" />
+                            <HereMap ref="mapRef" @route-selected="selectRoute" />
                         </div>
 
                         <div class="shrink-0 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 text-sm">

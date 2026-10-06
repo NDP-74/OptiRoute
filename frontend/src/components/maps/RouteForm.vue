@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, reactive, watch } from 'vue'
-import { ArrowUpDown, Clock, Plus, SlidersHorizontal, X } from 'lucide-vue-next'
+import { ArrowUpDown, Clock, Plus, X } from 'lucide-vue-next'
 import HereAutocompleteInput from './HereAutocompleteInput.vue'
 
 import { calculateRoute } from '@/api/here/mapsApi'
@@ -226,27 +226,6 @@ function toOffsetDateTime(value: string) {
                 aria-label="Inverser avec le champ précédent" title="Inverser avec le champ précédent">
                 <ArrowUpDown :size="16" :stroke-width="2" aria-hidden="true" />
             </button>
-        </div>
-
-        <!-- MODE -->
-        <div class="space-y-1.5">
-
-            <label class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                <SlidersHorizontal :size="14" />
-                Mode
-            </label>
-
-            <select v-model="form.mode"
-                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
-                <option value="FASTEST">
-                    Plus rapide
-                </option>
-
-                <option value="CHEAPEST">
-                    Plus économique
-                </option>
-
-            </select>
         </div>
 
         <!-- DEPARTURE TIME -->

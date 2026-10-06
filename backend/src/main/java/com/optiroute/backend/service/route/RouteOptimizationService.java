@@ -11,6 +11,7 @@ import com.optiroute.backend.service.cost.FuelPriceService;
 import com.optiroute.backend.service.driver.DriverService;
 import com.optiroute.backend.service.vehicle.SemiTrailerService;
 import com.optiroute.backend.service.vehicle.TractorService;
+import com.optiroute.backend.type.GpsModeType;
 import com.optiroute.backend.type.driver.DriverCostType;
 
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -50,12 +52,8 @@ public class RouteOptimizationService {
 
         double driverHourlyRate = resolveDriverHourlyRate(request.getDriverId());
 
-        // Routing API (HERE temporairement, PTV sinon) + Parsing
-        String raw = routingService.calculateRoutes(request,truckConfiguration,driverHourlyRate);
-        List<RoutePtvParser.ParsedRoute> parsedRoutes = routingService.isHere()
-            ? routeHereParser.parseRoutes(raw).stream()
-                .map(here -> new RoutePtvParser.ParsedRoute(here.duration, here.baseDuration, here.distanceMeters, here.polyline, here.tollCost, here.rawJson)).toList()
-            : routePtvParser.parseRoutes(raw);
+        // Deux routes : la plus rapide et la plus économique
+        Map<GpsModeType, RoutePtvParser.ParsedRoute> parsedRoutes = routingService.calculateRoutes(request,truckConfiguration,driverHourlyRate);
 
         // Cost calculation
         double fuelPrice = fuelPriceService.getAverageDieselPrice();
@@ -63,11 +61,13 @@ public class RouteOptimizationService {
 
         // Enriched DTOs
         List<RouteDto> routes = new ArrayList<>();
-        for (RoutePtvParser.ParsedRoute parsed : parsedRoutes) {
+        for (Map.Entry<GpsModeType, RoutePtvParser.ParsedRoute> entry : parsedRoutes.entrySet()) {
+            RoutePtvParser.ParsedRoute parsed = entry.getValue();
             double km = parsed.distanceMeters / 1000.0;
             RouteCostDetailsDto costs = routeCostService.calculateCosts(km,consumption,fuelPrice,parsed.tollCost);
 
             RouteDto dto = new RouteDto();
+            dto.setType(entry.getKey());
             dto.setDistanceMeters(parsed.distanceMeters);
             dto.setDuration(parsed.duration);
             dto.setBaseDuration(parsed.baseDuration);

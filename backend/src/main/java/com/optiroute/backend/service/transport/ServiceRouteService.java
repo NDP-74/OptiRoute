@@ -97,6 +97,9 @@ public class ServiceRouteService {
         route.setDistanceMeters(routeDto.getDistanceMeters());
         route.setDurationSeconds(routeDto.getDuration());
         route.setPolyline(routeDto.getPolyline());
+        if (routeDto.getType() != null) {
+            route.setRouteType(routeDto.getType());
+        }
         route.setFuelCost(BigDecimal.valueOf(routeDto.getCosts().getFuelCost()));
         route.setTollCost(BigDecimal.valueOf(routeDto.getCosts().getTollCost()));
     }

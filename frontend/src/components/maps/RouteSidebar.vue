@@ -32,13 +32,9 @@ const showAssignModal = ref(false)
 
 const routeRequest = ref<RouteRequest>()
 
-function getRouteSpecificities(): string {
-    if (routeRequest.value?.mode === "CHEAPEST") {
-        return "Route la plus économique"
-    }
-    return "Route la plus rapide"
+function getRouteSpecificities(type?: string): string {
+    return type === "CHEAPEST" ? "Route la plus économique" : "Route la plus rapide"
 }
-
 const onRouteCalculated = (data: { response: RouteResponse, request: RouteRequest }) => {
     routeRequest.value = data.request
 
@@ -79,7 +75,7 @@ function selectRoute(index: number) {
                                         <div class="mb-2 flex flex-wrap gap-1.5">
                                             <span
                                                 class="rounded-md bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">
-                                                {{ getRouteSpecificities() }}
+                                                {{ getRouteSpecificities(route.type) }}
                                             </span>
                                         </div>
 
