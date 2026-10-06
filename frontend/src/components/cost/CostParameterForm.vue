@@ -4,7 +4,7 @@ import { onMounted, ref } from "vue"
 
 import type { CostConditionRequest, CreateCostParameterRequest } from "@/models/cost/CostParameter"
 import { getSemiTrailerTypes } from "@/api/vehicle/semiTrailerApi"
-import { categoryOptions, conditionValueUnits, getFieldOptions, getOperatorOptions, sourceOptions, unitOptions } from "@/utils/costParameterUtils"
+import { assignmentTypeLabels, categoryOptions, conditionValueUnits, getFieldOptions, getOperatorOptions, sourceOptions, unitOptions } from "@/utils/costParameterUtils"
 
 const form = defineModel<CreateCostParameterRequest>({
     required: true,
@@ -160,6 +160,19 @@ const normalizeExistingConditions = () => {
                         </option>
                     </select>
                 </div>
+            </div>
+
+            <div>
+                <label class="mb-1 block text-sm font-medium text-slate-700">
+                    Type d'assignation
+                </label>
+
+                <select v-model="form.assignmentType" required :disabled="disabled"
+                    class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:bg-slate-100">
+                    <option v-for="(label, value) in assignmentTypeLabels" :key="value" :value="value">
+                        {{ label }}
+                    </option>
+                </select>
             </div>
 
             <label class="flex cursor-pointer items-center gap-3">

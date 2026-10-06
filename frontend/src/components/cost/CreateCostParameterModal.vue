@@ -57,6 +57,7 @@ const submitCostParameter = async () => {
             value: form.value,
             unit: form.unit,
             active: form.active,
+            assignmentType: form.assignmentType,
             rule: form.rule,
         }
 

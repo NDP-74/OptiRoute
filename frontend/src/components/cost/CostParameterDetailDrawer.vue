@@ -16,6 +16,7 @@ import { formatNumber } from "@/utils/formatters"
 import { getSemiTrailerTypes } from "@/api/vehicle/semiTrailerApi"
 import { getCostParameter } from "@/api/cost/costParameterApi"
 import {
+    assignmentTypeLabels,
     categoryLabels,
     conditionFieldLabels,
     conditionOperatorLabels,
@@ -162,6 +163,8 @@ const formatCondition = (condition: CostCondition) => {
                 <DetailRow label="Catégorie" :value="categoryLabels[costParameter.category]" />
 
                 <DetailRow label="Libellé" :value="costParameter.label" />
+
+                <DetailRow label="Type d'assignation" :value="assignmentTypeLabels[costParameter.assignmentType]" />
 
                 <DetailRow label="Statut" :value="costParameter.active ? 'Actif' : 'Désactivé'" />
             </DetailSection>

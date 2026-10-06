@@ -3,6 +3,10 @@ export type CostParameterCategory =
     | "DRIVER"
     | "STRUCTURE"
 
+export type CostParameterAssignmentType =
+    | "AUTOMATIC"
+    | "MANUAL"
+
 export type CostParameterUnit =
     | "EUR_PER_KM"
     | "EUR_PER_TRIP"

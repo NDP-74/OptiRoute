@@ -1,5 +1,5 @@
 import type { CostParameterFormData } from "@/models/cost/CostParameter"
-import type { CostConditionField, CostConditionOperator, CostConditionSource, CostParameterCategory, CostParameterUnit } from "@/types/CostParameterType"
+import type { CostConditionField, CostConditionOperator, CostConditionSource, CostParameterAssignmentType, CostParameterCategory, CostParameterUnit } from "@/types/CostParameterType"
 
 export const createEmptyCostParameterForm = (): CostParameterFormData => ({
     category: "VEHICLE",
@@ -7,8 +7,14 @@ export const createEmptyCostParameterForm = (): CostParameterFormData => ({
     value: 0,
     unit: "EUR_PER_TRIP",
     active: true,
+    assignmentType: "AUTOMATIC",
     rule: null,
 })
+
+export const assignmentTypeLabels: Record<CostParameterAssignmentType, string> = {
+    AUTOMATIC: "Automatique",
+    MANUAL: "Manuelle",
+}
 
 export type CostOption<T extends string> = {
     value: T

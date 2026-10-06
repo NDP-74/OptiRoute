@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 
-import { Trash2, Edit3 } from "lucide-vue-next";
+import { Trash2, Edit3, CalendarPlus } from "lucide-vue-next";
+import AssignEventModal from "@/components/transports/AssignEventModal.vue";
 import { getTransportById } from "@/api/planningApi";
 
 import type { TransportDetail } from "@/models/transport/TransportDetail";
@@ -18,6 +19,7 @@ import { formatVehicleLabel } from "@/utils/vehicleUtils"
 import { formatDurationSeconds, formatCurrency, formatDateTime, formatDistance } from "@/utils/formatters"
 
 const showDeleteModal = ref(false)
+const showEventModal = ref(false)
 
 const askDeleteTransport = () => {
     if (!transport.value) {
@@ -494,6 +496,13 @@ watch(
                 </button>
 
                 <button type="button"
+                    class="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                    @click="showEventModal = true">
+                    <CalendarPlus class="h-4 w-4" />
+                    Assigner un événement
+                </button>
+
+                <button type="button"
                     class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
                     @click="handleEdit">
                     <Edit3 class="h-4 w-4" />
@@ -503,6 +512,8 @@ watch(
             </div>
         </template>
     </AppDetailDrawer>
+
+    <AssignEventModal :show="showEventModal" :transport="transport" @close="showEventModal = false" />
 
     <DeleteTransportModal :show="showDeleteModal" :transport="transport" @close="closeDeleteModal"
         @deleted="handleTransportDeleted" />

@@ -43,6 +43,9 @@ public class CostParameterService {
         parameter.setValue(request.value());
         parameter.setUnit(request.unit());
         parameter.setActive(request.active());
+        if (request.assignmentType() != null) {
+            parameter.setAssignmentType(request.assignmentType());
+        }
 
         parameter = costParameterRepository.save(parameter);
 
@@ -62,6 +65,9 @@ public class CostParameterService {
         parameter.setValue(request.value());
         parameter.setUnit(request.unit());
         parameter.setActive(request.active());
+        if (request.assignmentType() != null) {
+            parameter.setAssignmentType(request.assignmentType());
+        }
 
         costParameterRepository.save(parameter);
 
@@ -92,7 +98,7 @@ public class CostParameterService {
     public List<CostParameterLightResponse> getAll() {
 
         return costParameterRepository.findAll().stream().map(parameter -> new CostParameterLightResponse(parameter.getId(), parameter.getLabel(), parameter.getValue(),
-            parameter.getUnit(), parameter.getCategory(), parameter.isActive())).toList();
+            parameter.getUnit(), parameter.getCategory(), parameter.isActive(), parameter.getAssignmentType())).toList();
     }
 
     public void delete(Long id) {
@@ -167,7 +173,7 @@ public class CostParameterService {
             ruleResponse = new CostRuleResponse(rule.getId(), rule.getLogicalOperator(), conditions);
         }
 
-        return new CostParameterResponse(parameter.getId(), parameter.getCategory(), parameter.getLabel(), parameter.getValue(), parameter.getUnit(), parameter.isActive(),
+        return new CostParameterResponse(parameter.getId(), parameter.getCategory(), parameter.getLabel(), parameter.getValue(), parameter.getUnit(), parameter.isActive(), parameter.getAssignmentType(),
             ruleResponse);
     }
 }

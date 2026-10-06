@@ -6,6 +6,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 
+import com.optiroute.backend.type.cost.CostParameterAssignmentType;
 import com.optiroute.backend.type.cost.CostParameterCategoryType;
 import com.optiroute.backend.type.cost.CostParameterUnitType;
 
@@ -35,4 +36,8 @@ public class CostParameter {
 
     @Column(name = "active", nullable = false)
     private boolean active = true;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "assignment_type", nullable = false, length = 20)
+    private CostParameterAssignmentType assignmentType = CostParameterAssignmentType.AUTOMATIC;
 }
