@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 
-import { Trash2, Edit3, CalendarPlus } from "lucide-vue-next";
+import { Trash2, Edit3, CalendarPlus, MapPin } from "lucide-vue-next";
 import AssignEventModal from "@/components/transports/AssignEventModal.vue";
 import { getTransportById } from "@/api/planningApi";
+import { getEventsByService } from "@/api/eventApi";
+import type { EventResponse } from "@/models/Event";
 
 import type { TransportDetail } from "@/models/transport/TransportDetail";
 
@@ -40,6 +42,11 @@ const handleTransportDeleted = () => {
     emit('close')
 }
 
+const handleEventCreated = async () => {
+    await loadTransport();
+    emit('updated');
+}
+
 const handleEdit = () => {
     if (!transport.value) {
         return
@@ -56,10 +63,12 @@ const props = defineProps<{
 const emit = defineEmits<{
     close: [];
     deleted: [];
+    updated: [];
     edit: [TransportDetail]
 }>();
 
 const transport = ref<TransportDetail | null>(null);
+const events = ref<EventResponse[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
 
@@ -125,9 +134,19 @@ const tripClasses = computed<string>(() => {
         : "border-emerald-200 bg-emerald-100 text-emerald-700";
 });
 
+async function loadEvents(id: number): Promise<void> {
+    try {
+        events.value = await getEventsByService(id);
+    } catch (exception) {
+        console.error(exception);
+        events.value = [];
+    }
+}
+
 async function loadTransport(): Promise<void> {
     if (props.transportId === null) {
         transport.value = null;
+        events.value = [];
         return;
     }
 
@@ -136,6 +155,7 @@ async function loadTransport(): Promise<void> {
 
     try {
         transport.value = await getTransportById(props.transportId);
+        await loadEvents(props.transportId);
     } catch (exception) {
         console.error(exception);
 
@@ -253,6 +273,50 @@ watch(
 
 
                 </div>
+            </section>
+
+            <!-- Événements -->
+            <section class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-semibold text-slate-900">
+                        Événements
+                    </h3>
+
+                    <span v-if="events.length > 0"
+                        class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
+                        {{ events.length }}
+                    </span>
+                </div>
+
+                <p v-if="events.length === 0" class="mt-3 text-sm text-slate-500">
+                    Aucun événement assigné à ce transport.
+                </p>
+
+                <ul v-else class="mt-4 space-y-2">
+                    <li v-for="event in events" :key="event.id"
+                        class="flex items-start justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2.5">
+                        <div class="min-w-0">
+                            <p class="truncate text-sm font-medium text-slate-900">
+                                {{ event.costParameterLabel }}
+                            </p>
+
+                            <p class="mt-0.5 flex items-center gap-1 truncate text-xs text-slate-500">
+                                <MapPin v-if="event.pointOfInterestLabel" class="h-3.5 w-3.5 shrink-0" />
+                                {{ event.pointOfInterestLabel ?? "Sans lieu" }}
+                            </p>
+                        </div>
+
+                        <div class="shrink-0 text-right">
+                            <span class="inline-flex rounded-full border border-slate-200 bg-white px-2 py-0.5 text-xs font-medium text-slate-600">
+                                {{ event.tractorId !== null ? "Tracteur" : "Semi-remorque" }}
+                            </span>
+
+                            <p class="mt-1 text-xs text-slate-400">
+                                {{ formatDateTime(event.eventDate) }}
+                            </p>
+                        </div>
+                    </li>
+                </ul>
             </section>
 
             <!-- Itinéraire -->
@@ -513,7 +577,7 @@ watch(
         </template>
     </AppDetailDrawer>
 
-    <AssignEventModal :show="showEventModal" :transport="transport" @close="showEventModal = false" />
+    <AssignEventModal :show="showEventModal" :transport="transport" @close="showEventModal = false" @created="handleEventCreated" />
 
     <DeleteTransportModal :show="showDeleteModal" :transport="transport" @close="closeDeleteModal"
         @deleted="handleTransportDeleted" />

@@ -10,7 +10,7 @@
             @close="selectedCostDetailDriverId = null" />
 
         <TransportDetailDrawer :open="selectedTransportId !== null" :transport-id="selectedTransportId"
-            @close="closeTransport" @deleted="handleTransportDeleted" @edit="openEditModal" />
+            @close="closeTransport" @deleted="handleTransportDeleted" @updated="loadCurrentPeriod" @edit="openEditModal" />
 
         <PlanningRouteModal :show="showRouteModal" :editing-transport="editingTransport" @close="closeRouteModal"
             @saved="handleRouteSaved" />
