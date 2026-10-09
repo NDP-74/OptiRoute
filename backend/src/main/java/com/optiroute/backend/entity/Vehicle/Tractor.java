@@ -67,4 +67,7 @@ public class Tractor extends EntityUtils {
     private LocalDate depreciationStartDate;
 
     private LocalDate depreciationEndDate;
+
+    @Column(name = "maintenance_cost_per_km", precision = 8, scale = 4)
+    private BigDecimal maintenanceCostPerKm;
 }

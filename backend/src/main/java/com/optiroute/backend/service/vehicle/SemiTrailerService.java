@@ -113,6 +113,7 @@ public class SemiTrailerService {
         semiTrailer.setPurchaseCost(request.purchaseCost());
         semiTrailer.setDepreciationStartDate(request.depreciationStartDate());
         semiTrailer.setDepreciationEndDate(request.depreciationEndDate());
+        semiTrailer.setMaintenanceCostPerKm(request.maintenanceCostPerKm());
 
         SemiTrailer savedSemiTrailer = semiTrailerRepository.save(semiTrailer);
         return VehicleUtils.toSemiTrailerResponse(savedSemiTrailer);
@@ -144,6 +145,7 @@ public class SemiTrailerService {
         semiTrailer.setPurchaseCost(request.purchaseCost());
         semiTrailer.setDepreciationStartDate(request.depreciationStartDate());
         semiTrailer.setDepreciationEndDate(request.depreciationEndDate());
+        semiTrailer.setMaintenanceCostPerKm(request.maintenanceCostPerKm());
 
         SemiTrailer updatedSemiTrailer = semiTrailerRepository.save(semiTrailer);
         return VehicleUtils.toSemiTrailerResponse(updatedSemiTrailer);

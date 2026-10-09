@@ -83,6 +83,7 @@ const submitSemiTrailer = async () => {
             purchaseCost: form.purchaseCost,
             depreciationStartDate: form.depreciationStartDate || null,
             depreciationEndDate: form.depreciationEndDate || null,
+            maintenanceCostPerKm: form.maintenanceCostPerKm,
         }
 
         await createSemiTrailer(payload)

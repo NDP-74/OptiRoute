@@ -88,6 +88,7 @@ const populateForm = () => {
         purchaseCost: props.semiTrailer.purchaseCost ?? null,
         depreciationStartDate: props.semiTrailer.depreciationStartDate ?? null,
         depreciationEndDate: props.semiTrailer.depreciationEndDate ?? null,
+        maintenanceCostPerKm: props.semiTrailer.maintenanceCostPerKm ?? null,
     } satisfies SemiTrailerFormData)
 }
 
@@ -119,6 +120,7 @@ const submitSemiTrailer = async () => {
             purchaseCost: form.purchaseCost,
             depreciationStartDate: form.depreciationStartDate || null,
             depreciationEndDate: form.depreciationEndDate || null,
+            maintenanceCostPerKm: form.maintenanceCostPerKm,
         }
 
         await updateSemiTrailer(

@@ -257,6 +257,8 @@ watch(
                 <DetailRow label="Début d’amortissement" :value="formatDate(tractor.depreciationStartDate)" />
 
                 <DetailRow label="Fin d’amortissement" :value="formatDate(tractor.depreciationEndDate)" />
+
+                <DetailRow label="Entretien" :value="formatCurrency(tractor.maintenanceCostPerKm) + ' / km'" />
             </DetailSection>
 
             <!-- Synchronisation -->

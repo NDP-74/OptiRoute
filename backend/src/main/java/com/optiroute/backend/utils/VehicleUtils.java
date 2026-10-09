@@ -14,7 +14,7 @@ public class VehicleUtils {
         return new SemiTrailerResponse(semiTrailer.getId(), semiTrailer.getExternalId(), semiTrailer.getExternalSource(), semiTrailer.getRegistration(), semiTrailer.getBrand(),
             semiTrailer.getModel(), trailerTypeLabel, semiTrailer.getMaxSpeed(), semiTrailer.getEmptyWeightKg(), semiTrailer.getGrossVehicleWeightKg(), semiTrailer.getHeightCm(),
             semiTrailer.getWidthCm(), semiTrailer.getLengthCm(), semiTrailer.getAxleCount(), semiTrailer.getPurchaseCost(), semiTrailer.getDepreciationStartDate(),
-            semiTrailer.getDepreciationEndDate(), semiTrailer.getCreatedAt(), semiTrailer.getUpdatedAt());
+            semiTrailer.getDepreciationEndDate(), semiTrailer.getMaintenanceCostPerKm(), semiTrailer.getCreatedAt(), semiTrailer.getUpdatedAt());
     }
 
     public static SemiTrailerLightResponse toSemiTrailerLightResponse(SemiTrailer semiTrailer) {
@@ -25,7 +25,7 @@ public class VehicleUtils {
         return new TractorResponse(tractor.getId(), tractor.getExternalId(), tractor.getExternalSource(), tractor.getRegistration(), tractor.getBrand(), tractor.getModel(),
             tractor.getMaxSpeed(), tractor.getFuelType(), tractor.getAverageConsumption(), tractor.getAverageConsumptionEmpty(), tractor.getEmptyWeightKg(),
             tractor.getGrossCombinationWeightKg(), tractor.getHeightCm(), tractor.getWidthCm(), tractor.getLengthCm(), tractor.getAxleCount(), tractor.getPurchaseCost(),
-            tractor.getDepreciationStartDate(), tractor.getDepreciationEndDate(), tractor.getCreatedAt(), tractor.getUpdatedAt());
+            tractor.getDepreciationStartDate(), tractor.getDepreciationEndDate(), tractor.getMaintenanceCostPerKm(), tractor.getCreatedAt(), tractor.getUpdatedAt());
     }
 
     public static TractorLightResponse toTractorLightResponse(Tractor tractor) {

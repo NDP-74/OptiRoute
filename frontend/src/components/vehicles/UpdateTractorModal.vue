@@ -70,6 +70,7 @@ const populateForm = () => {
         purchaseCost: props.tractor.purchaseCost,
         depreciationStartDate: props.tractor.depreciationStartDate,
         depreciationEndDate: props.tractor.depreciationEndDate,
+        maintenanceCostPerKm: props.tractor.maintenanceCostPerKm,
     } satisfies TractorFormData)
 }
 
@@ -104,6 +105,7 @@ const submitTractor = async () => {
             purchaseCost: form.purchaseCost,
             depreciationStartDate: form.depreciationStartDate || null,
             depreciationEndDate: form.depreciationEndDate || null,
+            maintenanceCostPerKm: form.maintenanceCostPerKm,
         }
 
         await updateTractor(props.tractor.id, payload)

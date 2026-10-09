@@ -26,6 +26,8 @@ export interface SemiTrailerDetails extends SemiTrailerSummary {
     depreciationStartDate: string | null
     depreciationEndDate: string | null
 
+    maintenanceCostPerKm: number | null
+
     externalId: string | null
     externalSource: string
 
@@ -59,6 +61,8 @@ export interface CreateSemiTrailerRequest {
 
     depreciationStartDate: string | null
     depreciationEndDate: string | null
+
+    maintenanceCostPerKm: number | null
 }
 
 export interface UpdateSemiTrailerRequest {
@@ -84,6 +88,8 @@ export interface UpdateSemiTrailerRequest {
 
     depreciationStartDate: string | null
     depreciationEndDate: string | null
+
+    maintenanceCostPerKm: number | null
 }
 
 export interface SemiTrailerFormData {
@@ -107,4 +113,5 @@ export interface SemiTrailerFormData {
     purchaseCost: number | null
     depreciationStartDate: string | null
     depreciationEndDate: string | null
+    maintenanceCostPerKm: number | null
 }

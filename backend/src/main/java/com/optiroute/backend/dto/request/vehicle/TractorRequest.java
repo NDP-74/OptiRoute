@@ -22,5 +22,7 @@ public record TractorRequest(String externalId, String externalSource,
 
         BigDecimal purchaseCost, LocalDate depreciationStartDate, LocalDate depreciationEndDate,
 
+        BigDecimal maintenanceCostPerKm,
+
         OffsetDateTime createdAt, OffsetDateTime updatedAt) {
 }

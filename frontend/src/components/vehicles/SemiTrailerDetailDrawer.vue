@@ -252,6 +252,8 @@ watch(
                 <DetailRow label="Début d’amortissement" :value="formatDate(semiTrailer.depreciationStartDate)" />
 
                 <DetailRow label="Fin d’amortissement" :value="formatDate(semiTrailer.depreciationEndDate)" />
+
+                <DetailRow label="Entretien" :value="formatCurrency(semiTrailer.maintenanceCostPerKm) + ' / km'" />
             </DetailSection>
 
             <!-- Synchronisation -->

@@ -75,6 +75,7 @@ public class TractorService {
         tractor.setPurchaseCost(request.purchaseCost());
         tractor.setDepreciationStartDate(request.depreciationStartDate());
         tractor.setDepreciationEndDate(request.depreciationEndDate());
+        tractor.setMaintenanceCostPerKm(request.maintenanceCostPerKm());
 
         Tractor savedTractor = tractorRepository.save(tractor);
         return VehicleUtils.toTractorResponse(savedTractor);
@@ -109,6 +110,7 @@ public class TractorService {
         tractor.setPurchaseCost(request.purchaseCost());
         tractor.setDepreciationStartDate(request.depreciationStartDate());
         tractor.setDepreciationEndDate(request.depreciationEndDate());
+        tractor.setMaintenanceCostPerKm(request.maintenanceCostPerKm());
 
         Tractor updatedTractor = tractorRepository.save(tractor);
         return VehicleUtils.toTractorResponse(updatedTractor);

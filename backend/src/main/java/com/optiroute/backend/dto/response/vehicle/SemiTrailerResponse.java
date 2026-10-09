@@ -18,5 +18,7 @@ public record SemiTrailerResponse(Long id, String externalId, String externalSou
 
         BigDecimal purchaseCost, LocalDate depreciationStartDate, LocalDate depreciationEndDate,
 
+        BigDecimal maintenanceCostPerKm,
+
         OffsetDateTime createdAt, OffsetDateTime updatedAt) {
 }

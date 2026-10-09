@@ -30,6 +30,8 @@ export interface TractorDetails extends TractorSummary {
     depreciationStartDate: string | null
     depreciationEndDate: string | null
 
+    maintenanceCostPerKm: number | null
+
     externalId: string | null
     externalSource: string
 
@@ -65,6 +67,8 @@ export interface CreateTractorRequest {
 
     depreciationStartDate: string | null
     depreciationEndDate: string | null
+
+    maintenanceCostPerKm: number | null
 }
 
 export interface UpdateTractorRequest {
@@ -92,6 +96,8 @@ export interface UpdateTractorRequest {
 
     depreciationStartDate: string | null
     depreciationEndDate: string | null
+
+    maintenanceCostPerKm: number | null
 }
 
 export interface TractorFormData {
@@ -117,4 +123,5 @@ export interface TractorFormData {
     purchaseCost: number | null
     depreciationStartDate: string | null
     depreciationEndDate: string | null
+    maintenanceCostPerKm: number | null
 }
