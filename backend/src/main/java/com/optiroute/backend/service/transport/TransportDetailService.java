@@ -28,7 +28,7 @@ public class TransportDetailService {
     private final TractorRepository tractorRepository;
     private final SemiTrailerRepository semiTrailerRepository;
 
-    private final EmptyCostDetailsFactory emptyCostDetailsFactory;
+    private final TransportCostService transportCostService;
 
     public TransportDetailResponse getDetail(Long serviceId) {
 
@@ -71,6 +71,6 @@ public class TransportDetailService {
 
             route.getPolyline(),
 
-            emptyCostDetailsFactory.create(), service.getRevenue());
+            transportCostService.calculate(route), service.getRevenue());
     }
 }

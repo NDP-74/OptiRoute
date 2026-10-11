@@ -34,11 +34,12 @@ public class DriverCostService {
         List<AppliedCostResponse> costs = new ArrayList<>();
 
         // Salaire conducteur
-        double annualSalary = driver.getAnnualSalary().doubleValue();
+        double salaryCost = 0;
         int workingDays = workingDaysService.getWorkingDaysInYear(context.date().getYear());
-
-        double dailySalary = annualSalary / workingDays;
-        double salaryCost = dailySalary * (context.durationHours() / context.dailyDriverDurationHours());
+        if (driver.getAnnualSalary() != null && workingDays > 0 && context.dailyDriverDurationHours() > 0) {
+            double dailySalary = driver.getAnnualSalary().doubleValue() / workingDays;
+            salaryCost = dailySalary * (context.durationHours() / context.dailyDriverDurationHours());
+        }
 
         costs.add(new AppliedCostResponse(SALARY_LABEL, salaryCost));
 

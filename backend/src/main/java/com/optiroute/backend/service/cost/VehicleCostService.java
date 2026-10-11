@@ -16,7 +16,8 @@ import com.optiroute.backend.type.cost.CostParameterCategoryType;
 
 @Service
 public class VehicleCostService {
-	private static final String DEPRECIATION_LABEL = "Amortissement du véhicule";
+	private static final String DEPRECIATION_LABEL = "Amortissement";
+	private static final String MAINTENANCE_LABEL = "Entretien";
 	private static final String TOLL_LABEL = "Péages";
 	private static final String FUEL_LABEL = "Carburant";
 
@@ -47,6 +48,10 @@ public class VehicleCostService {
 		double depreciationCost = calculateDepreciation(tractor,semiTrailer,context.distanceKm(),context.dailyVehicleDistanceKm(),context.date());
 		costs.add(new AppliedCostResponse(DEPRECIATION_LABEL, depreciationCost));
 
+		// Entretien
+		double maintenanceCost = calculateMaintenance(tractor,semiTrailer,context.distanceKm());
+		costs.add(new AppliedCostResponse(MAINTENANCE_LABEL, maintenanceCost));
+
 		// CostParameters VEHICLE
 		costs.addAll(costParameterEngine.calculateCosts(CostParameterCategoryType.VEHICLE,context,dailyContexts));
 
@@ -55,18 +60,29 @@ public class VehicleCostService {
 		return new CostCategoryResponse(costs, totalCost);
 	}
 
+	private double calculateMaintenance(Tractor tractor, SemiTrailer semiTrailer, double distanceKm) {
+		double costPerKm = 0;
+		if (tractor != null && tractor.getMaintenanceCostPerKm() != null) {
+			costPerKm += tractor.getMaintenanceCostPerKm().doubleValue();
+		}
+		if (semiTrailer != null && semiTrailer.getMaintenanceCostPerKm() != null) {
+			costPerKm += semiTrailer.getMaintenanceCostPerKm().doubleValue();
+		}
+		return costPerKm * distanceKm;
+	}
+
 	private double calculateDepreciation(Tractor tractor, SemiTrailer semiTrailer, double distanceKm, double dailyVehicleDistanceKm, LocalDate date) {
 		if (dailyVehicleDistanceKm <= 0) {
 			return 0;
 		}
 
 		double depreciationCost = 0;
-		if (isInDepreciationPeriod(tractor.getDepreciationStartDate(),tractor.getDepreciationEndDate(),date)) {
+		if (tractor != null && isInDepreciationPeriod(tractor.getDepreciationStartDate(),tractor.getDepreciationEndDate(),date)) {
 			depreciationCost += calculateVehicleDepreciation(tractor.getPurchaseCost(),tractor.getDepreciationStartDate(),tractor.getDepreciationEndDate(),distanceKm,
 				dailyVehicleDistanceKm);
 		}
 
-		if (isInDepreciationPeriod(semiTrailer.getDepreciationStartDate(),semiTrailer.getDepreciationEndDate(),date)) {
+		if (semiTrailer != null && isInDepreciationPeriod(semiTrailer.getDepreciationStartDate(),semiTrailer.getDepreciationEndDate(),date)) {
 			depreciationCost += calculateVehicleDepreciation(semiTrailer.getPurchaseCost(),semiTrailer.getDepreciationStartDate(),semiTrailer.getDepreciationEndDate(),distanceKm,
 				dailyVehicleDistanceKm);
 		}

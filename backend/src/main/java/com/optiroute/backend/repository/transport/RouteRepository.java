@@ -13,5 +13,7 @@ public interface RouteRepository extends JpaRepository<Route, Long> {
 
     List<Route> findByStartDateGreaterThanEqualAndStartDateLessThan(OffsetDateTime start, OffsetDateTime end);
 
+    List<Route> findByDriverIdAndStartDateGreaterThanEqualAndStartDateLessThan(Long driverId, OffsetDateTime start, OffsetDateTime end);
+
     void deleteByServiceId(Long serviceId);
 }

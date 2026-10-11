@@ -35,7 +35,7 @@ public class TransportPlanningService {
 
     private final RouteRepository routeRepository;
     private final DriverRepository driverRepository;
-    private final EmptyCostDetailsFactory emptyCostDetailsFactory;
+    private final TransportCostService transportCostService;
     private final DriverCostService driverCostService;
     private final TractorRepository tractorRepository;
     private final SemiTrailerRepository semiTrailerRepository;
@@ -57,7 +57,7 @@ public class TransportPlanningService {
 
         List<TransportPlanningResponse> transports = routes.stream().map(route -> {
             var service = route.getService();
-            TransportCostDetailsResponse costs = emptyCostDetailsFactory.create();
+            TransportCostDetailsResponse costs = transportCostService.calculate(route);
 
             Driver driver = route.getDriverId() == null ? null : driverRepository.findById(route.getDriverId()).orElse(null);
             String tractorRegistration = route.getTractorId() == null ? null : tractorRepository.findById(route.getTractorId()).map(Tractor::getRegistration).orElse(null);
