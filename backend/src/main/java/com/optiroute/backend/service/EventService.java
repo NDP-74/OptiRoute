@@ -2,7 +2,6 @@ package com.optiroute.backend.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -112,7 +111,8 @@ public class EventService {
         SemiTrailer semiTrailer = event.getSemiTrailer();
 
         return new EventResponse(event.getId(), event.getRoute().getId(), event.getCostParameter().getId(), event.getCostParameter().getLabel(), poi == null ? null : poi.getId(),
-                poi == null ? null : poi.getLabel(), tractor == null ? null : tractor.getId(), semiTrailer == null ? null : semiTrailer.getId(), event.getEventDate());
+                poi == null ? null : poi.getLabel(), tractor == null ? null : tractor.getId(), semiTrailer == null ? null : semiTrailer.getId(),
+                poi == null ? null : poi.getLatitude(), poi == null ? null : poi.getLongitude(), event.getEventDate());
     }
 
     // Recalcule l'itinéraire avec les points d'intérêt de tous les événements de la route comme étapes
@@ -135,10 +135,9 @@ public class EventService {
         routeRequest.setDriverId(route.getDriverId());
         routeRequest.setEmptyTrip(route.isEmptyTrip());
 
-        List<RouteDto> routes = routeOptimizationService.calculateRoute(routeRequest).getRoutes();
+        List<RouteDto> routes = routeOptimizationService.calculateRoute(routeRequest,mode).getRoutes();
 
-        RouteDto selected = routes.stream().filter(candidate -> candidate.getType() == mode).findFirst()
-                .orElseGet(() -> routes.stream().min(Comparator.comparingLong(RouteDto::getDuration)).orElseThrow(() -> new IllegalStateException("No route available")));
+        RouteDto selected = routes.stream().findFirst().orElseThrow(() -> new IllegalStateException("No route available"));
 
         route.setDistanceMeters(selected.getDistanceMeters());
         route.setDurationSeconds(selected.getDuration());

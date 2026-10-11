@@ -3,6 +3,7 @@ package com.optiroute.backend.dto.response.transport;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
+import com.optiroute.backend.type.GpsModeType;
 import com.optiroute.backend.dto.response.cost.TransportCostDetailsResponse;
 
 public record TransportDetailResponse(Long id, String name, String status, boolean emptyTrip,
@@ -32,7 +33,7 @@ public record TransportDetailResponse(Long id, String name, String status, boole
         // Route estimate
         Long distanceMeters, Long durationSeconds,
 
-        String polyline,
+        String polyline, GpsModeType routeType,
 
         TransportCostDetailsResponse costs, BigDecimal revenue) {
 }

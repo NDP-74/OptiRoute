@@ -38,6 +38,11 @@ public class RoutingService {
     }
 
     public Map<GpsModeType, RoutePtvParser.ParsedRoute> calculateRoutes(RouteRequest request, TruckConfiguration truckConfiguration, double driverHourlyRate) {
+        return calculateRoutes(request,truckConfiguration,driverHourlyRate,null);
+    }
+
+    // onlyMode != null : un seul appel fournisseur pour ce mode
+    public Map<GpsModeType, RoutePtvParser.ParsedRoute> calculateRoutes(RouteRequest request, TruckConfiguration truckConfiguration, double driverHourlyRate, GpsModeType onlyMode) {
 
         List<String> waypoints = new java.util.ArrayList<>();
         waypoints.add(request.getOrigin().getLat() + "," + request.getOrigin().getLng());
@@ -50,7 +55,7 @@ public class RoutingService {
         RouteTimeMode timeMode = request.getTimeMode() == null ? RouteTimeMode.DEPARTURE : request.getTimeMode();
 
         Map<GpsModeType, RoutePtvParser.ParsedRoute> routes = new LinkedHashMap<>();
-        for (GpsModeType mode : GpsModeType.values()) {
+        for (GpsModeType mode : onlyMode == null ? GpsModeType.values() : new GpsModeType[] { onlyMode }) {
             RoutePtvParser.ParsedRoute parsed = isHere() ? fetchHere(waypoints,routeTime,truckConfiguration,mode) : fetchPtv(waypoints,truckConfiguration,routeTime,timeMode,mode,driverHourlyRate);
             if (parsed != null) {
                 routes.put(mode,parsed);

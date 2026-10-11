@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 
 import com.optiroute.backend.entity.cost.CostParameter;
 import com.optiroute.backend.repository.cost.CostParameterRepository;
+import com.optiroute.backend.type.cost.CostParameterAssignmentType;
 import com.optiroute.backend.type.cost.CostParameterCategoryType;
 
 import com.optiroute.backend.dto.response.cost.AppliedCostResponse;
@@ -35,7 +36,7 @@ public class CostParameterEngine {
         List<AppliedCostResponse> costs = new ArrayList<>();
 
         for (CostParameter parameter : costParameterRepository.findByCategory(category)) {
-            if (!parameter.isActive() || !isApplicable(parameter,context,dailyContexts)) {
+            if (!parameter.isActive() || parameter.getAssignmentType() == CostParameterAssignmentType.MANUAL || !isApplicable(parameter,context,dailyContexts)) {
                 continue;
             }
 
@@ -44,6 +45,14 @@ public class CostParameterEngine {
         }
 
         return costs;
+    }
+
+    // Coût d'un paramètre MANUAL rattaché à un événement : pas de conditions, uniquement sur le trajet de l'événement
+    public AppliedCostResponse calculateManualCost(CostParameter parameter, CostCalculationContext context) {
+        if (!parameter.isActive() || parameter.getAssignmentType() != CostParameterAssignmentType.MANUAL) {
+            return null;
+        }
+        return new AppliedCostResponse(parameter.getLabel(),calculateAmount(parameter,context));
     }
 
     private boolean isApplicable(CostParameter parameter, CostCalculationContext context, List<CostCalculationContext> dailyContexts) {

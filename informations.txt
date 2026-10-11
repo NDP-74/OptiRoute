@@ -42,3 +42,5 @@ Retirer la possibilité de gérer plus routes alternative (backend et frontend)
 Formulaire dynamique avec verification des données (ok pour les couts)
 Retirer les champs "externalId" et "Source" des tables véhicules et customer (ou uniformiser) -> idem avec les champs "is_Active"
 DB -> créer un systeme de dataset -> répartie par entreprise + admin
+
+ça ne fonctionne toujours pas / Quand on supprime un evenement il faut recalculer l'itinéraire / Afficher l'évenement comme waypoints non supprimable

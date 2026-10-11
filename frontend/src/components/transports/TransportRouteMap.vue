@@ -7,6 +7,7 @@ import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 const props = defineProps<{
     polyline: string | null
+    events?: { pointOfInterestLabel: string | null, pointOfInterestLatitude: number | null, pointOfInterestLongitude: number | null }[]
 }>()
 
 const mapContainer = ref<HTMLElement | null>(null)
@@ -51,6 +52,49 @@ function createLineString(polyline: string) {
     }
 
     return H.geo.LineString.fromFlexiblePolyline(polyline)
+}
+
+let eventGroup: any = null
+const labelCanvas = document.createElement('canvas').getContext('2d')!
+
+function createEventIcon(label: string) {
+    labelCanvas.font = '600 12px sans-serif'
+    const textWidth = Math.ceil(labelCanvas.measureText(label).width)
+    const width = Math.max(textWidth + 12, 28)
+    const height = 48
+    const cx = width / 2
+    const escaped = label.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+    const svg =
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">` +
+        `<circle cx="${cx}" cy="14" r="11" fill="#10b981" stroke="#065f46" stroke-width="3"/>` +
+        `<circle cx="${cx}" cy="14" r="4" fill="#ecfdf5"/>` +
+        `<text x="${cx}" y="42" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="600" ` +
+        `fill="#064e3b" stroke="#ffffff" stroke-width="3" paint-order="stroke">${escaped}</text>` +
+        '</svg>'
+
+    return new H.map.Icon('data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg), { size: { w: width, h: height }, anchor: { x: cx, y: 14 } })
+}
+
+function displayEvents() {
+    if (!map) return
+
+    if (eventGroup) {
+        map.removeObject(eventGroup)
+        eventGroup = null
+    }
+
+    const located = (props.events ?? []).filter(event => event.pointOfInterestLatitude != null && event.pointOfInterestLongitude != null)
+    if (located.length === 0) return
+
+    eventGroup = new H.map.Group()
+    for (const event of located) {
+        eventGroup.addObject(new H.map.Marker(
+            { lat: Number(event.pointOfInterestLatitude), lng: Number(event.pointOfInterestLongitude) },
+            { icon: createEventIcon(event.pointOfInterestLabel ?? '') }
+        ))
+    }
+    map.addObject(eventGroup)
 }
 
 function displayRoute() {
@@ -138,9 +182,11 @@ onMounted(async () => {
 
     map.getViewPort().resize()
     displayRoute()
+    displayEvents()
 })
 
 watch(() => props.polyline, displayRoute)
+watch(() => props.events, displayEvents, { deep: true })
 
 onBeforeUnmount(() => {
     resizeObserver?.disconnect()

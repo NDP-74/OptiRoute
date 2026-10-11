@@ -62,6 +62,7 @@ export interface TransportDetail {
     durationSeconds: number | null;
 
     polyline: string | null;
+    routeType: "FASTEST" | "CHEAPEST" | null;
 
     costs: TransportCosts;
     revenue: number;

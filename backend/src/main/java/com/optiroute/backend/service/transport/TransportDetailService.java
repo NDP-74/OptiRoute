@@ -69,7 +69,7 @@ public class TransportDetailService {
 
             route.getDistanceMeters(), route.getDurationSeconds(),
 
-            route.getPolyline(),
+            route.getPolyline(), route.getRouteType(),
 
             transportCostService.calculate(route), service.getRevenue());
     }

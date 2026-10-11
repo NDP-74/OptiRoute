@@ -40,6 +40,11 @@ public class RouteOptimizationService {
     private final TruckConfigurationFactory truckConfigurationFactory;
 
     public RoutesResponse calculateRoute(RouteRequest request) {
+        return calculateRoute(request,null);
+    }
+
+    // onlyMode != null : ne calcule que ce mode (une seule requÃªte fournisseur)
+    public RoutesResponse calculateRoute(RouteRequest request, GpsModeType onlyMode) {
 
         TruckConfiguration truckConfiguration;
         if (request.getTractorId() != null && request.getSemiTrailerId() != null) {
@@ -52,8 +57,8 @@ public class RouteOptimizationService {
 
         double driverHourlyRate = resolveDriverHourlyRate(request.getDriverId());
 
-        // Deux routes : la plus rapide et la plus économique
-        Map<GpsModeType, RoutePtvParser.ParsedRoute> parsedRoutes = routingService.calculateRoutes(request,truckConfiguration,driverHourlyRate);
+        // Deux routes : la plus rapide et la plus ï¿½conomique
+        Map<GpsModeType, RoutePtvParser.ParsedRoute> parsedRoutes = routingService.calculateRoutes(request,truckConfiguration,driverHourlyRate,onlyMode);
 
         // Cost calculation
         double fuelPrice = fuelPriceService.getAverageDieselPrice();

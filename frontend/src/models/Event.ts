@@ -15,5 +15,7 @@ export interface EventResponse {
     pointOfInterestLabel: string | null
     tractorId: number | null
     semiTrailerId: number | null
+    pointOfInterestLatitude: number | null
+    pointOfInterestLongitude: number | null
     eventDate: string
 }

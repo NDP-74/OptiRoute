@@ -21,6 +21,11 @@ import com.optiroute.backend.repository.driver.DriverRepository;
 import com.optiroute.backend.repository.transport.RouteRepository;
 import com.optiroute.backend.repository.vehicle.SemiTrailerRepository;
 import com.optiroute.backend.repository.vehicle.TractorRepository;
+import com.optiroute.backend.repository.EventRepository;
+import com.optiroute.backend.dto.response.cost.AppliedCostResponse;
+import com.optiroute.backend.entity.event.Event;
+import com.optiroute.backend.type.cost.CostParameterCategoryType;
+import com.optiroute.backend.service.cost.CostParameterEngine;
 import com.optiroute.backend.service.cost.DriverCostService;
 import com.optiroute.backend.service.cost.StructureCostService;
 import com.optiroute.backend.service.cost.VehicleCostService;
@@ -40,6 +45,8 @@ public class TransportCostService {
     private final DriverCostService driverCostService;
     private final VehicleCostService vehicleCostService;
     private final StructureCostService structureCostService;
+    private final EventRepository eventRepository;
+    private final CostParameterEngine costParameterEngine;
 
     public TransportCostDetailsResponse calculate(Route route) {
         LocalDate date = route.getStartDate().atZoneSameInstant(ZONE).toLocalDate();
@@ -59,7 +66,29 @@ public class TransportCostService {
         CostCategoryResponse driverCosts = driver == null ? new CostCategoryResponse(List.of(),0) : driverCostService.calculateCosts(driver,context,dailyContexts);
         CostCategoryResponse structure = structureCostService.calculateCosts(context,dailyContexts);
 
+        List<Event> events = route.getId() == null ? List.of() : eventRepository.findByRouteIdOrderByIdAsc(route.getId());
+        for (Event event : events) {
+            AppliedCostResponse manualCost = costParameterEngine.calculateManualCost(event.getCostParameter(),context);
+            if (manualCost == null) {
+                continue;
+            }
+            CostParameterCategoryType category = event.getCostParameter().getCategory();
+            if (category == CostParameterCategoryType.VEHICLE) {
+                vehicle = withCost(vehicle,manualCost);
+            } else if (category == CostParameterCategoryType.DRIVER) {
+                driverCosts = withCost(driverCosts,manualCost);
+            } else {
+                structure = withCost(structure,manualCost);
+            }
+        }
+
         return new TransportCostDetailsResponse(vehicle, driverCosts, structure, vehicle.totalCost() + driverCosts.totalCost() + structure.totalCost());
+    }
+
+    private CostCategoryResponse withCost(CostCategoryResponse category, AppliedCostResponse cost) {
+        List<AppliedCostResponse> costs = new ArrayList<>(category.costs());
+        costs.add(cost);
+        return new CostCategoryResponse(costs,category.totalCost() + cost.amount());
     }
 
     // Trajets du même jour pour le même conducteur (le véhicule suit le conducteur)
