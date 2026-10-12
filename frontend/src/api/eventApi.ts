@@ -8,6 +8,18 @@ export const getEventsByService = async (serviceId: number): Promise<EventRespon
     return response.data;
 };
 
+export const getEventsByTractor = async (tractorId: number): Promise<EventResponse[]> => {
+    const response = await api.get<EventResponse[]>(`/events/tractors/${tractorId}`);
+
+    return response.data;
+};
+
+export const getEventsBySemiTrailer = async (semiTrailerId: number): Promise<EventResponse[]> => {
+    const response = await api.get<EventResponse[]>(`/events/semi-trailers/${semiTrailerId}`);
+
+    return response.data;
+};
+
 export const createEvent = async (event: EventCreateRequest): Promise<EventResponse> => {
     const response = await api.post<EventResponse>("/events", event);
 

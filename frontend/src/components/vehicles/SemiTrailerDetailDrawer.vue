@@ -15,7 +15,10 @@ import {
 
 import type { SemiTrailerDetails } from "@/models/vehicle/SemiTrailer"
 
+import type { EventResponse } from "@/models/Event"
+
 import { getSemiTrailer } from "@/api/vehicle/semiTrailerApi"
+import { getEventsBySemiTrailer } from "@/api/eventApi"
 import { getApiErrorMessage } from "@/api/utils"
 
 import DetailSection from "@/components/ui/DetailSection.vue"
@@ -23,6 +26,7 @@ import DetailRow from "@/components/ui/DetailRow.vue"
 import AppDetailDrawer from "@/components/ui/AppDetailDrawer.vue"
 import DeleteSemiTrailerModal from "@/components/vehicles/DeleteSemiTrailerModal.vue"
 import UpdateSemiTrailerModal from "@/components/vehicles/UpdateSemiTrailerModal.vue"
+import VehicleEventsSection from "@/components/vehicles/VehicleEventsSection.vue"
 
 import {
     formatCurrency, formatDate, formatDateTime, formatNumber,
@@ -47,11 +51,37 @@ const semiTrailer = ref<SemiTrailerDetails | null>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
 
+const events = ref<EventResponse[]>([])
+const eventsLoading = ref(false)
+const eventsError = ref<string | null>(null)
+
 /*
 * Permet d’ignorer une ancienne réponse HTTP lorsque
 * l’utilisateur sélectionne rapidement plusieurs tracteurs.
 */
 let currentRequestId = 0
+
+const loadEvents = async (semiTrailerId: number, requestId: number) => {
+    events.value = []
+    eventsLoading.value = true
+    eventsError.value = null
+
+    try {
+        const loadedEvents = await getEventsBySemiTrailer(semiTrailerId)
+
+        if (requestId === currentRequestId) {
+            events.value = loadedEvents
+        }
+    } catch (err: unknown) {
+        if (requestId === currentRequestId) {
+            eventsError.value = getApiErrorMessage(err, "Impossible de charger les événements de la semi-remorque.")
+        }
+    } finally {
+        if (requestId === currentRequestId) {
+            eventsLoading.value = false
+        }
+    }
+}
 
 const loadSemiTrailer = async () => {
     if (props.semiTrailerId === null) {
@@ -59,13 +89,16 @@ const loadSemiTrailer = async () => {
     }
 
     const requestId = ++currentRequestId
+    const semiTrailerId = props.semiTrailerId
+
+    loadEvents(semiTrailerId, requestId)
 
     try {
         loading.value = true
         error.value = null
         semiTrailer.value = null
 
-        const response = await getSemiTrailer(props.semiTrailerId)
+        const response = await getSemiTrailer(semiTrailerId)
 
         if (requestId !== currentRequestId) {
             return
@@ -147,6 +180,9 @@ watch(
         semiTrailer.value = null
         error.value = null
         loading.value = false
+        events.value = []
+        eventsError.value = null
+        eventsLoading.value = false
 
         showUpdateModal.value = false
         showDeleteModal.value = false
@@ -266,6 +302,8 @@ watch(
 
                 <DetailRow label="Modifié le" :value="formatDateTime(semiTrailer.updatedAt)" />
             </DetailSection>
+
+            <VehicleEventsSection :events="events" :loading="eventsLoading" :error="eventsError" />
         </div>
 
         <template v-if="semiTrailer" #footer>

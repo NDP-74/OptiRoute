@@ -116,6 +116,15 @@ public class EventService {
         return routeRepository.findFirstByServiceId(serviceId).map(route -> eventRepository.findByRouteIdOrderByIdAsc(route.getId()).stream().map(this::toResponse).toList()).orElse(List.of());
     }
 
+            @Transactional(readOnly = true)
+            public List<EventResponse> getByTractor(Long tractorId) {
+                return eventRepository.findByTractorIdOrderByEventDateDescIdDesc(tractorId).stream().map(this::toResponse).toList();
+            }
+
+            @Transactional(readOnly = true)
+            public List<EventResponse> getBySemiTrailer(Long semiTrailerId) {
+                return eventRepository.findBySemiTrailerIdOrderByEventDateDescIdDesc(semiTrailerId).stream().map(this::toResponse).toList();
+            }
     private EventResponse toResponse(Event event) {
         PointOfInterest poi = event.getPointOfInterest();
         Tractor tractor = event.getTractor();

@@ -34,6 +34,16 @@ public class EventController {
         return ResponseEntity.ok(eventService.getByService(serviceId));
     }
 
+    @GetMapping("/tractors/{tractorId}")
+    public ResponseEntity<List<EventResponse>> getByTractor(@PathVariable Long tractorId) {
+        return ResponseEntity.ok(eventService.getByTractor(tractorId));
+    }
+
+    @GetMapping("/semi-trailers/{semiTrailerId}")
+    public ResponseEntity<List<EventResponse>> getBySemiTrailer(@PathVariable Long semiTrailerId) {
+        return ResponseEntity.ok(eventService.getBySemiTrailer(semiTrailerId));
+    }
+
     @PostMapping
     public ResponseEntity<EventResponse> create(@Valid @RequestBody EventRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(eventService.create(request));

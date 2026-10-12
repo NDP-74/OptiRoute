@@ -48,6 +48,9 @@ Les `CostParameter` sont les frais définis dans les `Données référentielles`
   comme points de passage verrouillés. Ils restent inclus dans les calculs et ne peuvent
   être remplacés, déplacés ou supprimés depuis le formulaire d'itinéraire.
   Les étapes ajoutées manuellement restent modifiables et supprimables.
+- Les tiroirs de détail du tracteur et de la semi-remorque affichent en lecture seule les
+  événements qui leur sont assignés (`GET /api/events/tractors/{id}` et
+  `GET /api/events/semi-trailers/{id}`), du plus récent au plus ancien.
 
 ### Résumé
 

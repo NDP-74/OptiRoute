@@ -15,7 +15,10 @@ import {
 
 import type { TractorDetails } from "@/models/vehicle/Tractor"
 
+import type { EventResponse } from "@/models/Event"
+
 import { getTractor } from "@/api/vehicle/tractorApi"
+import { getEventsByTractor } from "@/api/eventApi"
 import { getApiErrorMessage } from "@/api/utils"
 
 
@@ -24,6 +27,7 @@ import DetailSection from "@/components/ui/DetailSection.vue"
 import DetailRow from "@/components/ui/DetailRow.vue"
 import UpdateTractorModal from "@/components/vehicles/UpdateTractorModal.vue"
 import DeleteTractorModal from "@/components/vehicles/DeleteTractorModal.vue"
+import VehicleEventsSection from "@/components/vehicles/VehicleEventsSection.vue"
 
 import {
     formatCurrency, formatDate, formatDateTime, formatNumber,
@@ -48,11 +52,37 @@ const tractor = ref<TractorDetails | null>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
 
+const events = ref<EventResponse[]>([])
+const eventsLoading = ref(false)
+const eventsError = ref<string | null>(null)
+
 /*
  * Permet d’ignorer une ancienne réponse HTTP lorsque
  * l’utilisateur sélectionne rapidement plusieurs tracteurs.
  */
 let currentRequestId = 0
+
+const loadEvents = async (tractorId: number, requestId: number) => {
+    events.value = []
+    eventsLoading.value = true
+    eventsError.value = null
+
+    try {
+        const loadedEvents = await getEventsByTractor(tractorId)
+
+        if (requestId === currentRequestId) {
+            events.value = loadedEvents
+        }
+    } catch (err) {
+        if (requestId === currentRequestId) {
+            eventsError.value = getApiErrorMessage(err, "Impossible de charger les événements du tracteur.")
+        }
+    } finally {
+        if (requestId === currentRequestId) {
+            eventsLoading.value = false
+        }
+    }
+}
 
 const loadTractor = async () => {
     if (props.tractorId === null) {
@@ -61,12 +91,16 @@ const loadTractor = async () => {
 
     const requestId = ++currentRequestId
 
+    const tractorId = props.tractorId
+
     loading.value = true
     error.value = null
     tractor.value = null
 
+    loadEvents(tractorId, requestId)
+
     try {
-        const loadedTractor = await getTractor(props.tractorId)
+        const loadedTractor = await getTractor(tractorId)
 
         if (requestId === currentRequestId) {
             tractor.value = loadedTractor
@@ -146,6 +180,9 @@ watch(
         tractor.value = null
         error.value = null
         loading.value = false
+        events.value = []
+        eventsError.value = null
+        eventsLoading.value = false
 
         showUpdateModal.value = false
         showDeleteModal.value = false
@@ -273,6 +310,8 @@ watch(
 
                 <DetailRow label="Modifié le" :value="formatDateTime(tractor.updatedAt)" />
             </DetailSection>
+
+            <VehicleEventsSection :events="events" :loading="eventsLoading" :error="eventsError" />
         </div>
 
         <!-- Actions -->

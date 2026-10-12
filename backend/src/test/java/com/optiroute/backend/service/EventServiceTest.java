@@ -20,12 +20,16 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import com.optiroute.backend.dto.request.route.RouteRequest;
+import com.optiroute.backend.dto.response.EventResponse;
 import com.optiroute.backend.dto.response.route.RouteCostDetailsDto;
 import com.optiroute.backend.dto.response.route.RouteDto;
 import com.optiroute.backend.dto.response.route.RoutesResponse;
+import com.optiroute.backend.entity.cost.CostParameter;
 import com.optiroute.backend.entity.event.Event;
 import com.optiroute.backend.entity.event.PointOfInterest;
 import com.optiroute.backend.entity.transport.Route;
+import com.optiroute.backend.entity.vehicle.SemiTrailer;
+import com.optiroute.backend.entity.vehicle.Tractor;
 import com.optiroute.backend.repository.EventRepository;
 import com.optiroute.backend.repository.transport.RouteRepository;
 import com.optiroute.backend.service.route.RouteOptimizationService;
@@ -106,6 +110,45 @@ class EventServiceTest {
         assertThrows(IllegalStateException.class, () -> service.delete(1L));
 
         verifyNoInteractions(routeRepository);
+    }
+
+    @Test
+    void shouldReturnEventsAssignedToTractor() {
+        Event event = vehicleEvent();
+        Tractor tractor = new Tractor();
+        tractor.setId(20L);
+        event.setTractor(tractor);
+        when(eventRepository.findByTractorIdOrderByEventDateDescIdDesc(20L)).thenReturn(List.of(event));
+
+        List<EventResponse> responses = service.getByTractor(20L);
+
+        assertEquals(1, responses.size());
+        assertEquals(5L, responses.get(0).id());
+        assertEquals("Péage", responses.get(0).costParameterLabel());
+        assertEquals(20L, responses.get(0).tractorId());
+    }
+
+    @Test
+    void shouldReturnEventsAssignedToSemiTrailer() {
+        Event event = vehicleEvent();
+        SemiTrailer semiTrailer = new SemiTrailer();
+        semiTrailer.setId(30L);
+        event.setSemiTrailer(semiTrailer);
+        when(eventRepository.findBySemiTrailerIdOrderByEventDateDescIdDesc(30L)).thenReturn(List.of(event));
+
+        List<EventResponse> responses = service.getBySemiTrailer(30L);
+
+        assertEquals(1, responses.size());
+        assertEquals(30L, responses.get(0).semiTrailerId());
+    }
+
+    private Event vehicleEvent() {
+        Route route = new Route();
+        route.setId(10L);
+        CostParameter costParameter = new CostParameter();
+        costParameter.setId(3L);
+        costParameter.setLabel("Péage");
+        return Event.builder().id(5L).route(route).costParameter(costParameter).build();
     }
 
     private Route prepareRoute(List<Event> remainingEvents) {
