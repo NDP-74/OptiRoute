@@ -100,6 +100,17 @@ public class EventService {
         return toResponse(saved);
     }
 
+    @Transactional
+    public void delete(Long id) {
+        Event event = eventRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Event not found with id " + id));
+        Route route = event.getRoute();
+
+        eventRepository.delete(event);
+        eventRepository.flush();
+        recalculateRoute(route);
+    }
+
     @Transactional(readOnly = true)
     public List<EventResponse> getByService(Long serviceId) {
         return routeRepository.findFirstByServiceId(serviceId).map(route -> eventRepository.findByRouteIdOrderByIdAsc(route.getId()).stream().map(this::toResponse).toList()).orElse(List.of());

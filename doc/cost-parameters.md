@@ -39,6 +39,15 @@ Les `CostParameter` sont les frais définis dans les `Données référentielles`
 - Un événement exige obligatoirement : un paramètre `MANUAL`, un trajet (via le transport), et un seul véhicule
   (tracteur **ou** semi-remorque) appartenant à ce trajet. Un point d'intérêt est optionnel.
 - Sans événement rattaché à un trajet, un paramètre `MANUAL` ne doit avoir aucun impact sur ce trajet.
+- Un événement peut être supprimé depuis le détail du transport, après confirmation.
+  `DELETE /api/events/{id}` supprime l'événement et recalcule l'itinéraire avec les points
+  d'intérêt des événements restants, y compris lorsque la dernière étape est supprimée.
+  Ces opérations sont transactionnelles : un échec du recalcul annule la suppression.
+  Le détail du transport (carte, événements et coûts) est ensuite rechargé.
+- Lors de la modification d'un transport, les événements géolocalisés sont préremplis
+  comme points de passage verrouillés. Ils restent inclus dans les calculs et ne peuvent
+  être remplacés, déplacés ou supprimés depuis le formulaire d'itinéraire.
+  Les étapes ajoutées manuellement restent modifiables et supprimables.
 
 ### Résumé
 

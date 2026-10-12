@@ -20,6 +20,7 @@ import type { SemiTrailerSummary } from '@/models/vehicle/SemiTrailer'
 import type { RouteDto, RouteRequest, RouteResponse } from '@/models/route/Route'
 import type { CreateTransportFromRouteRequest } from '@/models/transport/TransportRequest'
 import type { TransportDetail } from '@/models/transport/TransportDetail'
+import type { EventResponse } from '@/models/Event'
 
 import { formatCurrency, formatDateTime, formatDistance, formatDurationSeconds } from '@/utils/formatters'
 
@@ -45,6 +46,7 @@ const props = defineProps<{
     initialRouteResponse?: RouteResponse | null
     initialSelectedRouteIndex?: number
     editingTransport?: TransportDetail | null
+    events?: EventResponse[]
 }>()
 
 const emit = defineEmits<{
@@ -171,7 +173,17 @@ function routeRequestFromTransport(transport: TransportDetail): RouteRequest {
             lat: transport.destinationLat,
             lng: transport.destinationLng,
         },
-        waypoints: [],
+        waypoints: (props.events ?? []).flatMap(event =>
+            event.pointOfInterestLatitude != null && event.pointOfInterestLongitude != null
+                ? [{
+                    name: event.pointOfInterestLabel ?? event.costParameterLabel,
+                    address: event.pointOfInterestLabel ?? `${event.pointOfInterestLatitude}, ${event.pointOfInterestLongitude}`,
+                    lat: event.pointOfInterestLatitude,
+                    lng: event.pointOfInterestLongitude,
+                    eventId: event.id,
+                }]
+                : []
+        ),
         mode: 'FASTEST',
         emptyTrip: transport.emptyTrip,
         routeTime: transport.plannedStart,

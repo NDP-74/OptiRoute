@@ -1,9 +1,13 @@
 import type { Position } from '@/models/route/Position'
 
+export interface RouteWaypoint extends Position {
+    eventId?: number
+}
+
 export interface RouteRequest {
     origin: Position
     destination: Position
-    waypoints?: Position[]
+    waypoints?: RouteWaypoint[]
 
     tractorId?: number
     semiTrailerId?: number

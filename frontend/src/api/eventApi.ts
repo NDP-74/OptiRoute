@@ -13,3 +13,7 @@ export const createEvent = async (event: EventCreateRequest): Promise<EventRespo
 
     return response.data;
 };
+
+export const deleteEvent = async (id: number): Promise<void> => {
+    await api.delete(`/events/${id}`);
+};

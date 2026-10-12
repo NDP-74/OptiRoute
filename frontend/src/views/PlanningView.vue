@@ -12,7 +12,7 @@
         <TransportDetailDrawer :open="selectedTransportId !== null" :transport-id="selectedTransportId"
             @close="closeTransport" @deleted="handleTransportDeleted" @updated="loadCurrentPeriod" @edit="openEditModal" />
 
-        <PlanningRouteModal :show="showRouteModal" :editing-transport="editingTransport" @close="closeRouteModal"
+        <PlanningRouteModal :show="showRouteModal" :editing-transport="editingTransport" :events="editingEvents" @close="closeRouteModal"
             @saved="handleRouteSaved" />
     </div>
 </template>
@@ -31,6 +31,7 @@ import { usePlanning } from "@/utils/planningUtils";
 
 import type { PlanningDay, PlanningDriver, PlanningTransport, } from "@/models/planning/planning";
 import type { TransportDetail } from "@/models/transport/TransportDetail";
+import type { EventResponse } from "@/models/Event";
 import { formatParisDateKey } from "@/utils/formatters";
 
 
@@ -38,6 +39,7 @@ const selectedTransportId = ref<number | null>(null);
 const selectedCostDetailDriverId = ref<number | null>(null);
 const showRouteModal = ref(false);
 const editingTransport = ref<TransportDetail | null>(null);
+const editingEvents = ref<EventResponse[]>([]);
 
 function closePlanningDrawers(): void {
     selectedTransportId.value = null;
@@ -57,9 +59,11 @@ function openRouteModal(): void { showRouteModal.value = true; }
 function closeRouteModal(): void {
     showRouteModal.value = false;
     editingTransport.value = null;
+    editingEvents.value = [];
 }
-function openEditModal(transport: TransportDetail): void {
+function openEditModal(transport: TransportDetail, events: EventResponse[]): void {
     editingTransport.value = transport;
+    editingEvents.value = [...events];
     closeTransport();
     showRouteModal.value = true;
 }

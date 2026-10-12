@@ -4,7 +4,9 @@ import { computed, ref, watch } from "vue";
 import { Trash2, Edit3, CalendarPlus, MapPin, Coins, Zap } from "lucide-vue-next";
 import AssignEventModal from "@/components/transports/AssignEventModal.vue";
 import { getTransportById } from "@/api/planningApi";
-import { getEventsByService } from "@/api/eventApi";
+import { deleteEvent, getEventsByService } from "@/api/eventApi";
+import { getApiErrorMessage } from "@/api/utils";
+import { useNotification } from "@/composables/useNotification";
 import type { EventResponse } from "@/models/Event";
 
 import type { TransportDetail } from "@/models/transport/TransportDetail";
@@ -16,12 +18,16 @@ import TransportMetricCard from "@/components/transports/TransportMetricCard.vue
 import TransportRouteMap from '@/components/transports/TransportRouteMap.vue'
 import DeleteTransportModal from "@/components/transports/DeleteTransportModal.vue";
 import AppDetailDrawer from "@/components/ui/AppDetailDrawer.vue"
+import ConfirmDeleteModal from "@/components/ui/ConfirmDeleteModal.vue"
 
 import { formatVehicleLabel } from "@/utils/vehicleUtils"
 import { formatDurationSeconds, formatCurrency, formatDateTime, formatDistance } from "@/utils/formatters"
 
 const showDeleteModal = ref(false)
 const showEventModal = ref(false)
+const eventToDelete = ref<EventResponse | null>(null)
+const deletingEvent = ref(false)
+const notification = useNotification()
 
 const askDeleteTransport = () => {
     if (!transport.value) {
@@ -42,9 +48,35 @@ const handleTransportDeleted = () => {
     emit('close')
 }
 
-const handleEventCreated = async () => {
+const handleEventsChanged = async () => {
     await loadTransport();
     emit('updated');
+}
+
+const closeDeleteEventModal = () => {
+    if (!deletingEvent.value) {
+        eventToDelete.value = null
+    }
+}
+
+const confirmDeleteEvent = async () => {
+    if (!eventToDelete.value || deletingEvent.value) return
+
+    deletingEvent.value = true
+
+    try {
+        await deleteEvent(eventToDelete.value.id)
+        eventToDelete.value = null
+        notification.success('Événement supprimé', 'L’événement a bien été supprimé et l’itinéraire recalculé.')
+        await handleEventsChanged()
+    } catch (exception) {
+        notification.error(
+            'Suppression impossible',
+            getApiErrorMessage(exception, 'L’événement n’a pas pu être supprimé.')
+        )
+    } finally {
+        deletingEvent.value = false
+    }
 }
 
 const handleEdit = () => {
@@ -52,7 +84,7 @@ const handleEdit = () => {
         return
     }
 
-    emit('edit', transport.value)
+    emit('edit', transport.value, events.value)
 }
 
 const props = defineProps<{
@@ -64,7 +96,7 @@ const emit = defineEmits<{
     close: [];
     deleted: [];
     updated: [];
-    edit: [TransportDetail]
+    edit: [TransportDetail, EventResponse[]]
 }>();
 
 const transport = ref<TransportDetail | null>(null);
@@ -179,6 +211,7 @@ async function loadTransport(): Promise<void> {
 watch(
     () => [props.open, props.transportId] as const,
     ([open]) => {
+        eventToDelete.value = null;
         if (open) {
             void loadTransport();
         } else {
@@ -384,15 +417,25 @@ watch(
                             </p>
                         </div>
 
-                        <div class="shrink-0 text-right">
-                            <span
-                                class="inline-flex rounded-full border border-slate-200 bg-white px-2 py-0.5 text-xs font-medium text-slate-600">
-                                {{ event.tractorId !== null ? "Tracteur" : "Semi-remorque" }}
-                            </span>
+                        <div class="flex shrink-0 items-start gap-2">
+                            <div class="text-right">
+                                <span
+                                    class="inline-flex rounded-full border border-slate-200 bg-white px-2 py-0.5 text-xs font-medium text-slate-600">
+                                    {{ event.tractorId !== null ? "Tracteur" : "Semi-remorque" }}
+                                </span>
 
-                            <p class="mt-1 text-xs text-slate-400">
-                                {{ formatDateTime(event.eventDate) }}
-                            </p>
+                                <p class="mt-1 text-xs text-slate-400">
+                                    {{ formatDateTime(event.eventDate) }}
+                                </p>
+                            </div>
+
+                            <button type="button"
+                                class="rounded-lg p-1.5 text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                :aria-label="`Supprimer l’événement ${event.costParameterLabel}`"
+                                title="Supprimer l’événement" :disabled="deletingEvent"
+                                @click="eventToDelete = event">
+                                <Trash2 class="h-4 w-4" />
+                            </button>
                         </div>
                     </li>
                 </ul>
@@ -590,7 +633,12 @@ watch(
     </AppDetailDrawer>
 
     <AssignEventModal :show="showEventModal" :transport="transport" @close="showEventModal = false"
-        @created="handleEventCreated" />
+        @created="handleEventsChanged" />
+
+    <ConfirmDeleteModal :show="eventToDelete !== null" :loading="deletingEvent"
+        title="Supprimer l’événement"
+        :message="`Voulez-vous vraiment supprimer l’événement « ${eventToDelete?.costParameterLabel ?? ''} » ? Cette action est irréversible et l’itinéraire sera recalculé.`"
+        @close="closeDeleteEventModal" @confirm="confirmDeleteEvent" />
 
     <DeleteTransportModal :show="showDeleteModal" :transport="transport" @close="closeDeleteModal"
         @deleted="handleTransportDeleted" />

@@ -77,6 +77,7 @@ function createEventIcon(label: string) {
 }
 
 function displayEvents() {
+    console.log('Displaying events')
     if (!map) return
 
     if (eventGroup) {
@@ -85,6 +86,7 @@ function displayEvents() {
     }
 
     const located = (props.events ?? []).filter(event => event.pointOfInterestLatitude != null && event.pointOfInterestLongitude != null)
+    console.log('Located events:', located)
     if (located.length === 0) return
 
     eventGroup = new H.map.Group()
@@ -131,11 +133,26 @@ function displayRoute() {
     }
 
     const bounds = routePolylines.reduce(
-        (currentBounds, routePolyline) => currentBounds
-            ? currentBounds.merge(routePolyline.getBoundingBox())
-            : routePolyline.getBoundingBox(),
+        (currentBounds, routePolyline) => {
+            const routeBounds = routePolyline.getBoundingBox()
+            if (!currentBounds) return routeBounds
+            if (!routeBounds) return currentBounds
+
+            return H.geo.Rect.merge(
+                currentBounds.getTop(),
+                currentBounds.getLeft(),
+                currentBounds.getBottom(),
+                currentBounds.getRight(),
+                routeBounds.getTop(),
+                routeBounds.getLeft(),
+                routeBounds.getBottom(),
+                routeBounds.getRight()
+            )
+        },
         null
     )
+
+    if (!bounds) return
 
     map.getViewModel().setLookAtData({
         bounds,

@@ -1,12 +1,19 @@
 <script setup lang="ts">
 import { computed, ref, reactive, watch } from 'vue'
-import { ArrowUpDown, Clock, Plus, X } from 'lucide-vue-next'
+import { ArrowUpDown, Clock, LockKeyhole, Plus, X } from 'lucide-vue-next'
 import HereAutocompleteInput from './HereAutocompleteInput.vue'
 
 import { calculateRoute } from '@/api/here/mapsApi'
 
 import type { Position } from '@/models/route/Position'
-import type { RouteRequest } from '@/models/route/Route'
+import type { RouteRequest, RouteWaypoint } from '@/models/route/Route'
+
+interface RoutePlace {
+    name: string
+    address: string
+    position: { lat: number; lng: number }
+    eventId?: number
+}
 
 const props = defineProps<{
     initialRequest?: RouteRequest | null
@@ -25,19 +32,20 @@ const MAX_WAYPOINTS = 10
 const emit = defineEmits(['route-calculated'])
 
 const form = reactive({
-    origin: null as any,
-    destination: null as any,
-    waypoints: [] as any[],
+    origin: null as RoutePlace | null,
+    destination: null as RoutePlace | null,
+    waypoints: [] as (RoutePlace | null)[],
 
     routeTime: null as any,
 
     mode: 'FASTEST',
 })
 
-function toPlace(position: Position) {
+function toPlace(position: RouteWaypoint): RoutePlace {
     return {
         name: position.name ?? '',
         address: position.address ?? '',
+        eventId: position.eventId,
         position: {
             lat: position.lat,
             lng: position.lng,
@@ -87,7 +95,7 @@ function toPosition(place: {
 }
 
 function swapWithPrevious(index: number) {
-    if (index <= 0) return
+    if (index <= 0 || isEventRow(index) || isEventRow(index - 1)) return
 
     const current = getRowValue(index)
     const previous = getRowValue(index - 1)
@@ -106,18 +114,27 @@ function getRowValue(index: number) {
     return form.waypoints[index - 1]
 }
 
-function setRowValue(index: number, value: any) {
+function isEventRow(index: number) {
+    return getRowValue(index)?.eventId != null
+}
+
+function updateRowValue(index: number, value: RoutePlace | null) {
+    if (isEventRow(index)) return
+    setRowValue(index, value)
+}
+
+function setRowValue(index: number, value: RoutePlace | null | undefined) {
     if (index === 0) {
-        form.origin = value
+        form.origin = value ?? null
         return
     }
 
     if (index === lastRowIndex.value) {
-        form.destination = value
+        form.destination = value ?? null
         return
     }
 
-    form.waypoints[index - 1] = value
+    form.waypoints[index - 1] = value ?? null
 }
 
 function rowLabel(index: number) {
@@ -128,6 +145,7 @@ function rowLabel(index: number) {
 }
 
 function removeWaypointAt(index: number) {
+    if (index <= 0 || index >= lastRowIndex.value || isEventRow(index)) return
     form.waypoints.splice(index - 1, 1)
 }
 
@@ -154,10 +172,14 @@ async function submit() {
     try {
         const effectiveRouteTime = toOffsetDateTime(form.routeTime) ?? new Date().toISOString()
 
+        const waypoints = form.waypoints
+            .filter((place): place is RoutePlace => place !== null)
+            .map(place => ({ ...toPosition(place), eventId: place.eventId }))
+
         const payload = {
             origin: toPosition(form.origin),
             destination: toPosition(form.destination),
-            waypoints: form.waypoints.filter(Boolean).map(toPosition),
+            waypoints: waypoints.map(({ name, address, lat, lng }) => ({ name, address, lat, lng })),
 
             routeTime: effectiveRouteTime,
             timeMode: departureMode.value === 'ARRIVALTIME' ? 'ARRIVAL' : 'DEPARTURE',
@@ -174,7 +196,7 @@ async function submit() {
         emit('route-calculated',
             {
                 response,
-                request: payload
+                request: { ...payload, waypoints }
             }
         )
     } catch (e) {
@@ -199,8 +221,8 @@ function toOffsetDateTime(value: string) {
         <div class="relative grid gap-2" :style="{ gridTemplateRows: `repeat(${rowCount}, auto)` }">
             <div v-for="index in rowCount" :key="index - 1" class="flex items-center gap-2" :style="{ gridRow: index }">
                 <div class="flex-1">
-                    <HereAutocompleteInput :model-value="getRowValue(index - 1)"
-                        @update:model-value="setRowValue(index - 1, $event)" :label="rowLabel(index - 1)" />
+                    <HereAutocompleteInput :model-value="getRowValue(index - 1)" :disabled="isEventRow(index - 1)"
+                        @update:model-value="updateRowValue(index - 1, $event)" :label="rowLabel(index - 1)" />
                 </div>
 
                 <div class="flex h-9 w-9 shrink-0 items-center justify-center">
@@ -212,6 +234,9 @@ function toOffsetDateTime(value: string) {
                         <Plus :size="16" :stroke-width="2" aria-hidden="true" />
                     </button>
 
+                    <LockKeyhole v-else-if="isEventRow(index - 1)" :size="16" class="text-slate-400"
+                        aria-label="Étape liée à un événement, non supprimable" />
+
                     <button v-else-if="index - 1 !== lastRowIndex" type="button" @click="removeWaypointAt(index - 1)"
                         class="flex h-9 w-9 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 shadow-sm transition hover:bg-red-100"
                         aria-label="Supprimer cette étape" title="Supprimer cette étape">
@@ -221,8 +246,9 @@ function toOffsetDateTime(value: string) {
             </div>
 
             <button v-for="index in rowCount - 1" :key="`swap-${index}`" type="button" @click="swapWithPrevious(index)"
+                :disabled="isEventRow(index) || isEventRow(index - 1)"
                 :style="{ gridRow: `${index} / span 2`, top: '50%' }"
-                class="absolute right-11 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-600 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-900"
+                class="absolute right-11 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-600 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
                 aria-label="Inverser avec le champ précédent" title="Inverser avec le champ précédent">
                 <ArrowUpDown :size="16" :stroke-width="2" aria-hidden="true" />
             </button>
