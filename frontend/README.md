@@ -1,5 +1,16 @@
 # frontend
 
+## Points d'intérêt
+
+Sur la carte des points d'intérêt, cliquer sur un marqueur ouvre le panneau existant
+avec son adresse et son nom préremplis. Modifier ces champs puis enregistrer met
+à jour le point et son marqueur. Une nouvelle adresse doit être sélectionnée dans
+les suggestions (ou saisie sous forme de coordonnées `latitude, longitude`).
+Le bouton **Annuler** permet de revenir au mode ajout.
+
+Le bouton **Supprimer** ouvre une confirmation. Un point utilisé par un événement
+ne peut pas être supprimé ; un message explicite est alors affiché.
+
 This template should help get you started developing with Vue 3 in Vite.
 
 ## Recommended IDE Setup

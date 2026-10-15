@@ -4,6 +4,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import type { PointOfInterest } from '@/models/PointOfInterest'
 
 //Variables
 
@@ -16,9 +17,10 @@ let startMarker: any = null
 let endMarker: any = null
 const waypointMarkers: any[] = []
 
-const emit = defineEmits([
-    'route-selected'
-])
+const emit = defineEmits<{
+    'route-selected': [index: number]
+    'point-of-interest-selected': [point: PointOfInterest]
+}>()
 
 //Functions
 
@@ -130,7 +132,7 @@ function createPoiIcon(label: string) {
     return new H.map.Icon('data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg), { size: { w: width, h: height }, anchor: { x: cx, y: 14 } })
 }
 
-function setPointsOfInterest(points: { label: string, latitude: number, longitude: number }[]) {
+function setPointsOfInterest(points: PointOfInterest[]) {
     if (!map) return
 
     if (poiGroup) {
@@ -140,7 +142,18 @@ function setPointsOfInterest(points: { label: string, latitude: number, longitud
     poiGroup = new H.map.Group()
 
     for (const point of points) {
-        poiGroup.addObject(new H.map.Marker({ lat: Number(point.latitude), lng: Number(point.longitude) }, { icon: createPoiIcon(point.label) }))
+        const marker = new H.map.Marker(
+            { lat: Number(point.latitude), lng: Number(point.longitude) },
+            { icon: createPoiIcon(point.label) }
+        )
+        marker.addEventListener('tap', () => emit('point-of-interest-selected', point))
+        marker.addEventListener('pointerenter', () => {
+            if (mapContainer.value) mapContainer.value.style.cursor = 'pointer'
+        })
+        marker.addEventListener('pointerleave', () => {
+            if (mapContainer.value) mapContainer.value.style.cursor = ''
+        })
+        poiGroup.addObject(marker)
     }
 
     map.addObject(poiGroup)

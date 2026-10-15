@@ -10,6 +10,8 @@ import com.optiroute.backend.dto.response.PointOfInterestResponse;
 import com.optiroute.backend.entity.event.PointOfInterest;
 import com.optiroute.backend.repository.PointOfInterestRepository;
 
+import jakarta.persistence.EntityNotFoundException;
+
 @Service
 public class PointOfInterestService {
 
@@ -34,6 +36,28 @@ public class PointOfInterestService {
     @Transactional(readOnly = true)
     public List<PointOfInterestResponse> getAll() {
         return pointOfInterestRepository.findAll().stream().map(this::toResponse).toList();
+    }
+
+    @Transactional
+    public PointOfInterestResponse update(Long id, PointOfInterestRequest request) {
+        PointOfInterest point = pointOfInterestRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Point of interest not found with id " + id));
+
+        point.setLabel(request.label().trim());
+        point.setAddress(request.address());
+        point.setLatitude(request.latitude());
+        point.setLongitude(request.longitude());
+
+        return toResponse(pointOfInterestRepository.save(point));
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        PointOfInterest point = pointOfInterestRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Point of interest not found with id " + id));
+
+        pointOfInterestRepository.delete(point);
+        pointOfInterestRepository.flush();
     }
 
     private PointOfInterestResponse toResponse(PointOfInterest poi) {

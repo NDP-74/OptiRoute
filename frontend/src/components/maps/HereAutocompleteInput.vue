@@ -11,27 +11,19 @@ const props = defineProps<{
     disabled?: boolean
 }>()
 
-const emit = defineEmits(['selected', 'update:modelValue'])
+const emit = defineEmits(['selected', 'update:modelValue', 'input'])
 const inputValue = ref('')
 const results = ref<any[]>([])
 const loading = ref(false)
 const isSelecting = ref(false)
-
-watch(() => props.modelValue, (value) => {
-    isSelecting.value = true
-    inputValue.value = value?.address ?? ''
-    results.value = []
-
-    setTimeout(() => {
-        isSelecting.value = false
-    }, 0)
-}, { immediate: true })
+let requestVersion = 0
 
 //Functions
 
 watch(inputValue, (value) => {
     if (isSelecting.value) return
 
+    requestVersion++
     const coordinates = parseCoordinates(value)
     if (coordinates) {
         fetchPlaces.cancel?.()
@@ -52,13 +44,15 @@ const fetchPlaces = debounce(
         }
 
         loading.value = true
+        const version = requestVersion
 
         try {
-            results.value = await autocompletePlaces(value)
+            const places = await autocompletePlaces(value)
+            if (version === requestVersion) results.value = places
         } catch (e) {
             console.error(e)
         } finally {
-            loading.value = false
+            if (version === requestVersion) loading.value = false
         }
 
     },
@@ -67,6 +61,19 @@ const fetchPlaces = debounce(
         maxWait: 5000 // équivalent VueUse maxWait
     }
 )
+
+watch(() => props.modelValue, (value) => {
+    requestVersion++
+    fetchPlaces.cancel()
+    isSelecting.value = true
+    inputValue.value = value?.address ?? ''
+    results.value = []
+    loading.value = false
+
+    setTimeout(() => {
+        isSelecting.value = false
+    }, 0)
+}, { immediate: true })
 
 function parseCoordinates(value: string) {
     const parts = value.split(',').map(part => part.trim())
@@ -91,10 +98,13 @@ function parseCoordinates(value: string) {
 }
 
 async function selectPlace(item: any) {
+    const version = ++requestVersion
     try {
         isSelecting.value = true
+        fetchPlaces.cancel()
 
         const place = await geocodePlace(item.id)
+        if (version !== requestVersion) return
         const label = place.address.label
 
         // Important: on stop le debounce en cours
@@ -128,7 +138,7 @@ async function selectPlace(item: any) {
 <template>
     <div class="relative">
 
-        <input v-model="inputValue" type="text" :disabled="props.disabled"
+        <input v-model="inputValue" type="text" :disabled="props.disabled" @input="emit('input')"
             class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:bg-slate-100"
             :placeholder="label" />
 

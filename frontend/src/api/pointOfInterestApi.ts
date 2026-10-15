@@ -13,3 +13,13 @@ export const createPointOfInterest = async (point: PointOfInterestCreateRequest)
 
     return response.data;
 };
+
+export const updatePointOfInterest = async (id: number, point: PointOfInterestCreateRequest): Promise<PointOfInterest> => {
+    const response = await api.put<PointOfInterest>(`/points-of-interest/${id}`, point);
+
+    return response.data;
+};
+
+export const deletePointOfInterest = async (id: number): Promise<void> => {
+    await api.delete(`/points-of-interest/${id}`);
+};
