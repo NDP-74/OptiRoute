@@ -1,17 +1,16 @@
 <script setup lang="ts">
+import type { TrailerTypeOption } from "@/api/vehicle/semiTrailerApi"
 import type { SemiTrailerFormData } from "@/models/vehicle/SemiTrailer"
+
+import TrailerTypeSelect from "@/components/vehicles/TrailerTypeSelect.vue"
 
 const form = defineModel<SemiTrailerFormData>({
     required: true,
 })
 
-withDefaults(
-    defineProps<{ disabled?: boolean; trailerTypes?: string[] }>(),
-    {
-        disabled: false,
-        trailerTypes: () => [],
-    },
-)
+const trailerTypes = defineModel<TrailerTypeOption[]>("trailerTypes", { default: () => [] })
+
+defineProps<{ disabled?: boolean }>()
 </script>
 
 <template>
@@ -73,16 +72,7 @@ withDefaults(
                         Type de semi-remorque
                     </label>
 
-                    <select v-model="form.trailerType" :disabled="disabled || trailerTypes.length === 0"
-                        class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:bg-slate-100">
-                        <option :value="null">
-                            {{ trailerTypes.length === 0 ? 'Chargement des types...' : 'Sélectionner un type' }}
-                        </option>
-
-                        <option v-for="trailerType in trailerTypes" :key="trailerType" :value="trailerType">
-                            {{ trailerType }}
-                        </option>
-                    </select>
+                    <TrailerTypeSelect v-model="form.trailerType" v-model:types="trailerTypes" :disabled="disabled" />
                 </div>
 
                 <div>

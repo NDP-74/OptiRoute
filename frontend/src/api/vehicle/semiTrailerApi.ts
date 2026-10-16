@@ -10,12 +10,10 @@ import type {
 export type TrailerTypeOption = {
     id: number;
     label: string;
-    description: string | null;
 };
 
 export type TrailerTypeRequest = {
     label: string;
-    description: string | null;
 };
 
 export const getSemiTrailers = async (): Promise<SemiTrailerSummary[]> => {

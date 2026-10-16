@@ -9,4 +9,6 @@ public interface SemiTrailerRepository extends JpaRepository<SemiTrailer, Long> 
     Optional<SemiTrailer> findByRegistration(String registration);
 
     boolean existsByRegistration(String registration);
+
+    boolean existsByTrailerTypeId(Long trailerTypeId);
 }

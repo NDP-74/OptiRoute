@@ -2,6 +2,7 @@
 import { reactive, ref, watch } from "vue"
 
 import { createSemiTrailer, getSemiTrailerTypes } from "@/api/vehicle/semiTrailerApi"
+import type { TrailerTypeOption } from "@/api/vehicle/semiTrailerApi"
 import { getApiErrorMessage } from "@/api/utils"
 
 import type { CreateSemiTrailerRequest, SemiTrailerFormData } from "@/models/vehicle/SemiTrailer"
@@ -16,7 +17,7 @@ import { useNotification } from "@/composables/useNotification"
 
 const notification = useNotification()
 const loading = ref(false)
-const trailerTypes = ref<string[]>([])
+const trailerTypes = ref<TrailerTypeOption[]>([])
 
 const props = defineProps<{
     show: boolean
@@ -46,7 +47,7 @@ const resetForm = () => {
 const loadTrailerTypes = async () => {
     try {
         const trailerTypeOptions = await getSemiTrailerTypes()
-        trailerTypes.value = trailerTypeOptions.map((option) => option.label)
+        trailerTypes.value = trailerTypeOptions
     } catch (error: unknown) {
         trailerTypes.value = []
         notification.error(
@@ -125,7 +126,7 @@ watch(
             </h2>
 
             <div class="max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
-                <SemiTrailerForm v-model="form" :disabled="loading" :trailer-types="trailerTypes" />
+                <SemiTrailerForm v-model="form" :disabled="loading" v-model:trailer-types="trailerTypes" />
             </div>
 
             <div class="mt-6 flex justify-end gap-3">

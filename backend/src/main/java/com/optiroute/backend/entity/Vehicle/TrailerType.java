@@ -24,7 +24,4 @@ public class TrailerType {
 
     @Column(nullable = false, length = 100)
     private String label;
-
-    @Column(length = 255)
-    private String description;
 }

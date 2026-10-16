@@ -53,7 +53,6 @@ public class SemiTrailerService {
 
         TrailerType trailerType = new TrailerType();
         trailerType.setLabel(label);
-        trailerType.setDescription(normalizeDescription(request.description()));
         return toTrailerTypeResponse(trailerTypeRepository.save(trailerType));
     }
 
@@ -67,7 +66,6 @@ public class SemiTrailerService {
         });
 
         trailerType.setLabel(label);
-        trailerType.setDescription(normalizeDescription(request.description()));
         return toTrailerTypeResponse(trailerTypeRepository.save(trailerType));
     }
 
@@ -166,11 +164,15 @@ public class SemiTrailerService {
             throw new EntityNotFoundException("TrailerType not found with id " + id);
         }
 
+        if (semiTrailerRepository.existsByTrailerTypeId(id)) {
+            throw new IllegalArgumentException("Ce type est utilisé par au moins une semi-remorque et ne peut pas être supprimé");
+        }
+
         trailerTypeRepository.deleteById(id);
     }
 
     private TrailerTypeResponse toTrailerTypeResponse(TrailerType trailerType) {
-        return new TrailerTypeResponse(trailerType.getId(), trailerType.getLabel(), trailerType.getDescription());
+        return new TrailerTypeResponse(trailerType.getId(), trailerType.getLabel());
     }
 
     private String validateTrailerTypeLabel(String label) {
@@ -178,10 +180,6 @@ public class SemiTrailerService {
             throw new IllegalArgumentException("Trailer type label is required");
         }
         return label.trim();
-    }
-
-    private String normalizeDescription(String description) {
-        return description == null || description.isBlank() ? null : description.trim();
     }
 
     private TrailerType resolveTrailerType(String requestedLabel) {
