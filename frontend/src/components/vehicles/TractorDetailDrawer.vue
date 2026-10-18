@@ -3,14 +3,9 @@ import { ref, watch } from "vue"
 
 import {
     CircleDollarSign,
-    Fuel,
-    Gauge,
     Info,
-    Ruler,
-    Scale,
     Trash2,
     Edit3,
-    Tag,
 } from "lucide-vue-next"
 
 import type { TractorDetails } from "@/models/vehicle/Tractor"
@@ -30,9 +25,8 @@ import DeleteTractorModal from "@/components/vehicles/DeleteTractorModal.vue"
 import VehicleEventsSection from "@/components/vehicles/VehicleEventsSection.vue"
 
 import {
-    formatCurrency, formatDate, formatDateTime, formatNumber,
+    formatCurrency, formatDate,
 } from "@/utils/formatters"
-import { formatFuelType, formatConsumption, formatVehicleLabel } from "@/utils/vehicleUtils"
 
 //Variables
 
@@ -205,10 +199,6 @@ watch(
                 <h2 class="mt-1 truncate text-xl font-bold text-slate-900">
                     {{ tractor?.registration ?? "Chargement..." }}
                 </h2>
-
-                <p v-if="tractor" class="mt-1 truncate text-sm text-slate-500">
-                    {{ formatVehicleLabel(tractor?.brand, tractor?.model) }}
-                </p>
             </div>
         </template>
 
@@ -247,44 +237,6 @@ watch(
             <!-- Identification -->
             <DetailSection title="Identification" :icon="Info">
                 <DetailRow label="Immatriculation" :value="tractor.registration" />
-
-                <DetailRow label="Marque" :value="tractor.brand || 'Non renseignée'" />
-
-                <DetailRow label="Modèle" :value="tractor.model || 'Non renseigné'" />
-            </DetailSection>
-
-            <!-- Motorisation -->
-            <DetailSection title="Motorisation" :icon="Fuel">
-                <DetailRow label="Type de carburant" :value="formatFuelType(tractor.fuelType)" />
-
-                <DetailRow label="Consommation moyenne en charge"
-                    :value="formatConsumption(tractor.averageConsumption)" />
-
-                <DetailRow label="Consommation moyenne à vide"
-                    :value="formatConsumption(tractor.averageConsumptionEmpty)" />
-
-                <DetailRow label="Vitesse maximale" :value="formatNumber(tractor.maxSpeed, ' km/h', 0)" />
-            </DetailSection>
-
-            <!-- Configuration -->
-            <DetailSection title="Configuration" :icon="Gauge">
-                <DetailRow label="Nombre d’essieux" :value="formatNumber(tractor.axleCount, '', 0)" />
-            </DetailSection>
-
-            <!-- Poids -->
-            <DetailSection title="Poids" :icon="Scale">
-                <DetailRow label="Poids à vide" :value="formatNumber(tractor.emptyWeightKg, ' kg', 0)" />
-
-                <DetailRow label="PTRA" :value="formatNumber(tractor.grossCombinationWeightKg, ' kg', 0)" />
-            </DetailSection>
-
-            <!-- Dimensions -->
-            <DetailSection title="Dimensions" :icon="Ruler">
-                <DetailRow label="Hauteur" :value="formatNumber(tractor.heightCm, ' cm', 0)" />
-
-                <DetailRow label="Largeur" :value="formatNumber(tractor.widthCm, ' cm', 0)" />
-
-                <DetailRow label="Longueur" :value="formatNumber(tractor.lengthCm, ' cm', 0)" />
             </DetailSection>
 
             <!-- Achat et amortissement -->
@@ -296,19 +248,6 @@ watch(
                 <DetailRow label="Fin d’amortissement" :value="formatDate(tractor.depreciationEndDate)" />
 
                 <DetailRow label="Entretien" :value="formatCurrency(tractor.maintenanceCostPerKm) + ' / km'" />
-            </DetailSection>
-
-            <!-- Synchronisation -->
-            <DetailSection title="Synchronisation" :icon="Tag">
-                <DetailRow label="Source" :value="tractor.externalSource ?? 'Non renseignée'" />
-
-                <DetailRow label="Identifiant externe" :value="tractor.externalId
-                    || 'Aucun identifiant externe'
-                    " break-value />
-
-                <DetailRow label="Créé le" :value="formatDateTime(tractor.createdAt)" />
-
-                <DetailRow label="Modifié le" :value="formatDateTime(tractor.updatedAt)" />
             </DetailSection>
 
             <VehicleEventsSection :events="events" :loading="eventsLoading" :error="eventsError" />

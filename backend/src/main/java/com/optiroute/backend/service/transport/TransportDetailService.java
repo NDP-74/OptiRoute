@@ -54,11 +54,9 @@ public class TransportDetailService {
 
             driver != null ? driver.getId() : null, driver != null ? driver.getFirstName() + " " + driver.getLastName() : null, driver != null ? driver.getLogin() : null,
 
-            tractor != null ? tractor.getId() : null, tractor != null ? tractor.getRegistration() : null, tractor != null ? tractor.getBrand() : null,
-            tractor != null ? tractor.getModel() : null,
+            tractor != null ? tractor.getId() : null, tractor != null ? tractor.getRegistration() : null,
 
-            semiTrailer != null ? semiTrailer.getId() : null, semiTrailer != null ? semiTrailer.getRegistration() : null, semiTrailer != null ? semiTrailer.getBrand() : null,
-            semiTrailer != null ? semiTrailer.getModel() : null,
+            semiTrailer != null ? semiTrailer.getId() : null, semiTrailer != null ? semiTrailer.getRegistration() : null,
 
             customer != null ? customer.getId() : null, customer != null ? customer.getName() : null, customer != null ? customer.getAddress() : null,
             customer != null ? customer.getCity() : null,

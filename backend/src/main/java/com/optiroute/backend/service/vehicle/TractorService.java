@@ -49,29 +49,7 @@ public class TractorService {
         }
 
         Tractor tractor = new Tractor();
-
-        tractor.setExternalId(request.externalId());
-        tractor.setExternalSource(request.externalSource() == null || request.externalSource().isBlank() ? "MANUAL" : request.externalSource());
-
         tractor.setRegistration(request.registration());
-
-        tractor.setBrand(request.brand());
-        tractor.setModel(request.model());
-
-        tractor.setMaxSpeed(request.maxSpeed());
-
-        tractor.setFuelType(request.fuelType());
-        tractor.setAverageConsumption(request.averageConsumption());
-        tractor.setAverageConsumptionEmpty(request.averageConsumptionEmpty());
-
-        tractor.setEmptyWeightKg(request.emptyWeightKg());
-        tractor.setGrossCombinationWeightKg(request.grossCombinationWeightKg());
-
-        tractor.setHeightCm(request.heightCm());
-        tractor.setWidthCm(request.widthCm());
-        tractor.setLengthCm(request.lengthCm());
-        tractor.setAxleCount(request.axleCount());
-
         tractor.setPurchaseCost(request.purchaseCost());
         tractor.setDepreciationStartDate(request.depreciationStartDate());
         tractor.setDepreciationEndDate(request.depreciationEndDate());
@@ -84,29 +62,7 @@ public class TractorService {
     @Transactional
     public TractorResponse updateTractor(Long id, TractorRequest request) {
         Tractor tractor = tractorRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Tractor not found with id " + id));
-
-        tractor.setExternalId(request.externalId());
-        tractor.setExternalSource(request.externalSource() == null || request.externalSource().isBlank() ? "MANUAL" : request.externalSource());
-
         tractor.setRegistration(request.registration());
-
-        tractor.setBrand(request.brand());
-        tractor.setModel(request.model());
-
-        tractor.setMaxSpeed(request.maxSpeed());
-
-        tractor.setFuelType(request.fuelType());
-        tractor.setAverageConsumption(request.averageConsumption());
-        tractor.setAverageConsumptionEmpty(request.averageConsumptionEmpty());
-
-        tractor.setEmptyWeightKg(request.emptyWeightKg());
-        tractor.setGrossCombinationWeightKg(request.grossCombinationWeightKg());
-
-        tractor.setHeightCm(request.heightCm());
-        tractor.setWidthCm(request.widthCm());
-        tractor.setLengthCm(request.lengthCm());
-        tractor.setAxleCount(request.axleCount());
-
         tractor.setPurchaseCost(request.purchaseCost());
         tractor.setDepreciationStartDate(request.depreciationStartDate());
         tractor.setDepreciationEndDate(request.depreciationEndDate());

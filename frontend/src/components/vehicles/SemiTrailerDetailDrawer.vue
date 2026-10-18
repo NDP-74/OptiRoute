@@ -5,12 +5,7 @@ import {
     CircleDollarSign,
     Edit3,
     Info,
-    Ruler,
-    Scale,
-    Tag,
-    Gauge,
     Trash2,
-    Fuel,
 } from "lucide-vue-next"
 
 import type { SemiTrailerDetails } from "@/models/vehicle/SemiTrailer"
@@ -29,9 +24,8 @@ import UpdateSemiTrailerModal from "@/components/vehicles/UpdateSemiTrailerModal
 import VehicleEventsSection from "@/components/vehicles/VehicleEventsSection.vue"
 
 import {
-    formatCurrency, formatDate, formatDateTime, formatNumber,
+    formatCurrency, formatDate,
 } from "@/utils/formatters"
-import { formatVehicleLabel } from "@/utils/vehicleUtils"
 
 //Variables
 
@@ -205,10 +199,6 @@ watch(
                 <h2 class="mt-1 truncate text-xl font-bold text-slate-900">
                     {{ semiTrailer?.registration ?? "Chargement..." }}
                 </h2>
-
-                <p v-if="semiTrailer" class="mt-1 truncate text-sm text-slate-500">
-                    {{ formatVehicleLabel(semiTrailer?.brand, semiTrailer?.model) }}
-                </p>
             </div>
         </template>
 
@@ -248,37 +238,7 @@ watch(
             <DetailSection title="Identification" :icon="Info">
                 <DetailRow label="Immatriculation" :value="semiTrailer.registration" />
 
-                <DetailRow label="Marque" :value="semiTrailer.brand ?? 'Non renseignée'" />
-
-                <DetailRow label="Modèle" :value="semiTrailer.model ?? 'Non renseigné'" />
-
                 <DetailRow label="Type" :value="semiTrailer.trailerType ?? 'Non renseigné'" />
-            </DetailSection>
-
-            <!-- Motorisation -->
-            <DetailSection title="Motorisation" :icon="Fuel">
-                <DetailRow label="Vitesse maximale" :value="formatNumber(semiTrailer.maxSpeed, ' km/h', 0)" />
-            </DetailSection>
-
-            <!-- Configuration -->
-            <DetailSection title="Configuration" :icon="Gauge">
-                <DetailRow label="Nombre d’essieux" :value="String(semiTrailer.axleCount)" />
-            </DetailSection>
-
-            <!-- Poids -->
-            <DetailSection title="Poids" :icon="Scale">
-                <DetailRow label="Poids à vide" :value="formatNumber(semiTrailer.emptyWeightKg, ' kg', 0)" />
-
-                <DetailRow label="PTAC" :value="formatNumber(semiTrailer.grossVehicleWeightKg, ' kg', 0)" />
-            </DetailSection>
-
-            <!-- Dimensions -->
-            <DetailSection title="Dimensions" :icon="Ruler">
-                <DetailRow label="Hauteur" :value="formatNumber(semiTrailer.heightCm, ' cm', 0)" />
-
-                <DetailRow label="Largeur" :value="formatNumber(semiTrailer.widthCm, ' cm', 0)" />
-
-                <DetailRow label="Longueur" :value="formatNumber(semiTrailer.lengthCm, ' cm', 0)" />
             </DetailSection>
 
             <!-- Achat et amortissement -->
@@ -290,17 +250,6 @@ watch(
                 <DetailRow label="Fin d’amortissement" :value="formatDate(semiTrailer.depreciationEndDate)" />
 
                 <DetailRow label="Entretien" :value="formatCurrency(semiTrailer.maintenanceCostPerKm) + ' / km'" />
-            </DetailSection>
-
-            <!-- Synchronisation -->
-            <DetailSection title="Synchronisation" :icon="Tag">
-                <DetailRow label="Source" :value="semiTrailer.externalSource ?? 'Non renseignée'" />
-
-                <DetailRow label="Identifiant externe" :value="semiTrailer.externalId ?? 'Non renseigné'" />
-
-                <DetailRow label="Créé le" :value="formatDateTime(semiTrailer.createdAt)" />
-
-                <DetailRow label="Modifié le" :value="formatDateTime(semiTrailer.updatedAt)" />
             </DetailSection>
 
             <VehicleEventsSection :events="events" :loading="eventsLoading" :error="eventsError" />

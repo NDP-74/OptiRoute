@@ -83,14 +83,6 @@ onMounted(loadTractors)
                             Immatriculation
                         </th>
 
-                        <th class="whitespace-nowrap px-6 py-4 text-left">
-                            Marque
-                        </th>
-
-                        <th class="whitespace-nowrap px-6 py-4 text-left">
-                            Modèle
-                        </th>
-
                         <th class="whitespace-nowrap px-6 py-4 text-right">
                             Actions
                         </th>
@@ -107,14 +99,6 @@ onMounted(loadTractors)
 
                         <td class="whitespace-nowrap px-6 py-4 font-medium text-gray-900">
                             {{ tractor.registration }}
-                        </td>
-
-                        <td class="whitespace-nowrap px-6 py-4">
-                            {{ tractor.brand }}
-                        </td>
-
-                        <td class="whitespace-nowrap px-6 py-4">
-                            {{ tractor.model }}
                         </td>
 
                         <!-- Le stop empêche le clic sur les actions d'ouvrir également le drawer. -->

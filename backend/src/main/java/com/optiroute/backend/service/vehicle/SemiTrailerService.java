@@ -88,26 +88,8 @@ public class SemiTrailerService {
         }
 
         SemiTrailer semiTrailer = new SemiTrailer();
-
-        semiTrailer.setExternalId(request.externalId());
-        semiTrailer.setExternalSource(request.externalSource() == null || request.externalSource().isBlank() ? "MANUAL" : request.externalSource());
-
         semiTrailer.setRegistration(request.registration());
-
-        semiTrailer.setBrand(request.brand());
-        semiTrailer.setModel(request.model());
-
         semiTrailer.setTrailerType(resolveTrailerType(request.trailerType()));
-        semiTrailer.setMaxSpeed(request.maxSpeed());
-
-        semiTrailer.setEmptyWeightKg(request.emptyWeightKg());
-        semiTrailer.setGrossVehicleWeightKg(request.grossVehicleWeightKg());
-
-        semiTrailer.setHeightCm(request.heightCm());
-        semiTrailer.setWidthCm(request.widthCm());
-        semiTrailer.setLengthCm(request.lengthCm());
-        semiTrailer.setAxleCount(request.axleCount());
-
         semiTrailer.setPurchaseCost(request.purchaseCost());
         semiTrailer.setDepreciationStartDate(request.depreciationStartDate());
         semiTrailer.setDepreciationEndDate(request.depreciationEndDate());
@@ -121,24 +103,8 @@ public class SemiTrailerService {
     public SemiTrailerResponse updateSemiTrailer(Long id, SemiTrailerRequest request) {
         SemiTrailer semiTrailer = semiTrailerRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("SemiTrailer not found with id " + id));
 
-        semiTrailer.setExternalId(request.externalId());
-        semiTrailer.setExternalSource(request.externalSource() == null || request.externalSource().isBlank() ? "MANUAL" : request.externalSource());
-
         semiTrailer.setRegistration(request.registration());
-
-        semiTrailer.setBrand(request.brand());
-        semiTrailer.setModel(request.model());
-
         semiTrailer.setTrailerType(resolveTrailerType(request.trailerType()));
-        semiTrailer.setMaxSpeed(request.maxSpeed());
-
-        semiTrailer.setEmptyWeightKg(request.emptyWeightKg());
-        semiTrailer.setGrossVehicleWeightKg(request.grossVehicleWeightKg());
-
-        semiTrailer.setHeightCm(request.heightCm());
-        semiTrailer.setWidthCm(request.widthCm());
-        semiTrailer.setLengthCm(request.lengthCm());
-        semiTrailer.setAxleCount(request.axleCount());
 
         semiTrailer.setPurchaseCost(request.purchaseCost());
         semiTrailer.setDepreciationStartDate(request.depreciationStartDate());

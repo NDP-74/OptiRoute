@@ -71,20 +71,8 @@ const populateForm = () => {
 
     Object.assign(form, {
         registration: props.semiTrailer.registration,
-        brand: props.semiTrailer.brand ?? null,
-        model: props.semiTrailer.model ?? null,
 
-        maxSpeed: props.semiTrailer.maxSpeed ?? null,
         trailerType: props.semiTrailer.trailerType ?? null,
-
-        emptyWeightKg: props.semiTrailer.emptyWeightKg ?? null,
-        grossVehicleWeightKg: props.semiTrailer.grossVehicleWeightKg ?? null,
-
-        heightCm: props.semiTrailer.heightCm ?? null,
-        widthCm: props.semiTrailer.widthCm ?? null,
-        lengthCm: props.semiTrailer.lengthCm ?? null,
-
-        axleCount: props.semiTrailer.axleCount ?? null,
 
         purchaseCost: props.semiTrailer.purchaseCost ?? null,
         depreciationStartDate: props.semiTrailer.depreciationStartDate ?? null,
@@ -103,20 +91,8 @@ const submitSemiTrailer = async () => {
 
         const payload: UpdateSemiTrailerRequest = {
             registration: form.registration.trim().toUpperCase(),
-            brand: form.brand?.trim() || null,
-            model: form.model?.trim() || null,
 
-            maxSpeed: form.maxSpeed,
             trailerType: form.trailerType,
-
-            emptyWeightKg: form.emptyWeightKg,
-            grossVehicleWeightKg: form.grossVehicleWeightKg,
-
-            heightCm: form.heightCm,
-            widthCm: form.widthCm,
-            lengthCm: form.lengthCm,
-
-            axleCount: form.axleCount,
 
             purchaseCost: form.purchaseCost,
             depreciationStartDate: form.depreciationStartDate || null,

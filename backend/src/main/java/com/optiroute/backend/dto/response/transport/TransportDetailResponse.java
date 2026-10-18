@@ -16,10 +16,10 @@ public record TransportDetailResponse(Long id, String name, String status, boole
         Long driverId, String driverName, String driverLogin,
 
         // Tractor
-        Long tractorId, String tractorRegistration, String tractorBrand, String tractorModel,
+        Long tractorId, String tractorRegistration,
 
         // Semi-trailer
-        Long semiTrailerId, String semiTrailerRegistration, String semiTrailerBrand, String semiTrailerModel,
+        Long semiTrailerId, String semiTrailerRegistration,
 
         // Customer
         Long customerId, String customerName, String customerAddress, String customerCity,

@@ -49,27 +49,7 @@ const submitTractor = async () => {
         loading.value = true
 
         const payload: CreateTractorRequest = {
-            externalSource: "MANUAL",
-            externalId: null,
-
             registration: form.registration.trim().toUpperCase(),
-            brand: form.brand?.trim() || null,
-            model: form.model?.trim() || null,
-
-            maxSpeed: form.maxSpeed,
-
-            fuelType: form.fuelType,
-            averageConsumption: form.averageConsumption,
-            averageConsumptionEmpty: form.averageConsumptionEmpty,
-
-            emptyWeightKg: form.emptyWeightKg,
-            grossCombinationWeightKg: form.grossCombinationWeightKg,
-
-            heightCm: form.heightCm,
-            widthCm: form.widthCm,
-            lengthCm: form.lengthCm,
-
-            axleCount: form.axleCount,
 
             purchaseCost: form.purchaseCost,
             depreciationStartDate: form.depreciationStartDate || null,

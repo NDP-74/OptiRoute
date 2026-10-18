@@ -8,7 +8,6 @@ import { getPointsOfInterest } from '@/api/pointOfInterestApi'
 import { createEvent } from '@/api/eventApi'
 import { getApiErrorMessage } from '@/api/utils'
 import { useNotification } from '@/composables/useNotification'
-import { formatVehicleLabel } from '@/utils/vehicleUtils'
 
 import type { CostParameterLight } from '@/models/cost/CostParameter'
 import type { PointOfInterest } from '@/models/PointOfInterest'
@@ -132,7 +131,6 @@ const selectClass = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-
                             <span class="font-medium">Tracteur</span>
                             <span class="block text-xs text-slate-500">
                                 {{ transport?.tractorRegistration ?? 'Aucun tracteur' }}
-                                {{ formatVehicleLabel(transport?.tractorBrand ?? null, transport?.tractorModel ?? null) }}
                             </span>
                         </span>
                     </label>
@@ -144,7 +142,6 @@ const selectClass = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-
                             <span class="font-medium">Semi-remorque</span>
                             <span class="block text-xs text-slate-500">
                                 {{ transport?.semiTrailerRegistration ?? 'Aucune semi-remorque' }}
-                                {{ formatVehicleLabel(transport?.semiTrailerBrand ?? null, transport?.semiTrailerModel ?? null) }}
                             </span>
                         </span>
                     </label>

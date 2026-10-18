@@ -5,12 +5,8 @@ import com.optiroute.backend.dto.response.route.RouteCostDetailsDto;
 import com.optiroute.backend.dto.response.route.RoutesResponse;
 import com.optiroute.backend.dto.response.route.RouteDto;
 import com.optiroute.backend.entity.driver.Driver;
-import com.optiroute.backend.entity.vehicle.SemiTrailer;
-import com.optiroute.backend.entity.vehicle.Tractor;
 import com.optiroute.backend.service.cost.FuelPriceService;
 import com.optiroute.backend.service.driver.DriverService;
-import com.optiroute.backend.service.vehicle.SemiTrailerService;
-import com.optiroute.backend.service.vehicle.TractorService;
 import com.optiroute.backend.type.GpsModeType;
 import com.optiroute.backend.type.driver.DriverCostType;
 
@@ -30,12 +26,8 @@ import java.util.Map;
 public class RouteOptimizationService {
 
     private final RoutingService routingService;
-    private final RoutePtvParser routePtvParser;
-    private final RouteHereParser routeHereParser;
     private final RouteCostService routeCostService;
     private final FuelPriceService fuelPriceService;
-    private final TractorService tractorService;
-    private final SemiTrailerService semiTrailerService;
     private final DriverService driverService;
     private final TruckConfigurationFactory truckConfigurationFactory;
 
@@ -46,18 +38,11 @@ public class RouteOptimizationService {
     // onlyMode != null : ne calcule que ce mode (une seule requête fournisseur)
     public RoutesResponse calculateRoute(RouteRequest request, GpsModeType onlyMode) {
 
-        TruckConfiguration truckConfiguration;
-        if (request.getTractorId() != null && request.getSemiTrailerId() != null) {
-            Tractor tractor = tractorService.getEntityById(request.getTractorId());
-            SemiTrailer semiTrailer = semiTrailerService.getEntityById(request.getSemiTrailerId());
-            truckConfiguration = truckConfigurationFactory.create(tractor,semiTrailer,request.isEmptyTrip());
-        } else {
-            truckConfiguration = truckConfigurationFactory.createDefault(request.isEmptyTrip());
-        }
+        TruckConfiguration truckConfiguration = truckConfigurationFactory.createDefault(request.isEmptyTrip());
 
         double driverHourlyRate = resolveDriverHourlyRate(request.getDriverId());
 
-        // Deux routes : la plus rapide et la plus �conomique
+        // Deux routes : la plus rapide et la plus économique
         Map<GpsModeType, RoutePtvParser.ParsedRoute> parsedRoutes = routingService.calculateRoutes(request,truckConfiguration,driverHourlyRate,onlyMode);
 
         // Cost calculation

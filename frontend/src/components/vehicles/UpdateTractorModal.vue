@@ -49,23 +49,6 @@ const populateForm = () => {
 
     Object.assign(form, {
         registration: props.tractor.registration,
-        brand: props.tractor.brand,
-        model: props.tractor.model,
-
-        maxSpeed: props.tractor.maxSpeed,
-
-        fuelType: props.tractor.fuelType ?? null,
-        averageConsumption: props.tractor.averageConsumption,
-        averageConsumptionEmpty: props.tractor.averageConsumptionEmpty,
-
-        emptyWeightKg: props.tractor.emptyWeightKg,
-        grossCombinationWeightKg: props.tractor.grossCombinationWeightKg,
-
-        heightCm: props.tractor.heightCm,
-        widthCm: props.tractor.widthCm,
-        lengthCm: props.tractor.lengthCm,
-
-        axleCount: props.tractor.axleCount,
 
         purchaseCost: props.tractor.purchaseCost,
         depreciationStartDate: props.tractor.depreciationStartDate,
@@ -84,23 +67,6 @@ const submitTractor = async () => {
 
         const payload: UpdateTractorRequest = {
             registration: form.registration.trim().toUpperCase(),
-            brand: form.brand?.trim() || null,
-            model: form.model?.trim() || null,
-
-            maxSpeed: form.maxSpeed,
-
-            fuelType: form.fuelType,
-            averageConsumption: form.averageConsumption,
-            averageConsumptionEmpty: form.averageConsumptionEmpty,
-
-            emptyWeightKg: form.emptyWeightKg,
-            grossCombinationWeightKg: form.grossCombinationWeightKg,
-
-            heightCm: form.heightCm,
-            widthCm: form.widthCm,
-            lengthCm: form.lengthCm,
-
-            axleCount: form.axleCount,
 
             purchaseCost: form.purchaseCost,
             depreciationStartDate: form.depreciationStartDate || null,

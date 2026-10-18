@@ -62,24 +62,9 @@ const submitSemiTrailer = async () => {
         loading.value = true
 
         const payload: CreateSemiTrailerRequest = {
-            externalSource: "MANUAL",
-            externalId: null,
-
             registration: form.registration.trim().toUpperCase(),
-            brand: form.brand?.trim() || null,
-            model: form.model?.trim() || null,
 
-            maxSpeed: form.maxSpeed,
             trailerType: form.trailerType,
-
-            emptyWeightKg: form.emptyWeightKg,
-            grossVehicleWeightKg: form.grossVehicleWeightKg,
-
-            heightCm: form.heightCm,
-            widthCm: form.widthCm,
-            lengthCm: form.lengthCm,
-
-            axleCount: form.axleCount,
 
             purchaseCost: form.purchaseCost,
             depreciationStartDate: form.depreciationStartDate || null,

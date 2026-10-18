@@ -35,13 +35,9 @@ export interface TransportDetail {
 
     tractorId: number | null;
     tractorRegistration: string | null;
-    tractorBrand: string | null;
-    tractorModel: string | null;
 
     semiTrailerId: number | null;
     semiTrailerRegistration: string | null;
-    semiTrailerBrand: string | null;
-    semiTrailerModel: string | null;
 
     customerId: number | null;
     customerName: string | null;

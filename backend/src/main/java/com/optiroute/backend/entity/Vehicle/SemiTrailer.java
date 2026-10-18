@@ -19,38 +19,12 @@ public class SemiTrailer extends EntityUtils {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "external_id")
-    private String externalId;
-
-    @Column(name = "external_source")
-    private String externalSource = "MANUAL";
-
     @Column(nullable = false, unique = true, length = 15)
     private String registration;
-
-    @Column(length = 100)
-    private String brand;
-
-    @Column(length = 100)
-    private String model;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "trailer_type_id")
     private TrailerType trailerType;
-
-    private Integer maxSpeed;
-
-    private Integer emptyWeightKg;
-
-    private Integer grossVehicleWeightKg;
-
-    private Integer heightCm;
-
-    private Integer widthCm;
-
-    private Integer lengthCm;
-
-    private Integer axleCount;
 
     @Column(precision = 12, scale = 2)
     private BigDecimal purchaseCost;
