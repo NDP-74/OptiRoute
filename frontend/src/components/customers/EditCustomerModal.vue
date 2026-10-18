@@ -31,8 +31,6 @@ const form = ref<CustomerFormData>({
     name: "",
     code: null,
     address: null,
-    city: null,
-    country: null,
 })
 
 const loading = ref(false)
@@ -46,8 +44,6 @@ watch(
             name: customer.name,
             code: customer.code,
             address: customer.address,
-            city: customer.city,
-            country: customer.country,
         }
     },
     {
@@ -65,13 +61,9 @@ const saveCustomer = async () => {
     if (!props.customer) return
 
     const request: CustomerUpdateRequest = {
-        externalId: props.customer.externalId,
-        externalSource: props.customer.externalSource,
         name: form.value.name.trim(),
         code: form.value.code?.trim() || null,
         address: form.value.address?.trim() || null,
-        city: form.value.city?.trim() || null,
-        country: form.value.country?.trim() || null
     }
 
     try {

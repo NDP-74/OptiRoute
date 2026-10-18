@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from "vue"
-import { Building2, Tag, Edit3, MapPin, Trash2 } from "lucide-vue-next"
+import { Building2, Clock, Edit3, MapPin, Trash2 } from "lucide-vue-next"
 
 import { getCustomer } from "@/api/customerApi"
 import DeleteCustomerModal from "@/components/customers/DeleteCustomerModal.vue"
@@ -139,16 +139,6 @@ watch(
 
             <DetailSection title="Adresse" :icon="MapPin">
                 <DetailRow label="Adresse" :value="customer.address || 'Non renseignée'" :break-value="true" />
-                <DetailRow label="Ville" :value="customer.city || 'Non renseignée'" />
-                <DetailRow label="Pays" :value="customer.country || 'Non renseigné'" />
-            </DetailSection>
-
-            <!-- Synchronisation -->
-            <DetailSection title="Synchronisation" :icon="Tag">
-                <DetailRow label="Source" :value="customer.externalSource || 'Non renseignée'" />
-                <DetailRow label="Identifiant externe" :value="customer.externalId || 'Non renseigné'" />
-                <DetailRow label="Créé le" :value="formatDateTime(customer.createdAt)" />
-                <DetailRow label="Modifié le" :value="formatDateTime(customer.updatedAt)" />
             </DetailSection>
         </div>
 

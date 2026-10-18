@@ -103,16 +103,7 @@ const events = ref<EventResponse[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
 
-const customerAddress = computed<string | null>(() => {
-    if (!transport.value) {
-        return null;
-    }
-
-    return [
-        transport.value.customerAddress,
-        transport.value.customerCity,
-    ].filter((value): value is string => Boolean(value)).join(", ") || null;
-});
+const customerAddress = computed<string | null>(() => transport.value?.customerAddress ?? null);
 
 const statusLabel = computed<string>(() => {
     if (!transport.value) {

@@ -36,14 +36,9 @@ public class CustomerService {
 
         Customer customer = new Customer();
 
-        customer.setExternalId(request.externalId());
-        customer.setExternalSource(request.externalSource() == null || request.externalSource().isBlank() ? "MANUAL" : request.externalSource());
-
         customer.setName(request.name());
         customer.setCode(request.code());
         customer.setAddress(request.address());
-        customer.setCity(request.city());
-        customer.setCountry(request.country());
 
         return CustomerUtils.toCustomerResponse(customerRepository.save(customer));
     }
@@ -64,14 +59,9 @@ public class CustomerService {
     public CustomerResponse updateCustomer(Long id, CustomerRequest request) {
         Customer customer = customerRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Customer not found with id " + id));
 
-        customer.setExternalId(request.externalId());
-        customer.setExternalSource(request.externalSource() == null || request.externalSource().isBlank() ? "MANUAL" : request.externalSource());
-
         customer.setName(request.name());
         customer.setCode(request.code());
         customer.setAddress(request.address());
-        customer.setCity(request.city());
-        customer.setCountry(request.country());
 
         Customer updatedCustomer = customerRepository.save(customer);
         return CustomerUtils.toCustomerResponse(updatedCustomer);

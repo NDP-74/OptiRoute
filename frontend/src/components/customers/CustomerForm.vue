@@ -1,8 +1,18 @@
 <script setup lang="ts">
+import { computed } from "vue"
+
+import HereAutocompleteInput from "@/components/maps/HereAutocompleteInput.vue"
 import type { CustomerFormData } from "@/models/Customer"
 
 const form = defineModel<CustomerFormData>({
     required: true,
+})
+
+const address = computed({
+    get: () => (form.value.address ? { address: form.value.address } : null),
+    set: (place: { address?: string } | null) => {
+        form.value.address = place?.address ?? null
+    },
 })
 
 withDefaults(
@@ -58,26 +68,7 @@ withDefaults(
                 <label class="mb-1.5 block text-sm font-medium text-slate-700">
                     Adresse
                 </label>
-                <input v-model="form.address" type="text" maxlength="255" :disabled="disabled"
-                    class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100" />
-            </div>
-
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                    <label class="mb-1.5 block text-sm font-medium text-slate-700">
-                        Ville
-                    </label>
-                    <input v-model="form.city" type="text" maxlength="100" :disabled="disabled"
-                        class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100" />
-                </div>
-
-                <div>
-                    <label class="mb-1.5 block text-sm font-medium text-slate-700">
-                        Pays
-                    </label>
-                    <input v-model="form.country" type="text" maxlength="100" :disabled="disabled"
-                        class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100" />
-                </div>
+                <HereAutocompleteInput v-model="address" label="Rechercher une adresse" :disabled="disabled" />
             </div>
         </section>
     </div>

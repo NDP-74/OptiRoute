@@ -42,7 +42,6 @@ export interface TransportDetail {
     customerId: number | null;
     customerName: string | null;
     customerAddress: string | null;
-    customerCity: string | null;
 
     originName: string;
     originAddress: string | null;

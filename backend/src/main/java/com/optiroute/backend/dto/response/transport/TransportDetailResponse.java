@@ -22,7 +22,7 @@ public record TransportDetailResponse(Long id, String name, String status, boole
         Long semiTrailerId, String semiTrailerRegistration,
 
         // Customer
-        Long customerId, String customerName, String customerAddress, String customerCity,
+        Long customerId, String customerName, String customerAddress,
 
         // Origin
         String originName, String originAddress, double originLat, double originLng,

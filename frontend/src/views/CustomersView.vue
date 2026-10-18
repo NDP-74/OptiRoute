@@ -75,7 +75,6 @@ onMounted(async () => {
                     <tr>
                         <th class="whitespace-nowrap px-6 py-4 text-left">Nom</th>
                         <th class="whitespace-nowrap px-6 py-4 text-left">Code</th>
-                        <th class="whitespace-nowrap px-6 py-4 text-left">Ville</th>
                         <th class="whitespace-nowrap px-6 py-4 text-right">Actions</th>
                     </tr>
                 </thead>
@@ -90,9 +89,6 @@ onMounted(async () => {
                         </td>
                         <td class="whitespace-nowrap px-6 py-4">
                             {{ customer.code || 'Non renseigné' }}
-                        </td>
-                        <td class="whitespace-nowrap px-6 py-4">
-                            {{ customer.city || 'Non renseignée' }}
                         </td>
                         <td class="whitespace-nowrap px-6 py-4 text-right" @click.stop @keydown.stop>
                             <AppDropdown :open="openDropdownId === customer.id" @update:open="value => {

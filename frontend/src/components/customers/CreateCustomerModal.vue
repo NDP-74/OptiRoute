@@ -26,8 +26,6 @@ const initialForm = (): CustomerFormData => ({
     name: "",
     code: null,
     address: null,
-    city: null,
-    country: "France",
 })
 
 const form = ref<CustomerFormData>(initialForm())
@@ -40,13 +38,9 @@ const submitCustomer = async () => {
         loading.value = true
 
         const payload: CustomerCreateRequest = {
-            externalId: null,
-            externalSource: "MANUAL",
             name: form.value.name.trim(),
             code: form.value.code?.trim() || null,
             address: form.value.address?.trim() || null,
-            city: form.value.city?.trim() || null,
-            country: form.value.country?.trim() || null
         }
 
         await createCustomer(payload)

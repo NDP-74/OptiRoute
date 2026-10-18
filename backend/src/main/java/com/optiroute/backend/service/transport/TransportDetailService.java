@@ -59,7 +59,6 @@ public class TransportDetailService {
             semiTrailer != null ? semiTrailer.getId() : null, semiTrailer != null ? semiTrailer.getRegistration() : null,
 
             customer != null ? customer.getId() : null, customer != null ? customer.getName() : null, customer != null ? customer.getAddress() : null,
-            customer != null ? customer.getCity() : null,
 
             route.getOriginName(), route.getOriginAddress(), route.getOriginLat(), route.getOriginLng(),
 

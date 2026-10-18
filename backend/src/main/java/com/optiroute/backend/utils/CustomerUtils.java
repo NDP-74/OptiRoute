@@ -10,11 +10,10 @@ public final class CustomerUtils {
     }
 
     public static CustomerLightResponse toSummaryResponse(Customer customer) {
-        return new CustomerLightResponse(customer.getId(), customer.getName(), customer.getCode(), customer.getCity());
+        return new CustomerLightResponse(customer.getId(), customer.getName(), customer.getCode());
     }
 
     public static CustomerResponse toCustomerResponse(Customer customer) {
-        return new CustomerResponse(customer.getId(), customer.getExternalId(), customer.getExternalSource(), customer.getName(), customer.getCode(), customer.getAddress(),
-            customer.getCity(), customer.getCountry(), customer.getCreatedAt(), customer.getUpdatedAt());
+        return new CustomerResponse(customer.getId(), customer.getName(), customer.getCode(), customer.getAddress());
     }
 }
