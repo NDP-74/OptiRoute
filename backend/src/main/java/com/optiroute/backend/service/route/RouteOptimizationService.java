@@ -52,7 +52,7 @@ public class RouteOptimizationService {
             SemiTrailer semiTrailer = semiTrailerService.getEntityById(request.getSemiTrailerId());
             truckConfiguration = truckConfigurationFactory.create(tractor,semiTrailer,request.isEmptyTrip());
         } else {
-            truckConfiguration = truckConfigurationFactory.createDefault();
+            truckConfiguration = truckConfigurationFactory.createDefault(request.isEmptyTrip());
         }
 
         double driverHourlyRate = resolveDriverHourlyRate(request.getDriverId());
