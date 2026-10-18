@@ -2,3 +2,4 @@ todo.txt
 .vscode/launch.json
 API_PVT_DOC.json
 backend/src/main/resources/application.properties
+doc/ptv-documentation.json

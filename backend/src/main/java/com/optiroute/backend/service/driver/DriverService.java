@@ -52,7 +52,6 @@ public class DriverService {
         driver.setLogin(DriverUtils.generateUniqueLogin(driverRepository,request.firstName(),request.lastName()));
         driver.setFirstName(request.firstName());
         driver.setLastName(request.lastName());
-        driver.setPhoneNumber(request.phoneNumber());
         driver.setAnnualSalary(request.annualSalary());
         driver.setMonthlyWorkingHours(request.monthlyWorkingHours());
         applyLocation(driver,request);
@@ -68,7 +67,6 @@ public class DriverService {
         driver.setFirstName(request.firstName());
         driver.setLastName(request.lastName());
         driver.setLogin(DriverUtils.generateUniqueLogin(driverRepository,request.firstName(),request.lastName()));
-        driver.setPhoneNumber(request.phoneNumber());
         driver.setAnnualSalary(request.annualSalary());
         driver.setMonthlyWorkingHours(request.monthlyWorkingHours());
         applyLocation(driver,request);

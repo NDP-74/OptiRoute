@@ -32,8 +32,6 @@ public class Driver extends EntityUtils {
     @Column(nullable = false, unique = true)
     private String login;
 
-    private String phoneNumber;
-
     @Column(nullable = false)
     private Boolean isActive = true;
 

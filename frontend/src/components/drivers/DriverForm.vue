@@ -84,27 +84,6 @@ onMounted(async () => {
                                disabled:cursor-not-allowed disabled:bg-slate-100" />
                 </div>
             </div>
-
-            <!-- Téléphone -->
-            <div>
-                <label class="mb-1.5 block text-sm font-medium text-slate-700">
-                    Numéro de téléphone
-                </label>
-
-                <input v-model="form.phoneNumber" type="tel" maxlength="30" :disabled="disabled" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm
-                           outline-none transition
-                           placeholder:text-slate-400
-                           focus:border-blue-500 focus:ring-2 focus:ring-blue-100
-                           disabled:cursor-not-allowed disabled:bg-slate-100" />
-            </div>
-
-            <!-- Lieu de stationnement -->
-            <div>
-                <label class="mb-1.5 block text-sm font-medium text-slate-700">
-                    Lieu de stationnement
-                </label>
-                <HereAutocompleteInput v-model="parkingLocation" label="Lieu de stationnement" :disabled="disabled" />
-            </div>
         </section>
 
 
@@ -160,6 +139,14 @@ onMounted(async () => {
                         </option>
                     </select>
                 </div>
+            </div>
+
+            <!-- Lieu de stationnement -->
+            <div>
+                <label class="mb-1.5 block text-sm font-medium text-slate-700">
+                    Lieu de stationnement
+                </label>
+                <HereAutocompleteInput v-model="parkingLocation" label="Lieu de stationnement" :disabled="disabled" />
             </div>
 
             <p v-if="optionsError" class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">

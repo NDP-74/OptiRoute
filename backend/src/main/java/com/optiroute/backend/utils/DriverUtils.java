@@ -7,11 +7,11 @@ import com.optiroute.backend.entity.driver.Driver;
 
 public class DriverUtils {
     public static DriverResponse toDriverResponse(Driver driver) {
-        return new DriverResponse(driver.getId(), driver.getLogin(), driver.getFirstName(), driver.getLastName(), driver.getPhoneNumber(), driver.getAnnualSalary(),
-            driver.getMonthlyWorkingHours(), driver.getTractor() != null ? driver.getTractor().getId() : null,
-            driver.getTractor() != null ? driver.getTractor().getRegistration() : null, driver.getSemiTrailer() != null ? driver.getSemiTrailer().getId() : null,
-            driver.getSemiTrailer() != null ? driver.getSemiTrailer().getRegistration() : null, driver.getCostType() != null ? driver.getCostType().name() : null,
-            driver.getDriverType() != null ? driver.getDriverType().name() : null, driver.getLocationLabel(), driver.getLocationLatitude(), driver.getLocationLongitude());
+        return new DriverResponse(driver.getId(), driver.getLogin(), driver.getFirstName(), driver.getLastName(), driver.getAnnualSalary(), driver.getMonthlyWorkingHours(),
+            driver.getTractor() != null ? driver.getTractor().getId() : null, driver.getTractor() != null ? driver.getTractor().getRegistration() : null,
+            driver.getSemiTrailer() != null ? driver.getSemiTrailer().getId() : null, driver.getSemiTrailer() != null ? driver.getSemiTrailer().getRegistration() : null,
+            driver.getCostType() != null ? driver.getCostType().name() : null, driver.getDriverType() != null ? driver.getDriverType().name() : null, driver.getLocationLabel(),
+            driver.getLocationLatitude(), driver.getLocationLongitude());
     }
 
     public static DriverLightResponse toSummaryResponse(Driver driver) {

@@ -6,7 +6,6 @@ export interface DriverSummary {
 
 export interface DriverDetails extends DriverSummary {
     login: string
-    phoneNumber: string
 
     annualSalary: number
     monthlyWorkingHours: number
@@ -28,7 +27,6 @@ export type DriverType = "LONG_HAUL" | "SHORT_DISTANCE" | "REGIONAL"
 export interface CreateDriverRequest {
     firstName: string | null
     lastName: string | null
-    phoneNumber: string | null
     annualSalary: number | null
     monthlyWorkingHours: number | null
     tractorId: number | null
@@ -43,7 +41,6 @@ export interface CreateDriverRequest {
 export interface UpdateDriverRequest {
     firstName: string | null
     lastName: string | null
-    phoneNumber: string | null
     annualSalary: number | null
     monthlyWorkingHours: number | null
     tractorId: number | null
@@ -58,7 +55,6 @@ export interface UpdateDriverRequest {
 export interface DriverFormData {
     firstName: string | null
     lastName: string | null
-    phoneNumber: string | null
     annualSalary: number | null
     monthlyWorkingHours: number | null
     tractorId: number | null

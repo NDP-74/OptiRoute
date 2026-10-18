@@ -51,7 +51,6 @@ const populateForm = () => {
         firstName: props.driver.firstName,
         lastName: props.driver.lastName,
 
-        phoneNumber: props.driver.phoneNumber,
         annualSalary: props.driver.annualSalary,
         monthlyWorkingHours: props.driver.monthlyWorkingHours,
         tractorId: props.driver.tractorId,
@@ -76,7 +75,6 @@ const submitDriver = async () => {
             firstName: form.firstName,
             lastName: form.lastName,
 
-            phoneNumber: form.phoneNumber,
             annualSalary: form.annualSalary,
             monthlyWorkingHours: form.monthlyWorkingHours,
             tractorId: form.tractorId,

@@ -198,17 +198,13 @@ watch(
                 <DetailRow label="Login" :value="driver.login || 'Non renseigné'" />
             </DetailSection>
 
-            <DetailSection title="Coordonnées" :icon="Phone">
-                <DetailRow label="Téléphone" :value="driver.phoneNumber || 'Non renseigné'" />
-
-                <DetailRow label="Lieu de stationnement" :value="driver.locationLabel || 'Non renseigné'"
-                    :break-value="true" />
-            </DetailSection>
-
             <DetailSection title="Véhicules affectés" :icon="Info">
                 <DetailRow label="Tracteur" :value="driver.tractorRegistration || 'Aucun'" />
 
                 <DetailRow label="Semi-remorque" :value="driver.semiTrailerRegistration || 'Aucune'" />
+
+                <DetailRow label="Lieu de stationnement" :value="driver.locationLabel || 'Non renseigné'"
+                    :break-value="true" />
             </DetailSection>
 
             <DetailSection title="Profil du chauffeur" :icon="Info">
@@ -217,6 +213,10 @@ watch(
                     : driver.driverType === 'SHORT_DISTANCE'
                         ? 'Grand régional'
                         : driver.driverType === 'REGIONAL' ? 'Régional' : 'Non renseigné'" />
+
+                <DetailRow label="Heures mensuelles" :value="driver.monthlyWorkingHours != null
+                    ? `${formatNumber(driver.monthlyWorkingHours)} h`
+                    : 'Non renseignées'" />
             </DetailSection>
 
             <DetailSection title="Coût du chauffeur" :icon="WalletCards">
@@ -230,12 +230,6 @@ watch(
 
                 <DetailRow label="Type de coût"
                     :value="driver.costType === 'HOURLY' ? 'Horaire' : driver.costType === 'FIXED' ? 'Forfaitaire' : 'Non renseigné'" />
-            </DetailSection>
-
-            <DetailSection title="Temps de travail" :icon="Clock3">
-                <DetailRow label="Heures mensuelles" :value="driver.monthlyWorkingHours != null
-                    ? `${formatNumber(driver.monthlyWorkingHours)} h`
-                    : 'Non renseignées'" />
             </DetailSection>
         </div>
 

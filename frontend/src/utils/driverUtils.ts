@@ -5,8 +5,6 @@ export const createEmptyDriverForm = (): DriverFormData => ({
     firstName: null,
     lastName: null,
 
-    phoneNumber: null,
-
     annualSalary: null,
     monthlyWorkingHours: null,
 
