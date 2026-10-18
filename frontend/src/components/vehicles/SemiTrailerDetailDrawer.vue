@@ -248,7 +248,10 @@ watch(
                 <DetailRow label="Début d’amortissement" :value="formatDate(semiTrailer.depreciationStartDate)" />
 
                 <DetailRow label="Fin d’amortissement" :value="formatDate(semiTrailer.depreciationEndDate)" />
+            </DetailSection>
 
+            <!-- Coûts -->
+            <DetailSection title="Coûts" :icon="CircleDollarSign">
                 <DetailRow label="Entretien" :value="formatCurrency(semiTrailer.maintenanceCostPerKm) + ' / km'" />
             </DetailSection>
 

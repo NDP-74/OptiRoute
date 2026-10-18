@@ -246,7 +246,10 @@ watch(
                 <DetailRow label="Début d’amortissement" :value="formatDate(tractor.depreciationStartDate)" />
 
                 <DetailRow label="Fin d’amortissement" :value="formatDate(tractor.depreciationEndDate)" />
+            </DetailSection>
 
+            <!-- Coûts -->
+            <DetailSection title="Coûts" :icon="CircleDollarSign">
                 <DetailRow label="Entretien" :value="formatCurrency(tractor.maintenanceCostPerKm) + ' / km'" />
             </DetailSection>
 
