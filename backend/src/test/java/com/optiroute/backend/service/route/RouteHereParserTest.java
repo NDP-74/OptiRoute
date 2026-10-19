@@ -42,4 +42,34 @@ class RouteHereParserTest {
         assertEquals(5.5,routes.getFirst().tollCost,0.0001);
         assertEquals("[\"AAA\",\"BBB\"]",routes.getFirst().polyline);
     }
+
+    @Test
+    void shouldUseOneFarePerTollSystemAndAddSeparateTollSystems() {
+        RouteHereParser parser = new RouteHereParser();
+
+        String json = """
+            {
+              "routes": [
+                {
+                  "sections": [
+                    {
+                      "summary": {"duration": 100, "baseDuration": 80, "length": 200},
+                      "tolls": [
+                        {"fares": [
+                          {"price": {"value": 5.5}},
+                          {"price": {"value": 7.0}}
+                        ]},
+                        {"fares": [{"price": {"value": 2.5}}]}
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+            """;
+
+        List<RouteHereParser.ParsedRoute> routes = parser.parseRoutes(json);
+
+        assertEquals(8.0,routes.getFirst().tollCost,0.0001);
+    }
 }

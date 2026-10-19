@@ -73,11 +73,14 @@ public class RouteHereParser {
         double sum = 0.0;
         for (JsonNode tollSystem : tolls) {
             JsonNode fares = tollSystem.path("fares");
-
+            double lowestFare = Double.POSITIVE_INFINITY;
             if (fares.isArray()) {
                 for (JsonNode fare : fares) {
-                    sum += fare.path("price").path("value").asDouble(0.0);
+                    lowestFare = Math.min(lowestFare, fare.path("price").path("value").asDouble(Double.POSITIVE_INFINITY));
                 }
+            }
+            if (Double.isFinite(lowestFare)) {
+                sum += lowestFare;
             }
         }
 
