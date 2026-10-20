@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue"
+import { computed, onMounted, ref } from "vue"
+import { MoreHorizontal, Plus, Search } from "lucide-vue-next"
 
 import { getCustomers } from "@/api/customerApi"
 
@@ -16,6 +17,15 @@ const customers = ref<CustomerSummary[]>([])
 const loadCustomers = async () => {
     customers.value = await getCustomers()
 }
+
+const searchQuery = ref("")
+const visibleCustomers = computed(() => {
+    const normalizedQuery = searchQuery.value.trim().toLocaleLowerCase("fr")
+
+    return customers.value.filter(customer =>
+        customer.name.toLocaleLowerCase("fr").includes(normalizedQuery),
+    )
+})
 
 const showCreateModal = ref(false)
 const selectedCustomerId = ref<number | null>(null)
@@ -57,54 +67,86 @@ onMounted(async () => {
 
 <template>
 
-    <div>
-        <div class="mb-6 flex items-center justify-between">
-            <h1 class="text-3xl font-bold text-gray-800">
-                Donneurs d’ordres
-            </h1>
+    <div class="w-full max-w-3xl">
+        <div class="mb-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h1 class="text-2xl font-semibold leading-7 tracking-tight text-gray-900">
+                    Donneurs d’ordres
+                </h1>
+                <p class="mt-1 text-sm leading-6 text-gray-500">
+                    Consultez et gérez vos donneurs d’ordres.
+                </p>
+            </div>
             <button type="button"
-                class="rounded-xl bg-blue-600 px-5 py-3 text-white shadow transition hover:bg-blue-700"
+                class="inline-flex shrink-0 items-center justify-center gap-2 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                 @click="showCreateModal = true">
+                <Plus class="h-4 w-4" aria-hidden="true" />
                 Ajouter un donneur d’ordre
             </button>
         </div>
 
-        <div class="rounded-2xl bg-white shadow">
-            <table class="w-full">
-                <thead class="border-b bg-gray-50">
+        <div class="mb-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div class="w-full sm:max-w-xs">
+                <label for="customer-search" class="mb-1.5 block text-sm font-medium text-gray-700">
+                    Rechercher
+                </label>
+                <div class="relative">
+                    <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+                        aria-hidden="true" />
+                    <input id="customer-search" v-model="searchQuery" type="search"
+                        placeholder="Nom du donneur d’ordre..."
+                        class="w-full rounded-md border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm text-gray-700 shadow-sm outline-none transition placeholder:text-gray-400 hover:border-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20" />
+                </div>
+            </div>
+        </div>
+
+        <div class="max-h-[calc(100vh-18rem)] w-full max-w-3xl overflow-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="sticky top-0 z-10 bg-gray-50">
                     <tr>
-                        <th class="whitespace-nowrap px-6 py-4 text-left">Nom</th>
-                        <th class="whitespace-nowrap px-6 py-4 text-left">Code</th>
-                        <th class="whitespace-nowrap px-6 py-4 text-right">Actions</th>
+                        <th class="whitespace-nowrap px-4 py-3 text-left text-sm font-semibold text-gray-700">Nom</th>
+                        <th class="whitespace-nowrap px-4 py-3 text-left text-sm font-semibold text-gray-700">Code</th>
+                        <th class="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold text-gray-700">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr v-for="customer in customers" :key="customer.id" tabindex="0"
-                        class="cursor-pointer border-b transition last:border-b-0 hover:bg-gray-100"
-                        :class="{ 'bg-blue-50': selectedCustomerId === customer.id }"
+                <tbody class="divide-y divide-gray-100">
+                    <tr v-for="customer in visibleCustomers" :key="customer.id" tabindex="0"
+                        class="cursor-pointer transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500"
+                        :class="{ 'bg-indigo-50': selectedCustomerId === customer.id }"
                         @click="openCustomerDetails(customer)" @keydown.enter="openCustomerDetails(customer)"
                         @keydown.space.prevent="openCustomerDetails(customer)">
-                        <td class="whitespace-nowrap px-6 py-4 font-medium text-gray-900">
+                        <td class="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
                             {{ customer.name }}
                         </td>
-                        <td class="whitespace-nowrap px-6 py-4">
+                        <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-600">
                             {{ customer.code || 'Non renseigné' }}
                         </td>
-                        <td class="whitespace-nowrap px-6 py-4 text-right" @click.stop @keydown.stop>
+                        <td class="whitespace-nowrap px-4 py-3 text-right" @click.stop @keydown.stop>
                             <AppDropdown :open="openDropdownId === customer.id" @update:open="value => {
                                 openDropdownId = value ? customer.id : null
-                            }" v-slot="{ close }">
-                                <button type="button"
-                                    class="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                                    @click="close(); askDeleteCustomer(customer)">
-                                    Supprimer
-                                </button>
+                            }">
+                                <template #trigger="{ toggle }">
+                                    <button type="button"
+                                        class="rounded-md p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600"
+                                        :aria-label="`Actions pour ${customer.name}`" @click.stop="toggle">
+                                        <MoreHorizontal class="h-5 w-5" aria-hidden="true" />
+                                    </button>
+                                </template>
+                                <template #default="{ close }">
+                                    <button type="button"
+                                        class="flex w-full items-center px-3 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50 focus:bg-red-50 focus:outline-none"
+                                        @click="close(); askDeleteCustomer(customer)">
+                                        Supprimer
+                                    </button>
+                                </template>
                             </AppDropdown>
                         </td>
                     </tr>
-                    <tr v-if="customers.length === 0">
-                        <td colspan="4" class="px-6 py-12 text-center text-sm text-gray-500">
-                            Aucun donneur d’ordre enregistré.
+                    <tr v-if="visibleCustomers.length === 0">
+                        <td colspan="3" class="px-4 py-10 text-center text-sm text-gray-500">
+                            {{ customers.length === 0
+                                ? "Aucun donneur d’ordre enregistré."
+                                : "Aucun donneur d’ordre ne correspond à votre recherche." }}
                         </td>
                     </tr>
                 </tbody>

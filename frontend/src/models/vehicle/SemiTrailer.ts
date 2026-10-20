@@ -2,6 +2,8 @@ export interface SemiTrailerSummary {
     id: number
 
     registration: string
+    depreciationStartDate: string | null
+    depreciationEndDate: string | null
 }
 
 export interface SemiTrailerDetails extends SemiTrailerSummary {

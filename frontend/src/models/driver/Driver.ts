@@ -2,6 +2,8 @@ export interface DriverSummary {
     id: number
     firstName: string
     lastName: string
+    costType: DriverCostType
+    driverType: DriverType
 }
 
 export interface DriverDetails extends DriverSummary {

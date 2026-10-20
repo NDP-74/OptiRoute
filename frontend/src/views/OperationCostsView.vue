@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
+import { MoreHorizontal, Plus, Search } from "lucide-vue-next"
 
 import { getCostParameters, setCostParameterActive } from "@/api/cost/costParameterApi"
 
@@ -194,39 +195,40 @@ onMounted(loadCostParameters)
 </script>
 
 <template>
-    <div>
+    <div class="w-full max-w-5xl">
         <!-- Header -->
 
-        <div class="mb-6 flex items-center justify-between">
+        <div class="mb-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <h1 class="text-3xl font-bold text-gray-800">
+                <h1 class="text-2xl font-semibold leading-7 tracking-tight text-gray-900">
                     Coûts référentiels
                 </h1>
 
-                <p class="mt-1 text-sm text-gray-500">
+                <p class="mt-1 text-sm leading-6 text-gray-500">
                     Gérez les coûts utilisés pour les estimations.
                 </p>
             </div>
 
             <button type="button"
-                class="rounded-xl bg-blue-600 px-5 py-3 text-white shadow transition hover:bg-blue-700"
+                class="inline-flex shrink-0 items-center justify-center gap-2 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                 @click="showCreateModal = true">
+                <Plus class="h-4 w-4" aria-hidden="true" />
                 Ajouter un coût
             </button>
         </div>
 
         <section class="mb-8">
-            <div class="mb-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div class="mb-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
 
-                <div class="flex w-full flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                    <div class="flex w-full flex-col gap-3 sm:max-w-xl sm:flex-row">
+                <div class="flex w-full flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
+                    <div class="flex w-full flex-col gap-3 sm:max-w-xl sm:flex-row sm:gap-4">
                         <div class="w-full sm:max-w-xs">
-                            <label class="mb-1 block text-sm font-medium text-slate-700">
+                            <label class="mb-1.5 block text-sm font-medium text-gray-700">
                                 Filtre
                             </label>
 
                             <select v-model="selectedCostCategory"
-                                class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500">
+                                class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm outline-none transition hover:border-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
                                 <option value="ALL">
                                     Tous les coûts
                                 </option>
@@ -250,12 +252,12 @@ onMounted(loadCostParameters)
                         </div>
 
                         <div class="w-full sm:max-w-xs">
-                            <label class="mb-1 block text-sm font-medium text-slate-700">
+                            <label class="mb-1.5 block text-sm font-medium text-gray-700">
                                 Tri
                             </label>
 
                             <select v-model="selectedSort"
-                                class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500">
+                                class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm outline-none transition hover:border-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
                                 <option value="CREATION_DATE">
                                     Date de création
                                 </option>
@@ -275,91 +277,104 @@ onMounted(loadCostParameters)
                         </div>
                     </div>
 
-                    <div class="w-full sm:max-w-xs">
-                        <label class="mb-1 block text-sm font-medium text-slate-700">
+                    <div class="w-full sm:ml-auto sm:max-w-xs">
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">
                             Rechercher
                         </label>
 
-                        <input v-model="searchQuery" type="text" placeholder="Rechercher..."
-                            class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500" />
+                        <div class="relative">
+                            <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+                                aria-hidden="true" />
+                            <input v-model="searchQuery" type="text" placeholder="Rechercher..."
+                                class="w-full rounded-md border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm text-gray-700 shadow-sm outline-none transition placeholder:text-gray-400 hover:border-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20" />
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="rounded-2xl bg-white shadow">
-                <table class="w-full">
-                    <thead class="border-b bg-gray-50">
+            <div class="max-h-[calc(100vh-21rem)] w-full max-w-5xl overflow-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="sticky top-0 z-10 bg-gray-50">
                         <tr>
-                            <th class="whitespace-nowrap px-6 py-4 text-left">
+                            <th class="whitespace-nowrap px-4 py-3 text-left text-sm font-semibold text-gray-700">
                                 Libellé
                             </th>
 
-                            <th class="whitespace-nowrap px-6 py-4 text-left">
+                            <th class="whitespace-nowrap px-4 py-3 text-left text-sm font-semibold text-gray-700">
                                 Valeur
                             </th>
 
-                            <th class="whitespace-nowrap px-6 py-4 text-left">
+                            <th class="whitespace-nowrap px-4 py-3 text-left text-sm font-semibold text-gray-700">
                                 Catégorie
                             </th>
 
-                            <th class="whitespace-nowrap px-6 py-4 text-left">
+                            <th class="whitespace-nowrap px-4 py-3 text-left text-sm font-semibold text-gray-700">
                                 Statut
                             </th>
 
-                            <th class="whitespace-nowrap px-6 py-4 text-right">
+                            <th class="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold text-gray-700">
                                 Actions
                             </th>
                         </tr>
                     </thead>
 
-                    <tbody>
+                    <tbody class="divide-y divide-gray-100">
                         <tr v-for="cost in visibleCosts" :key="cost.id"
-                            class="cursor-pointer border-b transition last:border-b-0 hover:bg-gray-100" :class="{
-                                'bg-blue-50': selectedCostParameterId === cost.id,
+                            class="cursor-pointer transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500" :class="{
+                                'bg-indigo-50': selectedCostParameterId === cost.id,
                             }" tabindex="0" @click="openCostParameterDetails(cost)"
                             @keydown.enter="openCostParameterDetails(cost)"
                             @keydown.space.prevent="openCostParameterDetails(cost)">
-                            <td class="whitespace-nowrap px-6 py-4 font-medium text-gray-900">
+                            <td class="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
                                 {{ cost.label }}
                             </td>
 
-                            <td class="whitespace-nowrap px-6 py-4">
+                            <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-600">
                                 {{ formatValue(cost.value, cost.unit) }}
                             </td>
 
-                            <td class="whitespace-nowrap px-6 py-4 text-slate-600">
+                            <td class="whitespace-nowrap px-4 py-3 text-sm text-slate-600">
                                 {{ categoryLabels[cost.category] }}
                             </td>
 
-                            <td class="whitespace-nowrap px-6 py-4">
-                                <span class="inline-flex rounded-full px-3 py-1 text-xs font-medium" :class="cost.active
-                                    ? 'bg-emerald-100 text-emerald-700'
-                                    : 'bg-slate-100 text-slate-500'">
+                            <td class="whitespace-nowrap px-4 py-3">
+                                <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium" :class="cost.active
+                                    ? 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20'
+                                    : 'bg-gray-100 text-gray-600 ring-1 ring-inset ring-gray-500/10'">
                                     {{ cost.active ? "Actif" : "Désactivé" }}
                                 </span>
                             </td>
 
-                            <td class="whitespace-nowrap px-6 py-4 text-right" @click.stop @keydown.stop>
+                            <td class="whitespace-nowrap px-4 py-3 text-right" @click.stop @keydown.stop>
                                 <AppDropdown :open="openDropdownId === cost.id" @update:open="value => {
                                     openDropdownId = value ? cost.id : null
-                                }" v-slot="{ close }">
-                                    <button type="button"
-                                        class="flex w-full items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-                                        @click="close(); void toggleCostParameterActive(cost)">
-                                        {{ cost.active ? "Désactiver" : "Activer" }}
-                                    </button>
+                                }">
+                                    <template #trigger="{ toggle }">
+                                        <button type="button"
+                                            class="rounded-md p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600"
+                                            :aria-label="`Actions pour ${cost.label}`" @click.stop="toggle">
+                                            <MoreHorizontal class="h-5 w-5" aria-hidden="true" />
+                                        </button>
+                                    </template>
+                                    <template #default="{ close }">
+                                        <button type="button"
+                                            class="flex w-full items-center px-3 py-2.5 text-left text-sm text-gray-700 transition hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
+                                            @click="close(); void toggleCostParameterActive(cost)">
+                                            {{ cost.active ? "Désactiver" : "Activer" }}
+                                        </button>
 
-                                    <button type="button"
-                                        class="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                                        @click="close(); askDeleteCostParameter(cost)">
-                                        Supprimer
-                                    </button>
+                                        <button type="button"
+                                            class="flex w-full items-center px-3 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50 focus:bg-red-50 focus:outline-none"
+                                            @click="close(); askDeleteCostParameter(cost)">
+                                            Supprimer
+                                        </button>
+                                    </template>
                                 </AppDropdown>
                             </td>
                         </tr>
 
                         <tr v-if="visibleCosts.length === 0">
-                            <td colspan="6" class="px-6 py-12 text-center text-sm text-gray-500">
+                            <td colspan="5" class="px-4 py-10 text-center text-sm text-gray-500">
                                 Aucun coût correspondant à ce filtre.
                             </td>
                         </tr>

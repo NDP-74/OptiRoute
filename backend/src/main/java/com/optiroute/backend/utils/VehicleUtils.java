@@ -16,7 +16,12 @@ public class VehicleUtils {
     }
 
     public static SemiTrailerLightResponse toSemiTrailerLightResponse(SemiTrailer semiTrailer) {
-        return new SemiTrailerLightResponse(semiTrailer.getId(), semiTrailer.getRegistration());
+        return new SemiTrailerLightResponse(
+            semiTrailer.getId(),
+            semiTrailer.getRegistration(),
+            semiTrailer.getDepreciationStartDate(),
+            semiTrailer.getDepreciationEndDate()
+        );
     }
 
     public static TractorResponse toTractorResponse(Tractor tractor) {
@@ -25,6 +30,11 @@ public class VehicleUtils {
     }
 
     public static TractorLightResponse toTractorLightResponse(Tractor tractor) {
-        return new TractorLightResponse(tractor.getId(), tractor.getRegistration());
+        return new TractorLightResponse(
+            tractor.getId(),
+            tractor.getRegistration(),
+            tractor.getDepreciationStartDate(),
+            tractor.getDepreciationEndDate()
+        );
     }
 }

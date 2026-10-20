@@ -15,7 +15,13 @@ public class DriverUtils {
     }
 
     public static DriverLightResponse toSummaryResponse(Driver driver) {
-        return new DriverLightResponse(driver.getId(), driver.getFirstName(), driver.getLastName());
+        return new DriverLightResponse(
+            driver.getId(),
+            driver.getFirstName(),
+            driver.getLastName(),
+            driver.getCostType(),
+            driver.getDriverType()
+        );
     }
 
     public static String generateUniqueLogin(DriverRepository driverRepository, String firstName, String lastName) {

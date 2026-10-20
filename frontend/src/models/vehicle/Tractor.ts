@@ -2,6 +2,8 @@ export interface TractorSummary {
     id: number
 
     registration: string
+    depreciationStartDate: string | null
+    depreciationEndDate: string | null
 }
 
 export interface TractorDetails extends TractorSummary {
