@@ -1,4 +1,6 @@
 import type { TransportStatus } from "@/types/planningType"
+import type { ServiceTiming, TimeWindows } from "./TransportRequest"
+import type { Position } from "@/models/route/Position"
 
 export interface TransportCostItem {
     label: string;
@@ -17,17 +19,11 @@ export interface TransportCosts {
     totalCost: number;
 }
 
-export interface TransportDetail {
+export interface TransportDetail extends TimeWindows {
     id: number;
     name: string;
     status: TransportStatus;
     emptyTrip: boolean;
-
-    plannedStart: string;
-    plannedEnd: string;
-
-    actualStart: string | null;
-    actualEnd: string | null;
 
     driverId: number | null;
     driverName: string | null;
@@ -61,4 +57,6 @@ export interface TransportDetail {
 
     costs: TransportCosts;
     revenue: number;
+    serviceTiming: ServiceTiming;
+    waypoints: Position[];
 }

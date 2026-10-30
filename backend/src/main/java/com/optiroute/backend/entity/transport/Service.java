@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 
 import com.optiroute.backend.entity.EntityUtils;
 
@@ -25,6 +26,14 @@ public class Service extends EntityUtils {
     private String status = "PLANNED";
 
     private Long customerId;
+
+    private Integer loadingDurationMinutes;
+    private Integer unloadingDurationMinutes;
+
+    private OffsetDateTime departureStart;
+    private OffsetDateTime departureEnd;
+    private OffsetDateTime arrivalStart;
+    private OffsetDateTime arrivalEnd;
 
     @Column(precision = 12, scale = 2)
     private BigDecimal revenue;

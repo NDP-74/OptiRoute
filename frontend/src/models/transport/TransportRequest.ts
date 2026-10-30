@@ -1,4 +1,17 @@
 import type { RouteDto } from '@/models/route/Route'
+import type { Position } from '@/models/route/Position'
+
+export interface TimeWindows {
+    departureStart?: string | null
+    departureEnd?: string | null
+    arrivalStart?: string | null
+    arrivalEnd?: string | null
+}
+
+export interface ServiceTiming extends TimeWindows {
+    loadingDurationMinutes?: number | null
+    unloadingDurationMinutes?: number | null
+}
 
 export interface CreateTransportRequest {
     name: string
@@ -10,8 +23,8 @@ export interface CreateTransportRequest {
 
     emptyTrip: boolean
 
-    plannedStart: string
-    plannedEnd: string
+    routeTime?: string | null
+    timeMode?: 'DEPARTURE' | 'ARRIVAL'
 
     originName: string
     originAddress: string
@@ -24,6 +37,8 @@ export interface CreateTransportRequest {
     destinationLng: number
 
     revenue?: number | null
+    serviceTiming?: ServiceTiming
+    waypoints?: Position[]
 }
 
 export interface CreateTransportFromRouteRequest {

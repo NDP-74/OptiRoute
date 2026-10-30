@@ -1,0 +1,1995 @@
+{
+  "count": 1,
+  "next": "text",
+  "previous": "text",
+  "results": [
+    {
+      "uid": "447521b0-e165-11ea-a488-0242ac110007",
+      "sequential_id": 1240993,
+      "created": "2026-01-01T00:00:00.000Z",
+      "updated": "2026-01-01T00:00:00.000Z",
+      "deleted": "text",
+      "remote_id": "",
+      "carrier_address": {
+        "pk": 23498,
+        "name": "Transport Bouvet",
+        "address": "3 rue des champs",
+        "city": "Nantes",
+        "postcode": "44000",
+        "country": "FR",
+        "latitude": -52.5561625,
+        "longitude": 92.896504,
+        "radius": 500,
+        "coords_validated": false,
+        "is_demo": true,
+        "is_carrier": true,
+        "is_shipper": true,
+        "is_origin": true,
+        "is_destination": true,
+        "created_by": 1738,
+        "created": "2020-12-22T15:31:39.26167Z",
+        "remote_id": "text",
+        "company": {
+          "pk": 928,
+          "remote_id": "COMP_123",
+          "name": "Transport Bouvet",
+          "trade_number": "12345678901234",
+          "country": "FR",
+          "settings_contract_html": "text",
+          "settings_logo": "text",
+          "settings_stamp": "text",
+          "settings_print_mode": true,
+          "settings_special_agreements": "text",
+          "settings_transport_order_observations": "text",
+          "settings_constrain_reference_edition": true,
+          "vat_number": "FR123456789",
+          "is_verified": true
+        },
+        "original": 2085
+      },
+      "created_by": {
+        "pk": 928,
+        "remote_id": "text",
+        "created": "2020-07-30T21:10:06.445510Z",
+        "updated": "2020-07-30T21:10:06.44551Z",
+        "deleted": true,
+        "invoicing_remote_id": "COMP_456",
+        "name": "Transport Bouvet",
+        "phone_number": "0601020304",
+        "email": "i.love.dashdoc@gmail.com",
+        "siren": "123456789",
+        "trade_number": "text",
+        "country": "FR",
+        "comments": "text",
+        "vat_number": "text",
+        "is_verified": true,
+        "settings_transport_order_observations": "text",
+        "settings_constrain_reference_edition": true,
+        "account_type": "text",
+        "logo": "text",
+        "subscription_access": {},
+        "settings": {},
+        "primary_address": {
+          "pk": 23498,
+          "name": "Transport Bouvet",
+          "address": "3 rue des champs",
+          "city": "Nantes",
+          "postcode": "44000",
+          "country": "FR",
+          "latitude": -52.5561625,
+          "longitude": 92.896504,
+          "radius": 500,
+          "coords_validated": false,
+          "is_demo": true,
+          "is_carrier": true,
+          "is_shipper": true,
+          "is_origin": true,
+          "is_destination": true,
+          "created_by": {
+            "pk": 25,
+            "name": "Transport Bouvet"
+          },
+          "created_by_user": {
+            "pk": 34,
+            "display_name": "Jean Pierre Bouvet",
+            "company": 25,
+            "trucker_id": 95
+          },
+          "created": "2020-12-22T15:31:39.26167Z",
+          "remote_id": "text"
+        },
+        "managers": [
+          {
+            "pk": 928,
+            "user": {
+              "email": "adele.bouvet@gmail.com",
+              "first_name": "Adèle",
+              "last_name": "Bouvet"
+            },
+            "display_name": "text",
+            "role": "text"
+          }
+        ],
+        "has_loggable_managers": true
+      },
+      "created_device": "2026-01-01T00:00:00.000Z",
+      "creation_method": "mobile_app",
+      "archived_by": [
+        {}
+      ],
+      "is_order": true,
+      "carrier_assignation_status": "unassigned",
+      "invite_code": "RWMUYE",
+      "deliveries": [
+        {
+          "uid": "text",
+          "sequential_id": 1240993,
+          "remote_id": "text",
+          "tracking_id": "text",
+          "origin": {
+            "uid": "687cddac-dbd2-11ea-9024-0242ac130006",
+            "remote_id": "text",
+            "address": {
+              "pk": 23498,
+              "name": "Transport Bouvet",
+              "address": "3 rue des champs",
+              "city": "Nantes",
+              "postcode": "44000",
+              "country": "FR",
+              "latitude": -52.5561625,
+              "longitude": 92.896504,
+              "radius": 500,
+              "coords_validated": false,
+              "is_demo": true,
+              "is_carrier": true,
+              "is_shipper": true,
+              "is_origin": true,
+              "is_destination": true,
+              "instructions": "text",
+              "remote_id": "text",
+              "company": {
+                "pk": 928,
+                "remote_id": "COMP_123",
+                "trade_number": "12345678901234",
+                "name": "Transport Bouvet"
+              }
+            },
+            "real_start": "2020-12-22T15:31:39.26167Z",
+            "real_end": "2020-12-22T15:31:39.26167Z",
+            "signature_process": "sign_on_glass",
+            "is_booking_needed": true,
+            "instructions": "text",
+            "reference": "text",
+            "eta": "2026-01-01T00:00:00.000Z",
+            "eta_tracking": true,
+            "punctuality_status": "text",
+            "supports_exchanges": {
+              "uid": "123e4567-e89b-12d3-a456-426614174000",
+              "site": {
+                "uid": "123e4567-e89b-12d3-a456-426614174000",
+                "remote_id": "text"
+              },
+              "support_type": {
+                "name": "Palettes",
+                "created": "2020-12-22T15:31:39.26167Z",
+                "uid": "c8e4cc62-446a-11eb-a759-0242ac130005",
+                "remote_id": "text"
+              },
+              "expected_retrieved": 10,
+              "actual_retrieved": 10,
+              "expected_delivered": 10,
+              "actual_delivered": 10,
+              "observations": "1 broken",
+              "remote_id": "text"
+            },
+            "category": "text",
+            "slots": [
+              {
+                "start": "2026-01-01T00:00:00.000Z",
+                "end": "2026-01-01T00:00:00.000Z"
+              }
+            ],
+            "trucker_instructions": "text",
+            "trip": {
+              "uid": "123e4567-e89b-12d3-a456-426614174000",
+              "name": "text",
+              "is_prepared": true,
+              "status": "unstarted"
+            }
+          },
+          "destination": {
+            "uid": "687cddac-dbd2-11ea-9024-0242ac130006",
+            "remote_id": "text",
+            "address": {
+              "pk": 23498,
+              "name": "Transport Bouvet",
+              "address": "3 rue des champs",
+              "city": "Nantes",
+              "postcode": "44000",
+              "country": "FR",
+              "latitude": -52.5561625,
+              "longitude": 92.896504,
+              "radius": 500,
+              "coords_validated": false,
+              "is_demo": true,
+              "is_carrier": true,
+              "is_shipper": true,
+              "is_origin": true,
+              "is_destination": true,
+              "instructions": "text",
+              "remote_id": "text",
+              "company": {
+                "pk": 928,
+                "remote_id": "COMP_123",
+                "trade_number": "12345678901234",
+                "name": "Transport Bouvet"
+              }
+            },
+            "real_start": "2020-12-22T15:31:39.26167Z",
+            "real_end": "2020-12-22T15:31:39.26167Z",
+            "signature_process": "sign_on_glass",
+            "is_booking_needed": true,
+            "instructions": "text",
+            "reference": "text",
+            "eta": "2026-01-01T00:00:00.000Z",
+            "eta_tracking": true,
+            "punctuality_status": "text",
+            "supports_exchanges": {
+              "uid": "123e4567-e89b-12d3-a456-426614174000",
+              "site": {
+                "uid": "123e4567-e89b-12d3-a456-426614174000",
+                "remote_id": "text"
+              },
+              "support_type": {
+                "name": "Palettes",
+                "created": "2020-12-22T15:31:39.26167Z",
+                "uid": "c8e4cc62-446a-11eb-a759-0242ac130005",
+                "remote_id": "text"
+              },
+              "expected_retrieved": 10,
+              "actual_retrieved": 10,
+              "expected_delivered": 10,
+              "actual_delivered": 10,
+              "observations": "1 broken",
+              "remote_id": "text"
+            },
+            "category": "text",
+            "slots": [
+              {
+                "start": "2026-01-01T00:00:00.000Z",
+                "end": "2026-01-01T00:00:00.000Z"
+              }
+            ],
+            "trucker_instructions": "text",
+            "trip": {
+              "uid": "123e4567-e89b-12d3-a456-426614174000",
+              "name": "text",
+              "is_prepared": true,
+              "status": "unstarted"
+            }
+          },
+          "shipper_address": {
+            "pk": 23498,
+            "name": "Transport Bouvet",
+            "address": "3 rue des champs",
+            "city": "Nantes",
+            "postcode": "44000",
+            "country": "FR",
+            "latitude": -52.5561625,
+            "longitude": 92.896504,
+            "radius": 500,
+            "coords_validated": false,
+            "is_demo": true,
+            "is_carrier": true,
+            "is_shipper": true,
+            "is_origin": true,
+            "is_destination": true,
+            "created_by": 1738,
+            "created": "2020-12-22T15:31:39.26167Z",
+            "instructions": "text",
+            "remote_id": "text",
+            "company": {
+              "pk": 928,
+              "remote_id": "COMP_123",
+              "name": "Transport Bouvet",
+              "trade_number": "12345678901234",
+              "country": "FR",
+              "settings_contract_html": "text",
+              "settings_logo": "text",
+              "settings_stamp": "text",
+              "settings_print_mode": true,
+              "settings_special_agreements": "text",
+              "settings_transport_order_observations": "text",
+              "settings_constrain_reference_edition": true,
+              "vat_number": "FR123456789",
+              "is_verified": true
+            },
+            "original": 2085
+          },
+          "planned_loads": [
+            {
+              "uid": "text",
+              "remote_id": "text",
+              "description": "text",
+              "reference": "text",
+              "round_id": 1,
+              "weight": 1,
+              "volume": 1,
+              "volume_display_unit": "m3",
+              "linear_meters": 1,
+              "quantity": 1,
+              "pallet_equivalence": 1,
+              "category": "bulk",
+              "dangerous_goods_category": "1",
+              "is_dangerous": true,
+              "adr_un_code": "text",
+              "legal_mentions": "text",
+              "complementary_information": "text",
+              "container_number": "text",
+              "tare_weight": 1,
+              "container_seal_number": "text",
+              "refrigerated": true,
+              "temperature": "text",
+              "steres": 1,
+              "idtf_number": "text",
+              "use_identifiers": true,
+              "identifiers": [
+                "AX000123"
+              ],
+              "identifiers_observations": "Missing codes: 1234, 3456"
+            }
+          ],
+          "loads": [
+            {
+              "uid": "text",
+              "remote_id": "text",
+              "description": "text",
+              "reference": "text",
+              "round_id": 1,
+              "weight": 1,
+              "volume": 1,
+              "volume_display_unit": "m3",
+              "linear_meters": 1,
+              "quantity": 1,
+              "pallet_equivalence": 1,
+              "category": "bulk",
+              "dangerous_goods_category": "1",
+              "is_dangerous": true,
+              "adr_un_code": "text",
+              "legal_mentions": "text",
+              "complementary_information": "text",
+              "container_number": "text",
+              "tare_weight": 1,
+              "container_seal_number": "text",
+              "refrigerated": true,
+              "temperature": "text",
+              "steres": 1,
+              "idtf_number": "text",
+              "use_identifiers": true,
+              "identifiers": [
+                "AX000123"
+              ],
+              "identifiers_observations": "Missing codes: 1234, 3456"
+            }
+          ],
+          "origin_loads": [
+            {
+              "uid": "text",
+              "remote_id": "text",
+              "description": "text",
+              "reference": "text",
+              "round_id": 1,
+              "weight": 1,
+              "volume": 1,
+              "volume_display_unit": "m3",
+              "linear_meters": 1,
+              "quantity": 1,
+              "pallet_equivalence": 1,
+              "category": "bulk",
+              "dangerous_goods_category": "1",
+              "is_dangerous": true,
+              "adr_un_code": "text",
+              "legal_mentions": "text",
+              "complementary_information": "text",
+              "container_number": "text",
+              "tare_weight": 1,
+              "container_seal_number": "text",
+              "refrigerated": true,
+              "temperature": "text",
+              "steres": 1,
+              "idtf_number": "text",
+              "use_identifiers": true,
+              "identifiers": [
+                "AX000123"
+              ],
+              "identifiers_observations": "Missing codes: 1234, 3456"
+            }
+          ],
+          "destination_loads": [
+            {
+              "uid": "text",
+              "remote_id": "text",
+              "description": "text",
+              "reference": "text",
+              "round_id": 1,
+              "weight": 1,
+              "volume": 1,
+              "volume_display_unit": "m3",
+              "linear_meters": 1,
+              "quantity": 1,
+              "pallet_equivalence": 1,
+              "category": "bulk",
+              "dangerous_goods_category": "1",
+              "is_dangerous": true,
+              "adr_un_code": "text",
+              "legal_mentions": "text",
+              "complementary_information": "text",
+              "container_number": "text",
+              "tare_weight": 1,
+              "container_seal_number": "text",
+              "refrigerated": true,
+              "temperature": "text",
+              "steres": 1,
+              "idtf_number": "text",
+              "use_identifiers": true,
+              "identifiers": [
+                "AX000123"
+              ],
+              "identifiers_observations": "Missing codes: 1234, 3456"
+            }
+          ],
+          "tracking_contacts": [
+            {
+              "uid": "text",
+              "contact": {
+                "uid": "687cddac-dbd2-11ea-9024-0242ac130006",
+                "created": "2020-12-22T15:31:39.26167Z",
+                "company": {
+                  "pk": 23498,
+                  "remote_id": "text",
+                  "name": "Transport Bouvet",
+                  "trade_number": "text",
+                  "country": "FR",
+                  "settings_contract_html": "text",
+                  "settings_logo": "text",
+                  "settings_stamp": "text",
+                  "settings_print_mode": true,
+                  "settings_special_agreements": "text",
+                  "settings_transport_order_observations": "text",
+                  "settings_constrain_reference_edition": true,
+                  "vat_number": "text",
+                  "is_verified": "text"
+                },
+                "first_name": "text",
+                "last_name": "text",
+                "email": "name@gmail.com",
+                "phone_number": "text",
+                "fax_number": "text",
+                "remote_id": "CONTACT_123"
+              },
+              "subscribed_to_status_updates": true,
+              "role": "text"
+            }
+          ],
+          "shipper_reference": "text",
+          "multiple_rounds": true
+        }
+      ],
+      "segments": [
+        {
+          "uid": "text",
+          "remote_id": "text",
+          "origin": {
+            "uid": "687cddac-dbd2-11ea-9024-0242ac130006",
+            "remote_id": "text",
+            "address": {
+              "pk": 23498,
+              "name": "Transport Bouvet",
+              "address": "3 rue des champs",
+              "city": "Nantes",
+              "postcode": "44000",
+              "country": "FR",
+              "latitude": -52.5561625,
+              "longitude": 92.896504,
+              "radius": 500,
+              "coords_validated": false,
+              "is_demo": true,
+              "is_carrier": true,
+              "is_shipper": true,
+              "is_origin": true,
+              "is_destination": true,
+              "created_by": {
+                "pk": 25,
+                "name": "Transport Bouvet"
+              },
+              "created_by_user": {
+                "pk": 34,
+                "display_name": "Jean Pierre Bouvet",
+                "company": 25,
+                "trucker_id": 95
+              },
+              "created": "2020-12-22T15:31:39.26167Z",
+              "instructions": "text",
+              "remote_id": "text",
+              "original": 2085,
+              "company": {
+                "pk": 928,
+                "remote_id": "text",
+                "created": "2020-07-30T21:10:06.445510Z",
+                "updated": "2020-07-30T21:10:06.44551Z",
+                "deleted": true,
+                "invoicing_remote_id": "COMP_456",
+                "name": "Transport Bouvet",
+                "phone_number": "0601020304",
+                "email": "i.love.dashdoc@gmail.com",
+                "siren": "123456789",
+                "trade_number": "text",
+                "country": "FR",
+                "comments": "text",
+                "vat_number": "text",
+                "is_verified": true,
+                "settings_transport_order_observations": "text",
+                "settings_constrain_reference_edition": true,
+                "account_type": "text",
+                "logo": "text",
+                "subscription_access": {},
+                "settings": {},
+                "primary_address": {
+                  "pk": 23498,
+                  "name": "Transport Bouvet",
+                  "address": "3 rue des champs",
+                  "city": "Nantes",
+                  "postcode": "44000",
+                  "country": "FR",
+                  "latitude": -52.5561625,
+                  "longitude": 92.896504,
+                  "radius": 500,
+                  "coords_validated": false,
+                  "is_demo": true,
+                  "is_carrier": true,
+                  "is_shipper": true,
+                  "is_origin": true,
+                  "is_destination": true,
+                  "created_by": {
+                    "pk": 25,
+                    "name": "Transport Bouvet"
+                  },
+                  "created_by_user": {
+                    "pk": 34,
+                    "display_name": "Jean Pierre Bouvet",
+                    "company": 25,
+                    "trucker_id": 95
+                  },
+                  "created": "2020-12-22T15:31:39.26167Z",
+                  "remote_id": "text"
+                },
+                "managers": [
+                  {
+                    "pk": 928,
+                    "user": {
+                      "email": "adele.bouvet@gmail.com",
+                      "first_name": "Adèle",
+                      "last_name": "Bouvet"
+                    },
+                    "display_name": "text",
+                    "role": "text"
+                  }
+                ],
+                "has_loggable_managers": true
+              }
+            },
+            "real_start": "2020-12-22T15:31:39.26167Z",
+            "real_end": "2020-12-22T15:31:39.26167Z",
+            "signature_process": "sign_on_glass",
+            "instructions": "text",
+            "reference": "text",
+            "eta": "text",
+            "eta_tracking": false,
+            "punctuality_status": "untracked",
+            "supports_exchanges": {
+              "uid": "123e4567-e89b-12d3-a456-426614174000",
+              "site": {
+                "uid": "123e4567-e89b-12d3-a456-426614174000",
+                "remote_id": "text"
+              },
+              "support_type": {
+                "name": "Palettes",
+                "created": "2020-12-22T15:31:39.26167Z",
+                "uid": "c8e4cc62-446a-11eb-a759-0242ac130005",
+                "remote_id": "text"
+              },
+              "expected_retrieved": 10,
+              "actual_retrieved": 10,
+              "expected_delivered": 10,
+              "actual_delivered": 10,
+              "observations": "1 broken",
+              "remote_id": "text"
+            },
+            "category": "loading",
+            "slots": [
+              {
+                "start": "2026-01-01T00:00:00.000Z",
+                "end": "2026-01-01T00:00:00.000Z"
+              }
+            ],
+            "trucker_instructions": "text",
+            "trip": {
+              "uid": "123e4567-e89b-12d3-a456-426614174000",
+              "name": "text",
+              "is_prepared": true,
+              "status": "unstarted"
+            }
+          },
+          "destination": {
+            "uid": "687cddac-dbd2-11ea-9024-0242ac130006",
+            "remote_id": "text",
+            "address": {
+              "pk": 23498,
+              "name": "Transport Bouvet",
+              "address": "3 rue des champs",
+              "city": "Nantes",
+              "postcode": "44000",
+              "country": "FR",
+              "latitude": -52.5561625,
+              "longitude": 92.896504,
+              "radius": 500,
+              "coords_validated": false,
+              "is_demo": true,
+              "is_carrier": true,
+              "is_shipper": true,
+              "is_origin": true,
+              "is_destination": true,
+              "created_by": {
+                "pk": 25,
+                "name": "Transport Bouvet"
+              },
+              "created_by_user": {
+                "pk": 34,
+                "display_name": "Jean Pierre Bouvet",
+                "company": 25,
+                "trucker_id": 95
+              },
+              "created": "2020-12-22T15:31:39.26167Z",
+              "instructions": "text",
+              "remote_id": "text",
+              "original": 2085,
+              "company": {
+                "pk": 928,
+                "remote_id": "text",
+                "created": "2020-07-30T21:10:06.445510Z",
+                "updated": "2020-07-30T21:10:06.44551Z",
+                "deleted": true,
+                "invoicing_remote_id": "COMP_456",
+                "name": "Transport Bouvet",
+                "phone_number": "0601020304",
+                "email": "i.love.dashdoc@gmail.com",
+                "siren": "123456789",
+                "trade_number": "text",
+                "country": "FR",
+                "comments": "text",
+                "vat_number": "text",
+                "is_verified": true,
+                "settings_transport_order_observations": "text",
+                "settings_constrain_reference_edition": true,
+                "account_type": "text",
+                "logo": "text",
+                "subscription_access": {},
+                "settings": {},
+                "primary_address": {
+                  "pk": 23498,
+                  "name": "Transport Bouvet",
+                  "address": "3 rue des champs",
+                  "city": "Nantes",
+                  "postcode": "44000",
+                  "country": "FR",
+                  "latitude": -52.5561625,
+                  "longitude": 92.896504,
+                  "radius": 500,
+                  "coords_validated": false,
+                  "is_demo": true,
+                  "is_carrier": true,
+                  "is_shipper": true,
+                  "is_origin": true,
+                  "is_destination": true,
+                  "created_by": {
+                    "pk": 25,
+                    "name": "Transport Bouvet"
+                  },
+                  "created_by_user": {
+                    "pk": 34,
+                    "display_name": "Jean Pierre Bouvet",
+                    "company": 25,
+                    "trucker_id": 95
+                  },
+                  "created": "2020-12-22T15:31:39.26167Z",
+                  "remote_id": "text"
+                },
+                "managers": [
+                  {
+                    "pk": 928,
+                    "user": {
+                      "email": "adele.bouvet@gmail.com",
+                      "first_name": "Adèle",
+                      "last_name": "Bouvet"
+                    },
+                    "display_name": "text",
+                    "role": "text"
+                  }
+                ],
+                "has_loggable_managers": true
+              }
+            },
+            "real_start": "2020-12-22T15:31:39.26167Z",
+            "real_end": "2020-12-22T15:31:39.26167Z",
+            "signature_process": "sign_on_glass",
+            "instructions": "text",
+            "reference": "text",
+            "eta": "text",
+            "eta_tracking": false,
+            "punctuality_status": "untracked",
+            "supports_exchanges": {
+              "uid": "123e4567-e89b-12d3-a456-426614174000",
+              "site": {
+                "uid": "123e4567-e89b-12d3-a456-426614174000",
+                "remote_id": "text"
+              },
+              "support_type": {
+                "name": "Palettes",
+                "created": "2020-12-22T15:31:39.26167Z",
+                "uid": "c8e4cc62-446a-11eb-a759-0242ac130005",
+                "remote_id": "text"
+              },
+              "expected_retrieved": 10,
+              "actual_retrieved": 10,
+              "expected_delivered": 10,
+              "actual_delivered": 10,
+              "observations": "1 broken",
+              "remote_id": "text"
+            },
+            "category": "loading",
+            "slots": [
+              {
+                "start": "2026-01-01T00:00:00.000Z",
+                "end": "2026-01-01T00:00:00.000Z"
+              }
+            ],
+            "trucker_instructions": "text",
+            "trip": {
+              "uid": "123e4567-e89b-12d3-a456-426614174000",
+              "name": "text",
+              "is_prepared": true,
+              "status": "unstarted"
+            }
+          },
+          "trucker": {
+            "pk": 23498,
+            "remote_id": "text",
+            "display_name": "Adèle Bouvet",
+            "user": {
+              "pk": 17293,
+              "first_name": "Adèle",
+              "last_name": "Bouvet",
+              "username": "1b3b4c74-5f07-4f09-b18f-2753ffcf916e",
+              "email": "adele.bouvet@gmail.com",
+              "display_name": "Adèle Bouvet",
+              "date_joined": "2026-01-01T00:00:00.000Z",
+              "is_staff": true,
+              "is_superuser": true,
+              "has_usable_password": true
+            }
+          },
+          "vehicle": {
+            "pk": 928,
+            "carrier": 928,
+            "category": "tipper_cereal",
+            "license_plate": "WE749RM",
+            "fleet_number": "TRUCK120",
+            "remote_id": "tr123type1",
+            "created": "2020-07-30T21:10:06.44551Z",
+            "used_for_qualimat_transports": true,
+            "telematic_vehicle": 1,
+            "original": 40,
+            "tags": [
+              {
+                "pk": 1,
+                "name": "Urgent",
+                "color": "#E5291D",
+                "tag_group_id": 1
+              }
+            ],
+            "technical_control_deadline": "2020-12-22T15:31:39.26167Z",
+            "tachograph_deadline": "2020-12-22T15:31:39.26167Z",
+            "speed_limiter_deadline": "2020-12-22T15:31:39.26167Z",
+            "country": "FR",
+            "unavailability": [
+              {
+                "id": 928,
+                "remote_id": "tr123type1",
+                "created": "2020-07-30T21:10:06.44551Z",
+                "start_date": "2020-07-30T21:10:06.44551Z",
+                "end_date": "2020-07-30T21:10:06.44551Z",
+                "unavailability_type": "paid_vacation",
+                "unavailability_note": "I'm on vacation"
+              }
+            ],
+            "events": [
+              {}
+            ]
+          },
+          "trailers": [
+            {
+              "pk": 928,
+              "original": 1,
+              "carrier": 928,
+              "license_plate": "WE749RM",
+              "fleet_number": "TRAILER120",
+              "remote_id": "tr123type1",
+              "created": "2020-07-30T21:10:06.44551Z",
+              "used_for_qualimat_transports": true,
+              "tags": [
+                {
+                  "pk": 1,
+                  "name": "Urgent",
+                  "color": "#E5291D",
+                  "tag_group_id": 1
+                }
+              ],
+              "technical_control_deadline": "2020-12-22T15:31:39.26167Z",
+              "country": "FR",
+              "unavailability": [
+                {
+                  "id": 928,
+                  "remote_id": "tr123type1",
+                  "created": "2020-07-30T21:10:06.44551Z",
+                  "start_date": "2020-07-30T21:10:06.44551Z",
+                  "end_date": "2020-07-30T21:10:06.44551Z",
+                  "unavailability_type": "paid_vacation",
+                  "unavailability_note": "I'm on vacation"
+                }
+              ],
+              "events": [
+                {}
+              ]
+            }
+          ],
+          "sort_order": 0,
+          "scheduled_start_range": {
+            "start": "2021-12-21T13:51:33.323237Z",
+            "end": "2021-12-21T14:30:33.323237Z"
+          },
+          "scheduled_end_range": {
+            "start": "2021-12-21T13:51:33.323237Z",
+            "end": "2021-12-21T14:30:33.323237Z"
+          },
+          "child_transport": {
+            "uid": "123e4567-e89b-12d3-a456-426614174000",
+            "sequential_id": 1,
+            "remote_id": "text",
+            "has_strong_link": true
+          },
+          "telematic_distance": 1,
+          "distance": 1,
+          "origin_mileage": 1,
+          "destination_mileage": 1,
+          "tags": [
+            {
+              "pk": 1,
+              "name": "Urgent",
+              "color": "#E5291D",
+              "tag_group_id": 1
+            }
+          ]
+        }
+      ],
+      "status": "created",
+      "status_updates": [
+        {
+          "uid": "687cddac-dbd2-11ea-9024-0242ac130006",
+          "created": "2026-01-01T00:00:00.000Z",
+          "created_device": "2026-01-01T00:00:00.000Z",
+          "creation_method": "text",
+          "category": "text",
+          "author": {},
+          "content": {},
+          "content_signatory": {},
+          "target": {},
+          "site": {},
+          "site_id": "123e4567-e89b-12d3-a456-426614174000",
+          "delivery": "123e4567-e89b-12d3-a456-426614174000",
+          "segment": "123e4567-e89b-12d3-a456-426614174000",
+          "transport": "123e4567-e89b-12d3-a456-426614174000",
+          "signature": {},
+          "latitude": 1,
+          "longitude": 1,
+          "update_details": {},
+          "author_company": 1
+        }
+      ],
+      "has_observations": true,
+      "messages": [
+        {
+          "uid": "1f527452-45f4-11eb-a722-0242ac140004",
+          "created": "2020-12-22T15:31:39.26167Z",
+          "created_device": "2026-01-01T00:00:00.000Z",
+          "creation_method": "text",
+          "author": {
+            "display_name": "Adèle Bouvet",
+            "company": 1738,
+            "pk": 11239
+          },
+          "type": "note",
+          "document_title": "text",
+          "document_type": "load_photo",
+          "document": "https://storage.googleapis.com/dashdoc-media/media/shipments/aabd42eb.png",
+          "is_attached_to_cmr": true,
+          "transport": "123e4567-e89b-12d3-a456-426614174000",
+          "site": "6d95e434-146c-4b8d-a99c-7ef908238445",
+          "site_remote_id": "text",
+          "readable_by_company_ids": "[1, 2, 3, 4]",
+          "message": "text",
+          "latitude": -52.5561625,
+          "longitude": 92.896504,
+          "reference": "delivery note 123456 client 1",
+          "visible_by_everyone": true,
+          "readable_by_trucker": true,
+          "extracted_reference": "AX22"
+        }
+      ],
+      "requested_vehicle": "text",
+      "documents": [
+        {
+          "pk": 2511500,
+          "file_updated_date": "2026-01-01T00:00:00.000Z",
+          "delivery": "123e4567-e89b-12d3-a456-426614174000",
+          "delivery_sequential_id": 2511500,
+          "reference": 2511500,
+          "category": "text",
+          "languages": [
+            "fr"
+          ],
+          "name": "text",
+          "file": "text",
+          "business_privacy_scope": true,
+          "cancelled": "2026-01-01T00:00:00.000Z"
+        }
+      ],
+      "carrier_reference": "text",
+      "requires_washing": true,
+      "business_privacy": true,
+      "is_multiple_compartments": true,
+      "loading_plan": "text",
+      "customer_to_invoice": {
+        "pk": 928,
+        "name": "My company",
+        "invoicing_address": {
+          "address": "1 rue de la paix",
+          "city": "Paris",
+          "postcode": "75000",
+          "country": "FR"
+        }
+      },
+      "parent_transport": {
+        "uid": "123e4567-e89b-12d3-a456-426614174000",
+        "sequential_id": 1,
+        "remote_id": "text",
+        "has_strong_link": true
+      },
+      "invoice_number": "text",
+      "volume_display_unit": "m3",
+      "references": [
+        {
+          "role": "text",
+          "company": {
+            "name": "text"
+          },
+          "reference": "text"
+        }
+      ],
+      "rental_deliveries": [
+        {
+          "uid": "447521b0-e165-11ea-a488-0242ac110007",
+          "sequential_id": 1240993,
+          "created": "2026-01-01T00:00:00.000Z",
+          "updated": "2026-01-01T00:00:00.000Z",
+          "deleted": "text",
+          "remote_id": "",
+          "carrier_address": {
+            "pk": 23498,
+            "name": "Transport Bouvet",
+            "address": "3 rue des champs",
+            "city": "Nantes",
+            "postcode": "44000",
+            "country": "FR",
+            "latitude": -52.5561625,
+            "longitude": 92.896504,
+            "radius": 500,
+            "coords_validated": false,
+            "is_demo": true,
+            "is_carrier": true,
+            "is_shipper": true,
+            "is_origin": true,
+            "is_destination": true,
+            "created_by": 1738,
+            "created": "2020-12-22T15:31:39.26167Z",
+            "remote_id": "text",
+            "company": {
+              "pk": 928,
+              "remote_id": "COMP_123",
+              "name": "Transport Bouvet",
+              "trade_number": "12345678901234",
+              "country": "FR",
+              "settings_contract_html": "text",
+              "settings_logo": "text",
+              "settings_stamp": "text",
+              "settings_print_mode": true,
+              "settings_special_agreements": "text",
+              "settings_transport_order_observations": "text",
+              "settings_constrain_reference_edition": true,
+              "vat_number": "FR123456789",
+              "is_verified": true
+            },
+            "original": 2085
+          },
+          "created_by": {
+            "pk": 928,
+            "remote_id": "text",
+            "created": "2020-07-30T21:10:06.445510Z",
+            "updated": "2020-07-30T21:10:06.44551Z",
+            "deleted": true,
+            "invoicing_remote_id": "COMP_456",
+            "name": "Transport Bouvet",
+            "phone_number": "0601020304",
+            "email": "i.love.dashdoc@gmail.com",
+            "siren": "123456789",
+            "trade_number": "text",
+            "country": "FR",
+            "comments": "text",
+            "vat_number": "text",
+            "is_verified": true,
+            "settings_transport_order_observations": "text",
+            "settings_constrain_reference_edition": true,
+            "account_type": "text",
+            "logo": "text",
+            "subscription_access": {},
+            "settings": {},
+            "primary_address": {
+              "pk": 23498,
+              "name": "Transport Bouvet",
+              "address": "3 rue des champs",
+              "city": "Nantes",
+              "postcode": "44000",
+              "country": "FR",
+              "latitude": -52.5561625,
+              "longitude": 92.896504,
+              "radius": 500,
+              "coords_validated": false,
+              "is_demo": true,
+              "is_carrier": true,
+              "is_shipper": true,
+              "is_origin": true,
+              "is_destination": true,
+              "created_by": {
+                "pk": 25,
+                "name": "Transport Bouvet"
+              },
+              "created_by_user": {
+                "pk": 34,
+                "display_name": "Jean Pierre Bouvet",
+                "company": 25,
+                "trucker_id": 95
+              },
+              "created": "2020-12-22T15:31:39.26167Z",
+              "remote_id": "text"
+            },
+            "managers": [
+              {
+                "pk": 928,
+                "user": {
+                  "email": "adele.bouvet@gmail.com",
+                  "first_name": "Adèle",
+                  "last_name": "Bouvet"
+                },
+                "display_name": "text",
+                "role": "text"
+              }
+            ],
+            "has_loggable_managers": true
+          },
+          "created_device": "2026-01-01T00:00:00.000Z",
+          "creation_method": "mobile_app",
+          "archived_by": [
+            {}
+          ],
+          "is_order": true,
+          "carrier_assignation_status": "unassigned",
+          "invite_code": "RWMUYE",
+          "deliveries": [
+            {
+              "uid": "text",
+              "sequential_id": 1240993,
+              "remote_id": "text",
+              "tracking_id": "text",
+              "origin": {
+                "uid": "687cddac-dbd2-11ea-9024-0242ac130006",
+                "remote_id": "text",
+                "address": {
+                  "pk": 23498,
+                  "name": "Transport Bouvet",
+                  "address": "3 rue des champs",
+                  "city": "Nantes",
+                  "postcode": "44000",
+                  "country": "FR",
+                  "latitude": -52.5561625,
+                  "longitude": 92.896504,
+                  "radius": 500,
+                  "coords_validated": false,
+                  "is_demo": true,
+                  "is_carrier": true,
+                  "is_shipper": true,
+                  "is_origin": true,
+                  "is_destination": true,
+                  "instructions": "text",
+                  "remote_id": "text",
+                  "company": {
+                    "pk": 928,
+                    "remote_id": "COMP_123",
+                    "trade_number": "12345678901234",
+                    "name": "Transport Bouvet"
+                  }
+                },
+                "real_start": "2020-12-22T15:31:39.26167Z",
+                "real_end": "2020-12-22T15:31:39.26167Z",
+                "signature_process": "sign_on_glass",
+                "is_booking_needed": true,
+                "instructions": "text",
+                "reference": "text",
+                "eta": "2026-01-01T00:00:00.000Z",
+                "eta_tracking": true,
+                "punctuality_status": "text",
+                "supports_exchanges": {
+                  "uid": "123e4567-e89b-12d3-a456-426614174000",
+                  "site": {
+                    "uid": "123e4567-e89b-12d3-a456-426614174000",
+                    "remote_id": "text"
+                  },
+                  "support_type": {
+                    "name": "Palettes",
+                    "created": "2020-12-22T15:31:39.26167Z",
+                    "uid": "c8e4cc62-446a-11eb-a759-0242ac130005",
+                    "remote_id": "text"
+                  },
+                  "expected_retrieved": 10,
+                  "actual_retrieved": 10,
+                  "expected_delivered": 10,
+                  "actual_delivered": 10,
+                  "observations": "1 broken",
+                  "remote_id": "text"
+                },
+                "category": "text",
+                "slots": [
+                  {
+                    "start": "2026-01-01T00:00:00.000Z",
+                    "end": "2026-01-01T00:00:00.000Z"
+                  }
+                ],
+                "trucker_instructions": "text",
+                "trip": {
+                  "uid": "123e4567-e89b-12d3-a456-426614174000",
+                  "name": "text",
+                  "is_prepared": true,
+                  "status": "unstarted"
+                }
+              },
+              "destination": {
+                "uid": "687cddac-dbd2-11ea-9024-0242ac130006",
+                "remote_id": "text",
+                "address": {
+                  "pk": 23498,
+                  "name": "Transport Bouvet",
+                  "address": "3 rue des champs",
+                  "city": "Nantes",
+                  "postcode": "44000",
+                  "country": "FR",
+                  "latitude": -52.5561625,
+                  "longitude": 92.896504,
+                  "radius": 500,
+                  "coords_validated": false,
+                  "is_demo": true,
+                  "is_carrier": true,
+                  "is_shipper": true,
+                  "is_origin": true,
+                  "is_destination": true,
+                  "instructions": "text",
+                  "remote_id": "text",
+                  "company": {
+                    "pk": 928,
+                    "remote_id": "COMP_123",
+                    "trade_number": "12345678901234",
+                    "name": "Transport Bouvet"
+                  }
+                },
+                "real_start": "2020-12-22T15:31:39.26167Z",
+                "real_end": "2020-12-22T15:31:39.26167Z",
+                "signature_process": "sign_on_glass",
+                "is_booking_needed": true,
+                "instructions": "text",
+                "reference": "text",
+                "eta": "2026-01-01T00:00:00.000Z",
+                "eta_tracking": true,
+                "punctuality_status": "text",
+                "supports_exchanges": {
+                  "uid": "123e4567-e89b-12d3-a456-426614174000",
+                  "site": {
+                    "uid": "123e4567-e89b-12d3-a456-426614174000",
+                    "remote_id": "text"
+                  },
+                  "support_type": {
+                    "name": "Palettes",
+                    "created": "2020-12-22T15:31:39.26167Z",
+                    "uid": "c8e4cc62-446a-11eb-a759-0242ac130005",
+                    "remote_id": "text"
+                  },
+                  "expected_retrieved": 10,
+                  "actual_retrieved": 10,
+                  "expected_delivered": 10,
+                  "actual_delivered": 10,
+                  "observations": "1 broken",
+                  "remote_id": "text"
+                },
+                "category": "text",
+                "slots": [
+                  {
+                    "start": "2026-01-01T00:00:00.000Z",
+                    "end": "2026-01-01T00:00:00.000Z"
+                  }
+                ],
+                "trucker_instructions": "text",
+                "trip": {
+                  "uid": "123e4567-e89b-12d3-a456-426614174000",
+                  "name": "text",
+                  "is_prepared": true,
+                  "status": "unstarted"
+                }
+              },
+              "shipper_address": {
+                "pk": 23498,
+                "name": "Transport Bouvet",
+                "address": "3 rue des champs",
+                "city": "Nantes",
+                "postcode": "44000",
+                "country": "FR",
+                "latitude": -52.5561625,
+                "longitude": 92.896504,
+                "radius": 500,
+                "coords_validated": false,
+                "is_demo": true,
+                "is_carrier": true,
+                "is_shipper": true,
+                "is_origin": true,
+                "is_destination": true,
+                "created_by": 1738,
+                "created": "2020-12-22T15:31:39.26167Z",
+                "instructions": "text",
+                "remote_id": "text",
+                "company": {
+                  "pk": 928,
+                  "remote_id": "COMP_123",
+                  "name": "Transport Bouvet",
+                  "trade_number": "12345678901234",
+                  "country": "FR",
+                  "settings_contract_html": "text",
+                  "settings_logo": "text",
+                  "settings_stamp": "text",
+                  "settings_print_mode": true,
+                  "settings_special_agreements": "text",
+                  "settings_transport_order_observations": "text",
+                  "settings_constrain_reference_edition": true,
+                  "vat_number": "FR123456789",
+                  "is_verified": true
+                },
+                "original": 2085
+              },
+              "planned_loads": [
+                {
+                  "uid": "text",
+                  "remote_id": "text",
+                  "description": "text",
+                  "reference": "text",
+                  "round_id": 1,
+                  "weight": 1,
+                  "volume": 1,
+                  "volume_display_unit": "m3",
+                  "linear_meters": 1,
+                  "quantity": 1,
+                  "pallet_equivalence": 1,
+                  "category": "bulk",
+                  "dangerous_goods_category": "1",
+                  "is_dangerous": true,
+                  "adr_un_code": "text",
+                  "legal_mentions": "text",
+                  "complementary_information": "text",
+                  "container_number": "text",
+                  "tare_weight": 1,
+                  "container_seal_number": "text",
+                  "refrigerated": true,
+                  "temperature": "text",
+                  "steres": 1,
+                  "idtf_number": "text",
+                  "use_identifiers": true,
+                  "identifiers": [
+                    "AX000123"
+                  ],
+                  "identifiers_observations": "Missing codes: 1234, 3456"
+                }
+              ],
+              "loads": [
+                {
+                  "uid": "text",
+                  "remote_id": "text",
+                  "description": "text",
+                  "reference": "text",
+                  "round_id": 1,
+                  "weight": 1,
+                  "volume": 1,
+                  "volume_display_unit": "m3",
+                  "linear_meters": 1,
+                  "quantity": 1,
+                  "pallet_equivalence": 1,
+                  "category": "bulk",
+                  "dangerous_goods_category": "1",
+                  "is_dangerous": true,
+                  "adr_un_code": "text",
+                  "legal_mentions": "text",
+                  "complementary_information": "text",
+                  "container_number": "text",
+                  "tare_weight": 1,
+                  "container_seal_number": "text",
+                  "refrigerated": true,
+                  "temperature": "text",
+                  "steres": 1,
+                  "idtf_number": "text",
+                  "use_identifiers": true,
+                  "identifiers": [
+                    "AX000123"
+                  ],
+                  "identifiers_observations": "Missing codes: 1234, 3456"
+                }
+              ],
+              "origin_loads": [
+                {
+                  "uid": "text",
+                  "remote_id": "text",
+                  "description": "text",
+                  "reference": "text",
+                  "round_id": 1,
+                  "weight": 1,
+                  "volume": 1,
+                  "volume_display_unit": "m3",
+                  "linear_meters": 1,
+                  "quantity": 1,
+                  "pallet_equivalence": 1,
+                  "category": "bulk",
+                  "dangerous_goods_category": "1",
+                  "is_dangerous": true,
+                  "adr_un_code": "text",
+                  "legal_mentions": "text",
+                  "complementary_information": "text",
+                  "container_number": "text",
+                  "tare_weight": 1,
+                  "container_seal_number": "text",
+                  "refrigerated": true,
+                  "temperature": "text",
+                  "steres": 1,
+                  "idtf_number": "text",
+                  "use_identifiers": true,
+                  "identifiers": [
+                    "AX000123"
+                  ],
+                  "identifiers_observations": "Missing codes: 1234, 3456"
+                }
+              ],
+              "destination_loads": [
+                {
+                  "uid": "text",
+                  "remote_id": "text",
+                  "description": "text",
+                  "reference": "text",
+                  "round_id": 1,
+                  "weight": 1,
+                  "volume": 1,
+                  "volume_display_unit": "m3",
+                  "linear_meters": 1,
+                  "quantity": 1,
+                  "pallet_equivalence": 1,
+                  "category": "bulk",
+                  "dangerous_goods_category": "1",
+                  "is_dangerous": true,
+                  "adr_un_code": "text",
+                  "legal_mentions": "text",
+                  "complementary_information": "text",
+                  "container_number": "text",
+                  "tare_weight": 1,
+                  "container_seal_number": "text",
+                  "refrigerated": true,
+                  "temperature": "text",
+                  "steres": 1,
+                  "idtf_number": "text",
+                  "use_identifiers": true,
+                  "identifiers": [
+                    "AX000123"
+                  ],
+                  "identifiers_observations": "Missing codes: 1234, 3456"
+                }
+              ],
+              "tracking_contacts": [
+                {
+                  "uid": "text",
+                  "contact": {
+                    "uid": "687cddac-dbd2-11ea-9024-0242ac130006",
+                    "created": "2020-12-22T15:31:39.26167Z",
+                    "company": {
+                      "pk": 23498,
+                      "remote_id": "text",
+                      "name": "Transport Bouvet",
+                      "trade_number": "text",
+                      "country": "FR",
+                      "settings_contract_html": "text",
+                      "settings_logo": "text",
+                      "settings_stamp": "text",
+                      "settings_print_mode": true,
+                      "settings_special_agreements": "text",
+                      "settings_transport_order_observations": "text",
+                      "settings_constrain_reference_edition": true,
+                      "vat_number": "text",
+                      "is_verified": "text"
+                    },
+                    "first_name": "text",
+                    "last_name": "text",
+                    "email": "name@gmail.com",
+                    "phone_number": "text",
+                    "fax_number": "text",
+                    "remote_id": "CONTACT_123"
+                  },
+                  "subscribed_to_status_updates": true,
+                  "role": "text"
+                }
+              ],
+              "shipper_reference": "text",
+              "multiple_rounds": true
+            }
+          ],
+          "segments": [
+            {
+              "uid": "text",
+              "remote_id": "text",
+              "origin": {
+                "uid": "687cddac-dbd2-11ea-9024-0242ac130006",
+                "remote_id": "text",
+                "address": {
+                  "pk": 23498,
+                  "name": "Transport Bouvet",
+                  "address": "3 rue des champs",
+                  "city": "Nantes",
+                  "postcode": "44000",
+                  "country": "FR",
+                  "latitude": -52.5561625,
+                  "longitude": 92.896504,
+                  "radius": 500,
+                  "coords_validated": false,
+                  "is_demo": true,
+                  "is_carrier": true,
+                  "is_shipper": true,
+                  "is_origin": true,
+                  "is_destination": true,
+                  "created_by": {
+                    "pk": 25,
+                    "name": "Transport Bouvet"
+                  },
+                  "created_by_user": {
+                    "pk": 34,
+                    "display_name": "Jean Pierre Bouvet",
+                    "company": 25,
+                    "trucker_id": 95
+                  },
+                  "created": "2020-12-22T15:31:39.26167Z",
+                  "instructions": "text",
+                  "remote_id": "text",
+                  "original": 2085,
+                  "company": {
+                    "pk": 928,
+                    "remote_id": "text",
+                    "created": "2020-07-30T21:10:06.445510Z",
+                    "updated": "2020-07-30T21:10:06.44551Z",
+                    "deleted": true,
+                    "invoicing_remote_id": "COMP_456",
+                    "name": "Transport Bouvet",
+                    "phone_number": "0601020304",
+                    "email": "i.love.dashdoc@gmail.com",
+                    "siren": "123456789",
+                    "trade_number": "text",
+                    "country": "FR",
+                    "comments": "text",
+                    "vat_number": "text",
+                    "is_verified": true,
+                    "settings_transport_order_observations": "text",
+                    "settings_constrain_reference_edition": true,
+                    "account_type": "text",
+                    "logo": "text",
+                    "subscription_access": {},
+                    "settings": {},
+                    "primary_address": {
+                      "pk": 23498,
+                      "name": "Transport Bouvet",
+                      "address": "3 rue des champs",
+                      "city": "Nantes",
+                      "postcode": "44000",
+                      "country": "FR",
+                      "latitude": -52.5561625,
+                      "longitude": 92.896504,
+                      "radius": 500,
+                      "coords_validated": false,
+                      "is_demo": true,
+                      "is_carrier": true,
+                      "is_shipper": true,
+                      "is_origin": true,
+                      "is_destination": true,
+                      "created_by": {
+                        "pk": 25,
+                        "name": "Transport Bouvet"
+                      },
+                      "created_by_user": {
+                        "pk": 34,
+                        "display_name": "Jean Pierre Bouvet",
+                        "company": 25,
+                        "trucker_id": 95
+                      },
+                      "created": "2020-12-22T15:31:39.26167Z",
+                      "remote_id": "text"
+                    },
+                    "managers": [
+                      {
+                        "pk": 928,
+                        "user": {
+                          "email": "adele.bouvet@gmail.com",
+                          "first_name": "Adèle",
+                          "last_name": "Bouvet"
+                        },
+                        "display_name": "text",
+                        "role": "text"
+                      }
+                    ],
+                    "has_loggable_managers": true
+                  }
+                },
+                "real_start": "2020-12-22T15:31:39.26167Z",
+                "real_end": "2020-12-22T15:31:39.26167Z",
+                "signature_process": "sign_on_glass",
+                "instructions": "text",
+                "reference": "text",
+                "eta": "text",
+                "eta_tracking": false,
+                "punctuality_status": "untracked",
+                "supports_exchanges": {
+                  "uid": "123e4567-e89b-12d3-a456-426614174000",
+                  "site": {
+                    "uid": "123e4567-e89b-12d3-a456-426614174000",
+                    "remote_id": "text"
+                  },
+                  "support_type": {
+                    "name": "Palettes",
+                    "created": "2020-12-22T15:31:39.26167Z",
+                    "uid": "c8e4cc62-446a-11eb-a759-0242ac130005",
+                    "remote_id": "text"
+                  },
+                  "expected_retrieved": 10,
+                  "actual_retrieved": 10,
+                  "expected_delivered": 10,
+                  "actual_delivered": 10,
+                  "observations": "1 broken",
+                  "remote_id": "text"
+                },
+                "category": "loading",
+                "slots": [
+                  {
+                    "start": "2026-01-01T00:00:00.000Z",
+                    "end": "2026-01-01T00:00:00.000Z"
+                  }
+                ],
+                "trucker_instructions": "text",
+                "trip": {
+                  "uid": "123e4567-e89b-12d3-a456-426614174000",
+                  "name": "text",
+                  "is_prepared": true,
+                  "status": "unstarted"
+                }
+              },
+              "destination": {
+                "uid": "687cddac-dbd2-11ea-9024-0242ac130006",
+                "remote_id": "text",
+                "address": {
+                  "pk": 23498,
+                  "name": "Transport Bouvet",
+                  "address": "3 rue des champs",
+                  "city": "Nantes",
+                  "postcode": "44000",
+                  "country": "FR",
+                  "latitude": -52.5561625,
+                  "longitude": 92.896504,
+                  "radius": 500,
+                  "coords_validated": false,
+                  "is_demo": true,
+                  "is_carrier": true,
+                  "is_shipper": true,
+                  "is_origin": true,
+                  "is_destination": true,
+                  "created_by": {
+                    "pk": 25,
+                    "name": "Transport Bouvet"
+                  },
+                  "created_by_user": {
+                    "pk": 34,
+                    "display_name": "Jean Pierre Bouvet",
+                    "company": 25,
+                    "trucker_id": 95
+                  },
+                  "created": "2020-12-22T15:31:39.26167Z",
+                  "instructions": "text",
+                  "remote_id": "text",
+                  "original": 2085,
+                  "company": {
+                    "pk": 928,
+                    "remote_id": "text",
+                    "created": "2020-07-30T21:10:06.445510Z",
+                    "updated": "2020-07-30T21:10:06.44551Z",
+                    "deleted": true,
+                    "invoicing_remote_id": "COMP_456",
+                    "name": "Transport Bouvet",
+                    "phone_number": "0601020304",
+                    "email": "i.love.dashdoc@gmail.com",
+                    "siren": "123456789",
+                    "trade_number": "text",
+                    "country": "FR",
+                    "comments": "text",
+                    "vat_number": "text",
+                    "is_verified": true,
+                    "settings_transport_order_observations": "text",
+                    "settings_constrain_reference_edition": true,
+                    "account_type": "text",
+                    "logo": "text",
+                    "subscription_access": {},
+                    "settings": {},
+                    "primary_address": {
+                      "pk": 23498,
+                      "name": "Transport Bouvet",
+                      "address": "3 rue des champs",
+                      "city": "Nantes",
+                      "postcode": "44000",
+                      "country": "FR",
+                      "latitude": -52.5561625,
+                      "longitude": 92.896504,
+                      "radius": 500,
+                      "coords_validated": false,
+                      "is_demo": true,
+                      "is_carrier": true,
+                      "is_shipper": true,
+                      "is_origin": true,
+                      "is_destination": true,
+                      "created_by": {
+                        "pk": 25,
+                        "name": "Transport Bouvet"
+                      },
+                      "created_by_user": {
+                        "pk": 34,
+                        "display_name": "Jean Pierre Bouvet",
+                        "company": 25,
+                        "trucker_id": 95
+                      },
+                      "created": "2020-12-22T15:31:39.26167Z",
+                      "remote_id": "text"
+                    },
+                    "managers": [
+                      {
+                        "pk": 928,
+                        "user": {
+                          "email": "adele.bouvet@gmail.com",
+                          "first_name": "Adèle",
+                          "last_name": "Bouvet"
+                        },
+                        "display_name": "text",
+                        "role": "text"
+                      }
+                    ],
+                    "has_loggable_managers": true
+                  }
+                },
+                "real_start": "2020-12-22T15:31:39.26167Z",
+                "real_end": "2020-12-22T15:31:39.26167Z",
+                "signature_process": "sign_on_glass",
+                "instructions": "text",
+                "reference": "text",
+                "eta": "text",
+                "eta_tracking": false,
+                "punctuality_status": "untracked",
+                "supports_exchanges": {
+                  "uid": "123e4567-e89b-12d3-a456-426614174000",
+                  "site": {
+                    "uid": "123e4567-e89b-12d3-a456-426614174000",
+                    "remote_id": "text"
+                  },
+                  "support_type": {
+                    "name": "Palettes",
+                    "created": "2020-12-22T15:31:39.26167Z",
+                    "uid": "c8e4cc62-446a-11eb-a759-0242ac130005",
+                    "remote_id": "text"
+                  },
+                  "expected_retrieved": 10,
+                  "actual_retrieved": 10,
+                  "expected_delivered": 10,
+                  "actual_delivered": 10,
+                  "observations": "1 broken",
+                  "remote_id": "text"
+                },
+                "category": "loading",
+                "slots": [
+                  {
+                    "start": "2026-01-01T00:00:00.000Z",
+                    "end": "2026-01-01T00:00:00.000Z"
+                  }
+                ],
+                "trucker_instructions": "text",
+                "trip": {
+                  "uid": "123e4567-e89b-12d3-a456-426614174000",
+                  "name": "text",
+                  "is_prepared": true,
+                  "status": "unstarted"
+                }
+              },
+              "trucker": {
+                "pk": 23498,
+                "remote_id": "text",
+                "display_name": "Adèle Bouvet",
+                "user": {
+                  "pk": 17293,
+                  "first_name": "Adèle",
+                  "last_name": "Bouvet",
+                  "username": "1b3b4c74-5f07-4f09-b18f-2753ffcf916e",
+                  "email": "adele.bouvet@gmail.com",
+                  "display_name": "Adèle Bouvet",
+                  "date_joined": "2026-01-01T00:00:00.000Z",
+                  "is_staff": true,
+                  "is_superuser": true,
+                  "has_usable_password": true
+                }
+              },
+              "vehicle": {
+                "pk": 928,
+                "carrier": 928,
+                "category": "tipper_cereal",
+                "license_plate": "WE749RM",
+                "fleet_number": "TRUCK120",
+                "remote_id": "tr123type1",
+                "created": "2020-07-30T21:10:06.44551Z",
+                "used_for_qualimat_transports": true,
+                "telematic_vehicle": 1,
+                "original": 40,
+                "tags": [
+                  {
+                    "pk": 1,
+                    "name": "Urgent",
+                    "color": "#E5291D",
+                    "tag_group_id": 1
+                  }
+                ],
+                "technical_control_deadline": "2020-12-22T15:31:39.26167Z",
+                "tachograph_deadline": "2020-12-22T15:31:39.26167Z",
+                "speed_limiter_deadline": "2020-12-22T15:31:39.26167Z",
+                "country": "FR",
+                "unavailability": [
+                  {
+                    "id": 928,
+                    "remote_id": "tr123type1",
+                    "created": "2020-07-30T21:10:06.44551Z",
+                    "start_date": "2020-07-30T21:10:06.44551Z",
+                    "end_date": "2020-07-30T21:10:06.44551Z",
+                    "unavailability_type": "paid_vacation",
+                    "unavailability_note": "I'm on vacation"
+                  }
+                ],
+                "events": [
+                  {}
+                ]
+              },
+              "trailers": [
+                {
+                  "pk": 928,
+                  "original": 1,
+                  "carrier": 928,
+                  "license_plate": "WE749RM",
+                  "fleet_number": "TRAILER120",
+                  "remote_id": "tr123type1",
+                  "created": "2020-07-30T21:10:06.44551Z",
+                  "used_for_qualimat_transports": true,
+                  "tags": [
+                    {
+                      "pk": 1,
+                      "name": "Urgent",
+                      "color": "#E5291D",
+                      "tag_group_id": 1
+                    }
+                  ],
+                  "technical_control_deadline": "2020-12-22T15:31:39.26167Z",
+                  "country": "FR",
+                  "unavailability": [
+                    {
+                      "id": 928,
+                      "remote_id": "tr123type1",
+                      "created": "2020-07-30T21:10:06.44551Z",
+                      "start_date": "2020-07-30T21:10:06.44551Z",
+                      "end_date": "2020-07-30T21:10:06.44551Z",
+                      "unavailability_type": "paid_vacation",
+                      "unavailability_note": "I'm on vacation"
+                    }
+                  ],
+                  "events": [
+                    {}
+                  ]
+                }
+              ],
+              "sort_order": 0,
+              "scheduled_start_range": {
+                "start": "2021-12-21T13:51:33.323237Z",
+                "end": "2021-12-21T14:30:33.323237Z"
+              },
+              "scheduled_end_range": {
+                "start": "2021-12-21T13:51:33.323237Z",
+                "end": "2021-12-21T14:30:33.323237Z"
+              },
+              "child_transport": {
+                "uid": "123e4567-e89b-12d3-a456-426614174000",
+                "sequential_id": 1,
+                "remote_id": "text",
+                "has_strong_link": true
+              },
+              "telematic_distance": 1,
+              "distance": 1,
+              "origin_mileage": 1,
+              "destination_mileage": 1
+            }
+          ],
+          "status": "created",
+          "status_updates": [
+            {
+              "uid": "687cddac-dbd2-11ea-9024-0242ac130006",
+              "created": "2026-01-01T00:00:00.000Z",
+              "created_device": "2026-01-01T00:00:00.000Z",
+              "creation_method": "text",
+              "category": "text",
+              "author": {},
+              "content": {},
+              "content_signatory": {},
+              "target": {},
+              "site": {},
+              "site_id": "123e4567-e89b-12d3-a456-426614174000",
+              "delivery": "123e4567-e89b-12d3-a456-426614174000",
+              "segment": "123e4567-e89b-12d3-a456-426614174000",
+              "transport": "123e4567-e89b-12d3-a456-426614174000",
+              "signature": {},
+              "latitude": 1,
+              "longitude": 1,
+              "update_details": {},
+              "author_company": 1
+            }
+          ],
+          "has_observations": true,
+          "messages": [
+            {
+              "uid": "1f527452-45f4-11eb-a722-0242ac140004",
+              "created": "2020-12-22T15:31:39.26167Z",
+              "created_device": "2026-01-01T00:00:00.000Z",
+              "creation_method": "text",
+              "author": {
+                "display_name": "Adèle Bouvet",
+                "company": 1738,
+                "pk": 11239
+              },
+              "type": "note",
+              "document_title": "text",
+              "document_type": "load_photo",
+              "document": "https://storage.googleapis.com/dashdoc-media/media/shipments/aabd42eb.png",
+              "is_attached_to_cmr": true,
+              "transport": "123e4567-e89b-12d3-a456-426614174000",
+              "site": "6d95e434-146c-4b8d-a99c-7ef908238445",
+              "site_remote_id": "text",
+              "readable_by_company_ids": "[1, 2, 3, 4]",
+              "message": "text",
+              "latitude": -52.5561625,
+              "longitude": 92.896504,
+              "reference": "delivery note 123456 client 1",
+              "visible_by_everyone": true,
+              "readable_by_trucker": true,
+              "extracted_reference": "AX22"
+            }
+          ],
+          "requested_vehicle": "text",
+          "documents": [
+            {
+              "pk": 2511500,
+              "file_updated_date": "2026-01-01T00:00:00.000Z",
+              "delivery": "123e4567-e89b-12d3-a456-426614174000",
+              "delivery_sequential_id": 2511500,
+              "reference": 2511500,
+              "category": "text",
+              "languages": [
+                "fr"
+              ],
+              "name": "text",
+              "file": "text",
+              "business_privacy_scope": true,
+              "cancelled": "2026-01-01T00:00:00.000Z"
+            }
+          ],
+          "carrier_reference": "text",
+          "requires_washing": true,
+          "business_privacy": true,
+          "is_multiple_compartments": true,
+          "loading_plan": "text",
+          "customer_to_invoice": {
+            "pk": 928,
+            "name": "My company",
+            "invoicing_address": {
+              "address": "1 rue de la paix",
+              "city": "Paris",
+              "postcode": "75000",
+              "country": "FR"
+            }
+          },
+          "parent_transport": {
+            "uid": "123e4567-e89b-12d3-a456-426614174000",
+            "sequential_id": 1,
+            "remote_id": "text",
+            "has_strong_link": true
+          },
+          "invoice_number": "text",
+          "volume_display_unit": "m3",
+          "references": [
+            {
+              "role": "text",
+              "company": {
+                "name": "text"
+              },
+              "reference": "text"
+            }
+          ],
+          "rental_deliveries": "[Circular Reference]",
+          "shape": "text",
+          "instructions": "text",
+          "carbon_footprint": 1,
+          "tags": [
+            {
+              "pk": 1,
+              "name": "Urgent",
+              "color": "#E5291D",
+              "tag_group_id": 1
+            }
+          ]
+        }
+      ],
+      "shape": "text",
+      "instructions": "text",
+      "carbon_footprint": 1,
+      "tags": [
+        {
+          "pk": 1,
+          "name": "Urgent",
+          "color": "#E5291D",
+          "tag_group_id": 1
+        }
+      ],
+      "agreed_price_total": "123.45",
+      "invoiced_price_total": "123.45",
+      "shipper_final_price_total": "123.45",
+      "effective_price_total": "123.45",
+      "purchase_cost_total": "123.45"
+    }
+  ]
+}

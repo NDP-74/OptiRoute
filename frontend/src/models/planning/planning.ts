@@ -10,8 +10,10 @@ export interface PlanningTransport {
     tractorRegistration: string | null;
     semiTrailerRegistration: string | null;
 
-    plannedStart: string;
-    plannedEnd: string;
+    departureStart: string | null;
+    departureEnd: string | null;
+    arrivalStart: string | null;
+    arrivalEnd: string | null;
 
     originName: string;
     destinationName: string;

@@ -21,7 +21,7 @@ const props = defineProps<{
 const calendarItems = computed(() => props.transports
   .map((transport) => ({
     id: transport.id,
-    sortTime: new Date(transport.plannedStart).getTime(),
+    sortTime: transport.departureStart ? new Date(transport.departureStart).getTime() : Number.MAX_SAFE_INTEGER,
     transport,
   }))
   .sort((first, second) => first.sortTime - second.sortTime));

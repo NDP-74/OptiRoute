@@ -1,6 +1,8 @@
 package com.optiroute.backend.service.transport;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.time.OffsetDateTime;
 
 import org.springframework.transaction.annotation.Transactional;
 
@@ -72,6 +74,21 @@ public class ServiceRouteService {
         service.setName(req.name());
         service.setCustomerId(req.customerId());
         service.setRevenue(req.revenue());
+        if (req.externalId() != null) {
+            service.setExternalId(req.externalId());
+        }
+        if (req.externalSource() != null) {
+            service.setExternalSource(req.externalSource());
+        }
+        if (req.serviceTiming() != null) {
+            var timing = req.serviceTiming();
+            service.setLoadingDurationMinutes(timing.loadingDurationMinutes());
+            service.setUnloadingDurationMinutes(timing.unloadingDurationMinutes());
+            service.setDepartureStart(timing.departureStart());
+            service.setDepartureEnd(timing.departureEnd());
+            service.setArrivalStart(timing.arrivalStart());
+            service.setArrivalEnd(timing.arrivalEnd());
+        }
     }
 
     // Les coûts driver/vehicle/structure restent null pour l'instant
@@ -80,8 +97,10 @@ public class ServiceRouteService {
         route.setTractorId(req.tractorId());
         route.setSemiTrailerId(req.semiTrailerId());
 
-        route.setStartDate(req.plannedStart());
-        route.setEndDate(req.plannedEnd());
+        applyRouteTimes(route, req, routeDto);
+        if (req.waypoints() != null) {
+            route.setWaypoints(new ArrayList<>(req.waypoints()));
+        }
         route.setEmptyTrip(req.emptyTrip());
 
         route.setOriginName(req.originName());
@@ -102,5 +121,32 @@ public class ServiceRouteService {
         }
         route.setFuelCost(BigDecimal.valueOf(routeDto.getCosts().getFuelCost()));
         route.setTollCost(BigDecimal.valueOf(routeDto.getCosts().getTollCost()));
+    }
+
+    private void applyRouteTimes(Route route, TransportRequest req, RouteDto routeDto) {
+        Service service = route.getService();
+        if ("DASHDOC".equalsIgnoreCase(service.getExternalSource())) {
+            route.setDepartureStart(service.getDepartureStart());
+            route.setDepartureEnd(service.getDepartureEnd());
+            route.setArrivalStart(service.getArrivalStart());
+            route.setArrivalEnd(service.getArrivalEnd());
+            return;
+        }
+
+        route.setDepartureEnd(null);
+        route.setArrivalEnd(null);
+        if (req.routeTime() == null) {
+            route.setDepartureStart(null);
+            route.setArrivalStart(null);
+            return;
+        }
+
+        if (req.timeMode() == com.optiroute.backend.type.RouteTimeMode.ARRIVAL) {
+            route.setArrivalStart(req.routeTime());
+            route.setDepartureStart(req.routeTime().minusSeconds(routeDto.getDuration()));
+        } else {
+            route.setDepartureStart(req.routeTime());
+            route.setArrivalStart(req.routeTime().plusSeconds(routeDto.getDuration()));
+        }
     }
 }

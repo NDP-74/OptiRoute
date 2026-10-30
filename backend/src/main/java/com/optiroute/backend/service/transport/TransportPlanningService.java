@@ -53,7 +53,7 @@ public class TransportPlanningService {
         OffsetDateTime start = startDate.atStartOfDay(PLANNING_ZONE).toOffsetDateTime();
         OffsetDateTime end = endDate.atStartOfDay(PLANNING_ZONE).toOffsetDateTime();
 
-        List<Route> routes = routeRepository.findByStartDateGreaterThanEqualAndStartDateLessThan(start,end);
+        List<Route> routes = routeRepository.findByDepartureStartGreaterThanEqualAndDepartureStartLessThan(start,end);
 
         List<TransportPlanningResponse> transports = routes.stream().map(route -> {
             var service = route.getService();
@@ -65,13 +65,14 @@ public class TransportPlanningService {
                 : semiTrailerRepository.findById(route.getSemiTrailerId()).map(SemiTrailer::getRegistration).orElse(null);
 
             return new TransportPlanningResponse(service.getId(), service.getName(), driver != null ? driver.getId() : null,
-                driver != null ? driver.getFirstName() + " " + driver.getLastName() : null, tractorRegistration, semiTrailerRegistration, route.getStartDate(), route.getEndDate(),
+                driver != null ? driver.getFirstName() + " " + driver.getLastName() : null, tractorRegistration, semiTrailerRegistration,
+                route.getDepartureStart(), route.getDepartureEnd(), route.getArrivalStart(), route.getArrivalEnd(),
                 route.getOriginName(), route.getDestinationName(), route.isEmptyTrip(), costs.totalCost(), costs.driver().totalCost(), costs.structure().totalCost(),
                 costs.vehicle().totalCost(), service.getRevenue() == null ? 0 : service.getRevenue().doubleValue());
         }).toList();
 
-        Map<Long, Set<LocalDate>> transportDatesByDriver = routes.stream().filter(route -> route.getDriverId() != null)
-            .collect(Collectors.groupingBy(Route::getDriverId,Collectors.mapping(route -> route.getStartDate().atZoneSameInstant(PLANNING_ZONE).toLocalDate(),Collectors.toSet())));
+        Map<Long, Set<LocalDate>> transportDatesByDriver = routes.stream().filter(route -> route.getDriverId() != null && route.getDepartureStart() != null)
+            .collect(Collectors.groupingBy(Route::getDriverId,Collectors.mapping(route -> route.getDepartureStart().atZoneSameInstant(PLANNING_ZONE).toLocalDate(),Collectors.toSet())));
 
         List<Driver> allDrivers = driverRepository.findAll();
 

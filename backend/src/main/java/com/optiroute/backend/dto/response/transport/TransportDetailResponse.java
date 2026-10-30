@@ -2,15 +2,14 @@ package com.optiroute.backend.dto.response.transport;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.List;
 
+import com.optiroute.backend.dto.request.transport.ServiceTiming;
+import com.optiroute.backend.model.Position;
 import com.optiroute.backend.type.GpsModeType;
 import com.optiroute.backend.dto.response.cost.TransportCostDetailsResponse;
 
 public record TransportDetailResponse(Long id, String name, String status, boolean emptyTrip,
-
-        OffsetDateTime plannedStart, OffsetDateTime plannedEnd,
-
-        OffsetDateTime actualStart, OffsetDateTime actualEnd,
 
         // Driver
         Long driverId, String driverName, String driverLogin,
@@ -35,5 +34,10 @@ public record TransportDetailResponse(Long id, String name, String status, boole
 
         String polyline, GpsModeType routeType,
 
-        TransportCostDetailsResponse costs, BigDecimal revenue) {
+        TransportCostDetailsResponse costs, BigDecimal revenue,
+
+        ServiceTiming serviceTiming,
+        OffsetDateTime departureStart, OffsetDateTime departureEnd,
+        OffsetDateTime arrivalStart, OffsetDateTime arrivalEnd,
+        List<Position> waypoints) {
 }

@@ -56,7 +56,7 @@ public class RoutingService {
 
         Map<GpsModeType, RoutePtvParser.ParsedRoute> routes = new LinkedHashMap<>();
         for (GpsModeType mode : onlyMode == null ? GpsModeType.values() : new GpsModeType[] { onlyMode }) {
-            RoutePtvParser.ParsedRoute parsed = isHere() ? fetchHere(waypoints,routeTime,truckConfiguration,mode) : fetchPtv(waypoints,truckConfiguration,routeTime,timeMode,mode,driverHourlyRate);
+            RoutePtvParser.ParsedRoute parsed = isHere() ? fetchHere(waypoints,routeTime,timeMode,truckConfiguration,mode) : fetchPtv(waypoints,truckConfiguration,routeTime,timeMode,mode,driverHourlyRate);
             if (parsed != null) {
                 routes.put(mode,parsed);
             }
@@ -64,9 +64,9 @@ public class RoutingService {
         return routes;
     }
 
-    private RoutePtvParser.ParsedRoute fetchHere(List<String> waypoints, String routeTime, TruckConfiguration truckConfiguration, GpsModeType mode) {
+    private RoutePtvParser.ParsedRoute fetchHere(List<String> waypoints, String routeTime, RouteTimeMode timeMode, TruckConfiguration truckConfiguration, GpsModeType mode) {
         List<String> viaPoints = waypoints.subList(1,waypoints.size() - 1);
-        String raw = hereApiClient.getRoutes(waypoints.getFirst(),waypoints.getLast(),viaPoints,routeTime,truckConfiguration,GpsModeType.CHEAPEST.equals(mode),0);
+        String raw = hereApiClient.getRoutes(waypoints.getFirst(),waypoints.getLast(),viaPoints,routeTime,timeMode,truckConfiguration,GpsModeType.CHEAPEST.equals(mode),0);
         return routeHereParser.parseRoutes(raw).stream().findFirst()
             .map(here -> new RoutePtvParser.ParsedRoute(here.duration, here.baseDuration, here.distanceMeters, here.polyline, here.tollCost, here.rawJson)).orElse(null);
     }

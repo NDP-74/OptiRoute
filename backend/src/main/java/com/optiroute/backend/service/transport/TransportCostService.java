@@ -49,7 +49,10 @@ public class TransportCostService {
     private final CostParameterEngine costParameterEngine;
 
     public TransportCostDetailsResponse calculate(Route route) {
-        LocalDate date = route.getStartDate().atZoneSameInstant(ZONE).toLocalDate();
+        if (route.getDepartureStart() == null || route.getArrivalStart() == null) {
+            throw new IllegalStateException("Route departure and arrival times must be calculated before costs");
+        }
+        LocalDate date = route.getDepartureStart().atZoneSameInstant(ZONE).toLocalDate();
 
         List<Route> dayRoutes = findDayRoutes(route,date);
         List<CostCalculationContext> dailyContexts = dayRoutes.stream().map(r -> buildContext(r,dayRoutes)).toList();
@@ -99,7 +102,7 @@ public class TransportCostService {
 
         OffsetDateTime start = date.atStartOfDay(ZONE).toOffsetDateTime();
         OffsetDateTime end = date.plusDays(1).atStartOfDay(ZONE).toOffsetDateTime();
-        List<Route> routes = new ArrayList<>(routeRepository.findByDriverIdAndStartDateGreaterThanEqualAndStartDateLessThan(route.getDriverId(),start,end));
+        List<Route> routes = new ArrayList<>(routeRepository.findByDriverIdAndDepartureStartGreaterThanEqualAndDepartureStartLessThan(route.getDriverId(),start,end));
         if (routes.stream().noneMatch(r -> r.getId().equals(route.getId()))) {
             routes.add(route);
         }
@@ -110,16 +113,16 @@ public class TransportCostService {
         double dailyKm = dayRoutes.stream().mapToDouble(r -> r.getDistanceMeters() / 1000.0).sum();
         double dailyHours = dayRoutes.stream().mapToDouble(r -> r.getDurationSeconds() / 3600.0).sum();
 
-        LocalTime dayStart = dayRoutes.stream().map(r -> r.getStartDate().atZoneSameInstant(ZONE).toLocalTime()).min(Comparator.naturalOrder()).orElse(null);
-        LocalTime dayEnd = dayRoutes.stream().map(r -> r.getEndDate().atZoneSameInstant(ZONE).toLocalTime()).max(Comparator.naturalOrder()).orElse(null);
+        LocalTime dayStart = dayRoutes.stream().map(r -> r.getDepartureStart().atZoneSameInstant(ZONE).toLocalTime()).min(Comparator.naturalOrder()).orElse(null);
+        LocalTime dayEnd = dayRoutes.stream().map(r -> r.getArrivalStart().atZoneSameInstant(ZONE).toLocalTime()).max(Comparator.naturalOrder()).orElse(null);
 
         Long trailerTypeId = null;
         if (route.getSemiTrailerId() != null) {
             trailerTypeId = semiTrailerRepository.findById(route.getSemiTrailerId()).map(SemiTrailer::getTrailerType).map(t -> t.getId()).orElse(null);
         }
 
-        return new CostCalculationContext(route.getStartDate().atZoneSameInstant(ZONE).toLocalDate(), route.getDistanceMeters() / 1000.0, dailyKm,
-            route.getDurationSeconds() / 3600.0, dayRoutes.size(), route.isEmptyTrip(), route.getStartDate().atZoneSameInstant(ZONE).toLocalTime(),
-            route.getEndDate().atZoneSameInstant(ZONE).toLocalTime(), dayStart, dayEnd, trailerTypeId, dailyHours);
+        return new CostCalculationContext(route.getDepartureStart().atZoneSameInstant(ZONE).toLocalDate(), route.getDistanceMeters() / 1000.0, dailyKm,
+            route.getDurationSeconds() / 3600.0, dayRoutes.size(), route.isEmptyTrip(), route.getDepartureStart().atZoneSameInstant(ZONE).toLocalTime(),
+            route.getArrivalStart().atZoneSameInstant(ZONE).toLocalTime(), dayStart, dayEnd, trailerTypeId, dailyHours);
     }
 }

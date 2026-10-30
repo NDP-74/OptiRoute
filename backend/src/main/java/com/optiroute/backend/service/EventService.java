@@ -3,6 +3,7 @@ package com.optiroute.backend.service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.ArrayList;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -87,7 +88,7 @@ public class EventService {
             semiTrailer = semiTrailerRepository.findById(request.semiTrailerId()).orElseThrow(() -> new EntityNotFoundException("Semi-trailer not found with id " + request.semiTrailerId()));
         }
 
-        LocalDateTime eventDate = route.getStartDate() == null ? LocalDateTime.now() : route.getStartDate().toLocalDateTime();
+        LocalDateTime eventDate = route.getDepartureStart() == null ? LocalDateTime.now() : route.getDepartureStart().toLocalDateTime();
 
         Event event = Event.builder().route(route).costParameter(costParameter).pointOfInterest(pointOfInterest).tractor(tractor).semiTrailer(semiTrailer).eventDate(eventDate).build();
 
@@ -137,9 +138,10 @@ public class EventService {
 
     // Recalcule l'itinéraire avec les points d'intérêt de tous les événements de la route comme étapes
     private void recalculateRoute(Route route) {
-        List<Position> waypoints = eventRepository.findByRouteIdOrderByIdAsc(route.getId()).stream().map(Event::getPointOfInterest)
+        List<Position> waypoints = new ArrayList<>(route.getWaypoints() == null ? List.of() : route.getWaypoints());
+        waypoints.addAll(eventRepository.findByRouteIdOrderByIdAsc(route.getId()).stream().map(Event::getPointOfInterest)
                 .filter(poi -> poi != null && poi.getLatitude() != null && poi.getLongitude() != null)
-                .map(poi -> new Position(poi.getLatitude().doubleValue(), poi.getLongitude().doubleValue())).toList();
+                .map(poi -> new Position(poi.getLatitude().doubleValue(), poi.getLongitude().doubleValue())).toList());
 
         GpsModeType mode = route.getRouteType() == null ? GpsModeType.FASTEST : route.getRouteType();
 
@@ -148,8 +150,8 @@ public class EventService {
         routeRequest.setDestination(new Position(route.getDestinationLat(), route.getDestinationLng()));
         routeRequest.setWaypoints(waypoints);
         routeRequest.setMode(mode);
-        routeRequest.setRouteTime(route.getStartDate());
-        routeRequest.setTimeMode(RouteTimeMode.DEPARTURE);
+        routeRequest.setRouteTime(route.getArrivalStart() != null ? route.getArrivalStart() : route.getDepartureStart());
+        routeRequest.setTimeMode(route.getArrivalStart() != null ? RouteTimeMode.ARRIVAL : RouteTimeMode.DEPARTURE);
         routeRequest.setTractorId(route.getTractorId());
         routeRequest.setSemiTrailerId(route.getSemiTrailerId());
         routeRequest.setDriverId(route.getDriverId());
@@ -166,8 +168,10 @@ public class EventService {
         route.setFuelCost(BigDecimal.valueOf(selected.getCosts().getFuelCost()));
         route.setTollCost(BigDecimal.valueOf(selected.getCosts().getTollCost()));
 
-        if (route.getStartDate() != null) {
-            route.setEndDate(route.getStartDate().plusSeconds(selected.getDuration()));
+        if (!"DASHDOC".equalsIgnoreCase(route.getService().getExternalSource()) && route.getArrivalStart() != null) {
+            route.setDepartureStart(route.getArrivalStart().minusSeconds(selected.getDuration()));
+        } else if (!"DASHDOC".equalsIgnoreCase(route.getService().getExternalSource()) && route.getDepartureStart() != null) {
+            route.setArrivalStart(route.getDepartureStart().plusSeconds(selected.getDuration()));
         }
 
         routeRepository.save(route);

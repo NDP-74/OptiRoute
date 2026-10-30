@@ -22,6 +22,14 @@ import ConfirmDeleteModal from "@/components/ui/ConfirmDeleteModal.vue"
 
 import { formatDurationSeconds, formatCurrency, formatDateTime, formatDistance } from "@/utils/formatters"
 
+function formatTimeWindow(start?: string | null, end?: string | null): string {
+    if (start && end) {
+        return `${formatDateTime(start)} - ${formatDateTime(end)}`
+    }
+
+    return formatDateTime(start ?? end)
+}
+
 const showDeleteModal = ref(false)
 const showEventModal = ref(false)
 const eventToDelete = ref<EventResponse | null>(null)
@@ -280,9 +288,14 @@ watch(
                 </div>
 
                 <div class="mt-4 grid grid-cols-2 gap-4">
-                    <TransportDetailItem label="Début prévu" :value="formatDateTime(transport.plannedStart)" />
-
-                    <TransportDetailItem label="Fin prévue" :value="formatDateTime(transport.plannedEnd)" />
+                    <TransportDetailItem v-if="transport.departureStart || transport.departureEnd" label="Départ"
+                        :value="formatTimeWindow(transport.departureStart, transport.departureEnd)" />
+                    <TransportDetailItem v-if="transport.arrivalStart || transport.arrivalEnd" label="Arrivée"
+                        :value="formatTimeWindow(transport.arrivalStart, transport.arrivalEnd)" />
+                    <TransportDetailItem v-if="transport.serviceTiming?.loadingDurationMinutes != null" label="Chargement"
+                        :value="`${transport.serviceTiming.loadingDurationMinutes} min`" />
+                    <TransportDetailItem v-if="transport.serviceTiming?.unloadingDurationMinutes != null" label="Déchargement"
+                        :value="`${transport.serviceTiming.unloadingDurationMinutes} min`" />
                 </div>
             </section>
 

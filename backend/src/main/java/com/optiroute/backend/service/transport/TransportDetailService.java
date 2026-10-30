@@ -1,5 +1,7 @@
 package com.optiroute.backend.service.transport;
 
+import java.util.List;
+import com.optiroute.backend.dto.request.transport.ServiceTiming;
 import org.springframework.stereotype.Service;
 
 import com.optiroute.backend.dto.response.transport.TransportDetailResponse;
@@ -48,10 +50,6 @@ public class TransportDetailService {
 
             service.getId(), service.getName(), service.getStatus(), route.isEmptyTrip(),
 
-            route.getStartDate(), route.getEndDate(),
-
-            null, null,
-
             driver != null ? driver.getId() : null, driver != null ? driver.getFirstName() + " " + driver.getLastName() : null, driver != null ? driver.getLogin() : null,
 
             tractor != null ? tractor.getId() : null, tractor != null ? tractor.getRegistration() : null,
@@ -68,6 +66,10 @@ public class TransportDetailService {
 
             route.getPolyline(), route.getRouteType(),
 
-            transportCostService.calculate(route), service.getRevenue());
+            transportCostService.calculate(route), service.getRevenue(),
+            new ServiceTiming(service.getLoadingDurationMinutes(), service.getUnloadingDurationMinutes(),
+                service.getDepartureStart(), service.getDepartureEnd(), service.getArrivalStart(), service.getArrivalEnd()),
+            route.getDepartureStart(), route.getDepartureEnd(), route.getArrivalStart(), route.getArrivalEnd(),
+            route.getWaypoints() == null ? List.of() : route.getWaypoints());
     }
 }

@@ -1,6 +1,7 @@
 package com.optiroute.backend.controller.transport;
 
 import java.time.LocalDate;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,7 +29,7 @@ public class TransportController {
     }
 
     @PostMapping
-    public ResponseEntity<Service> create(@RequestBody TransportRequest request) {
+    public ResponseEntity<Service> create(@Valid @RequestBody TransportRequest request) {
         Service service = transportFacadeService.createTransport(request);
 
         return ResponseEntity.ok(service);
@@ -45,14 +46,14 @@ public class TransportController {
     }
 
     @PostMapping("/from-route")
-    public ResponseEntity<Service> createFromRoute(@RequestBody TransportFromRouteRequest request) {
+    public ResponseEntity<Service> createFromRoute(@Valid @RequestBody TransportFromRouteRequest request) {
         Service service = transportFacadeService.createFromRoute(request);
 
         return ResponseEntity.ok(service);
     }
 
     @PutMapping("/{id}/from-route")
-    public ResponseEntity<Service> updateFromRoute(@PathVariable Long id, @RequestBody TransportFromRouteRequest request) {
+    public ResponseEntity<Service> updateFromRoute(@PathVariable Long id, @Valid @RequestBody TransportFromRouteRequest request) {
         Service service = transportFacadeService.updateFromRoute(id,request);
 
         return ResponseEntity.ok(service);

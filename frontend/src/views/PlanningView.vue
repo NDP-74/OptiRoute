@@ -232,7 +232,7 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
     });
 
     const sortedTransports = [...transports.value].sort((first, second) => {
-        return (new Date(first.plannedStart).getTime() - new Date(second.plannedStart).getTime());
+        return (new Date(first.departureStart ?? 0).getTime() - new Date(second.departureStart ?? 0).getTime());
     });
 
     sortedTransports.forEach((transport: PlanningTransport) => {
@@ -242,7 +242,11 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
             return;
         }
 
-        const dayKey = formatParisDateKey(transport.plannedStart);
+        const plannedDate = transport.departureStart ?? transport.arrivalStart;
+        if (!plannedDate) {
+            return;
+        }
+        const dayKey = formatParisDateKey(plannedDate);
 
         if (!driver.days[dayKey]) {
             driver.days[dayKey] = [];

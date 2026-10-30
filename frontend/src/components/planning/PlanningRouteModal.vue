@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 
 import AppModal from '@/components/ui/AppModal.vue'
 import HereMap from '@/components/maps/HereMap.vue'
 import RouteForm from '@/components/maps/RouteForm.vue'
 
 import { createTransportFromRoute, updateTransportFromRoute } from '@/api/transportApi'
+import { calculateRoute } from '@/api/here/mapsApi'
 import { getCustomers } from '@/api/customerApi'
 import { getDriver, getDrivers } from '@/api/driver/driverApi'
 import { getTractors } from '@/api/vehicle/tractorApi'
@@ -18,7 +19,7 @@ import type { DriverSummary } from '@/models/driver/Driver'
 import type { TractorSummary } from '@/models/vehicle/Tractor'
 import type { SemiTrailerSummary } from '@/models/vehicle/SemiTrailer'
 import type { RouteDto, RouteRequest, RouteResponse } from '@/models/route/Route'
-import type { CreateTransportFromRouteRequest } from '@/models/transport/TransportRequest'
+import type { CreateTransportFromRouteRequest, TimeWindows } from '@/models/transport/TransportRequest'
 import type { TransportDetail } from '@/models/transport/TransportDetail'
 import type { EventResponse } from '@/models/Event'
 
@@ -70,6 +71,26 @@ const customers = ref<CustomerSummary[]>([])
 const tractors = ref<TractorSummary[]>([])
 const semiTrailers = ref<SemiTrailerSummary[]>([])
 const isSaving = ref(false)
+const loadingDurationMinutes = ref<number | ''>('')
+const unloadingDurationMinutes = ref<number | ''>('')
+const windowFields = [
+    { key: 'departureStart', label: 'Départ minimal' },
+    { key: 'departureEnd', label: 'Départ maximal' },
+    { key: 'arrivalStart', label: 'Arrivée minimale' },
+    { key: 'arrivalEnd', label: 'Arrivée maximale' },
+] as const
+const serviceWindows = reactive({ departureStart: '', departureEnd: '', arrivalStart: '', arrivalEnd: '' })
+
+function localDate(value?: string | null): string {
+    if (!value) return ''
+    const date = new Date(value)
+    const pad = (part: number) => String(part).padStart(2, '0')
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+}
+
+function serializeWindows(values: typeof serviceWindows): TimeWindows {
+    return Object.fromEntries(windowFields.map(({ key }) => [key, values[key] ? new Date(values[key]).toISOString() : null]))
+}
 
 const selectedRoute = computed(() => routeResponse.value?.routes[selectedRouteIndex.value])
 
@@ -85,6 +106,7 @@ const fallbackRoute = computed<RouteDto | null>(() => {
         transport.costs.vehicle.costs.find(cost => cost.label === label)?.amount ?? 0
 
     return {
+        type: transport.routeType ?? undefined,
         duration: transport.durationSeconds,
         baseDuration: transport.durationSeconds,
         distanceMeters: transport.distanceMeters,
@@ -173,7 +195,7 @@ function routeRequestFromTransport(transport: TransportDetail): RouteRequest {
             lat: transport.destinationLat,
             lng: transport.destinationLng,
         },
-        waypoints: (props.events ?? []).flatMap(event =>
+        waypoints: [...(transport.waypoints ?? []), ...(props.events ?? []).flatMap(event =>
             event.pointOfInterestLatitude != null && event.pointOfInterestLongitude != null
                 ? [{
                     name: event.pointOfInterestLabel ?? event.costParameterLabel,
@@ -183,16 +205,22 @@ function routeRequestFromTransport(transport: TransportDetail): RouteRequest {
                     eventId: event.id,
                 }]
                 : []
-        ),
-        mode: 'FASTEST',
+        )],
+        mode: transport.routeType ?? 'FASTEST',
         emptyTrip: transport.emptyTrip,
-        routeTime: transport.plannedStart,
-        timeMode: 'DEPARTURE',
+        routeTime: transport.arrivalStart ?? transport.departureStart ?? undefined,
+        timeMode: transport.arrivalStart ? 'ARRIVAL' : 'DEPARTURE',
         driverId: transport.driverId ?? undefined,
     }
 }
 
 async function initializeFromProps() {
+    loadingDurationMinutes.value = props.editingTransport?.serviceTiming?.loadingDurationMinutes ?? ''
+    unloadingDurationMinutes.value = props.editingTransport?.serviceTiming?.unloadingDurationMinutes ?? ''
+    for (const { key } of windowFields) {
+        serviceWindows[key] = localDate(props.editingTransport?.serviceTiming?.[key])
+    }
+
     if (props.editingTransport) {
         const transport = props.editingTransport
 
@@ -238,31 +266,66 @@ async function saveRoute() {
         return
     }
 
-    const request: CreateTransportFromRouteRequest = {
-        transport: {
-            name: transportTitle.value,
-            customerId: customerId.value,
-            driverId: driverId.value,
-            tractorId: tractorId.value,
-            semiTrailerId: semiTrailerId.value ?? undefined,
-            emptyTrip: emptyTrip.value,
-            plannedStart: plannedStart.value,
-            plannedEnd: plannedEnd.value,
-            originName: routeRequest.value.origin.name,
-            originAddress: routeRequest.value.origin.address,
-            originLat: routeRequest.value.origin.lat,
-            originLng: routeRequest.value.origin.lng,
-            destinationName: routeRequest.value.destination.name,
-            destinationAddress: routeRequest.value.destination.address,
-            destinationLat: routeRequest.value.destination.lat,
-            destinationLng: routeRequest.value.destination.lng,
-            revenue: revenue.value,
-        },
-        selectedRoute: effectiveRoute.value,
-    }
-
     try {
         isSaving.value = true
+        const sourceWindows = serializeWindows(serviceWindows)
+        if ((sourceWindows.departureStart && sourceWindows.departureEnd && sourceWindows.departureStart > sourceWindows.departureEnd)
+            || (sourceWindows.arrivalStart && sourceWindows.arrivalEnd && sourceWindows.arrivalStart > sourceWindows.arrivalEnd)) {
+            throw new Error('Une borne minimale ne peut pas dépasser la borne maximale.')
+        }
+        if ([loadingDurationMinutes.value, unloadingDurationMinutes.value]
+            .some(value => value !== '' && (!Number.isInteger(value) || value < 0))) {
+            throw new Error('Les durées doivent être des nombres entiers positifs ou nuls.')
+        }
+        if (sourceWindows.arrivalStart && (routeRequest.value.timeMode !== 'ARRIVAL'
+            || new Date(routeRequest.value.routeTime ?? '').getTime() !== new Date(sourceWindows.arrivalStart).getTime())) {
+            const updatedRequest: RouteRequest = {
+                ...routeRequest.value,
+                routeTime: sourceWindows.arrivalStart,
+                timeMode: 'ARRIVAL',
+                tractorId: tractorId.value,
+                semiTrailerId: semiTrailerId.value ?? undefined,
+                driverId: driverId.value,
+                emptyTrip: emptyTrip.value,
+            }
+            const response: RouteResponse = await calculateRoute(updatedRequest)
+            const index = response.routes.findIndex(route => route.type === effectiveRoute.value?.type)
+            if (!response.routes.length) throw new Error('Aucun itinéraire disponible.')
+            handleRouteCalculated({ response, request: updatedRequest })
+            selectedRouteIndex.value = index < 0 ? 0 : index
+        }
+        const savedRoute = effectiveRoute.value
+        if (!savedRoute) throw new Error('Aucun itinéraire disponible.')
+        const request: CreateTransportFromRouteRequest = {
+            transport: {
+                name: transportTitle.value,
+                customerId: customerId.value,
+                driverId: driverId.value,
+                tractorId: tractorId.value,
+                semiTrailerId: semiTrailerId.value ?? undefined,
+                emptyTrip: emptyTrip.value,
+                routeTime: routeRequest.value.routeTime,
+                timeMode: routeRequest.value.timeMode,
+                originName: routeRequest.value.origin.name,
+                originAddress: routeRequest.value.origin.address,
+                originLat: routeRequest.value.origin.lat,
+                originLng: routeRequest.value.origin.lng,
+                destinationName: routeRequest.value.destination.name,
+                destinationAddress: routeRequest.value.destination.address,
+                destinationLat: routeRequest.value.destination.lat,
+                destinationLng: routeRequest.value.destination.lng,
+                revenue: revenue.value,
+                serviceTiming: {
+                    ...sourceWindows,
+                    loadingDurationMinutes: loadingDurationMinutes.value === '' ? null : loadingDurationMinutes.value,
+                    unloadingDurationMinutes: unloadingDurationMinutes.value === '' ? null : unloadingDurationMinutes.value,
+                },
+                waypoints: (routeRequest.value.waypoints ?? [])
+                    .filter(point => point.eventId == null)
+                    .map(({ lat, lng, name, address }) => ({ lat, lng, name, address })),
+            },
+            selectedRoute: savedRoute,
+        }
 
         if (props.editingTransport) {
             await updateTransportFromRoute(props.editingTransport.id, request)
@@ -274,7 +337,8 @@ async function saveRoute() {
 
         emit('saved')
     } catch (error) {
-        notification.error('Enregistrement impossible', getApiErrorMessage(error, 'Le transport n’a pas pu être enregistré.'))
+        notification.error('Enregistrement impossible', error instanceof Error && !('response' in error)
+            ? error.message : getApiErrorMessage(error, 'Le transport n’a pas pu être enregistré.'))
     } finally {
         isSaving.value = false
     }
@@ -424,6 +488,27 @@ onMounted(async () => {
                                 <input v-model.number="revenue" type="number" placeholder="0" min="0" step="0.01"
                                     class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20" />
                             </div>
+                            <fieldset class="space-y-2">
+                                <legend class="text-sm font-semibold text-slate-700">Durées du service (minutes)</legend>
+                                <label class="block text-xs text-slate-500">
+                                    Chargement
+                                    <input v-model.number="loadingDurationMinutes" type="number" min="0" step="1"
+                                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" />
+                                </label>
+                                <label class="block text-xs text-slate-500">
+                                    Déchargement
+                                    <input v-model.number="unloadingDurationMinutes" type="number" min="0" step="1"
+                                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" />
+                                </label>
+                            </fieldset>
+                            <fieldset class="space-y-2">
+                                <legend class="text-sm font-semibold text-slate-700">Fenêtres sources du service (optionnelles)</legend>
+                                <label v-for="field in windowFields" :key="field.key" class="block text-xs text-slate-500">
+                                    {{ field.label }}
+                                    <input v-model="serviceWindows[field.key]" type="datetime-local" step="1"
+                                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" />
+                                </label>
+                            </fieldset>
                         </div>
                     </section>
 

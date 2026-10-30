@@ -9,6 +9,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import com.optiroute.backend.config.HereApiProperties;
 import com.optiroute.backend.model.TruckConfiguration;
+import com.optiroute.backend.type.RouteTimeMode;
 
 @Service
 public class HereApiClient {
@@ -21,8 +22,8 @@ public class HereApiClient {
         this.properties = properties;
     }
 
-    public String getRoutes(String origin, String destination, List<String> viaPoints, String departureTime, TruckConfiguration truckConfiguration, boolean avoidTolls,
-        int alternatives) {
+    public String getRoutes(String origin, String destination, List<String> viaPoints, String routeTime, RouteTimeMode timeMode,
+        TruckConfiguration truckConfiguration, boolean avoidTolls, int alternatives) {
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString("https://router.hereapi.com/v8/routes").queryParam("origin",origin)
             .queryParam("destination",destination).queryParam("alternatives",alternatives).queryParam("return","polyline,summary,tolls").queryParam("transportMode","truck")
             .queryParam("routingMode","fast")
@@ -31,7 +32,7 @@ public class HereApiClient {
             .queryParam("vehicle[width]",truckConfiguration.getWidthCm()).queryParam("vehicle[length]",truckConfiguration.getLengthCm())
             .queryParam("vehicle[axleCount]",truckConfiguration.getAxleCount()).queryParam("vehicle[speedCap]",truckConfiguration.getMaxSpeed())
 
-            .queryParam("departureTime",departureTime).queryParam("apikey",properties.getApiKey());
+            .queryParam(timeMode == RouteTimeMode.ARRIVAL ? "arrivalTime" : "departureTime",routeTime).queryParam("apikey",properties.getApiKey());
 
         if (viaPoints != null) {
             for (String viaPoint : viaPoints) {

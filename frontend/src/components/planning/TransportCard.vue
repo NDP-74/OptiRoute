@@ -18,11 +18,11 @@ const tripLabel = computed(() => {
 });
 
 const startTime = computed(() => {
-    return formatParisTime(props.transport.plannedStart);
+    return formatParisTime(props.transport.departureStart ?? '');
 });
 
 const endTime = computed(() => {
-    return formatParisTime(props.transport.plannedEnd);
+    return formatParisTime(props.transport.arrivalStart ?? '');
 });
 
 const result = computed(() => props.transport.revenue - props.transport.totalCost);

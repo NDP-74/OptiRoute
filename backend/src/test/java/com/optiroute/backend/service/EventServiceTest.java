@@ -28,12 +28,15 @@ import com.optiroute.backend.entity.cost.CostParameter;
 import com.optiroute.backend.entity.event.Event;
 import com.optiroute.backend.entity.event.PointOfInterest;
 import com.optiroute.backend.entity.transport.Route;
+import com.optiroute.backend.entity.transport.Service;
 import com.optiroute.backend.entity.vehicle.SemiTrailer;
 import com.optiroute.backend.entity.vehicle.Tractor;
 import com.optiroute.backend.repository.EventRepository;
 import com.optiroute.backend.repository.transport.RouteRepository;
 import com.optiroute.backend.service.route.RouteOptimizationService;
 import com.optiroute.backend.type.GpsModeType;
+import com.optiroute.backend.model.Position;
+import com.optiroute.backend.type.RouteTimeMode;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -43,6 +46,35 @@ class EventServiceTest {
     private final RouteRepository routeRepository = mock(RouteRepository.class);
     private final RouteOptimizationService optimizationService = mock(RouteOptimizationService.class);
     private final EventService service = new EventService(eventRepository, routeRepository, null, null, null, null, optimizationService);
+
+    @Test
+    void shouldPreserveUserWaypointsAndArrivalAnchorWhenRecalculating() {
+        Route route = prepareRoute(List.of(locatedEvent()));
+        route.setWaypoints(List.of(new Position(47.0, 3.0), new Position(46.0, 4.0)));
+        OffsetDateTime arrival = route.getDepartureStart().plusHours(2);
+        route.setArrivalStart(arrival);
+
+        service.delete(1L);
+
+        RouteRequest request = capturedRequest();
+        assertEquals(List.of(47.0, 46.0, 48.0), request.getWaypoints().stream().map(Position::getLat).toList());
+        assertEquals(2, route.getWaypoints().size());
+        assertEquals(RouteTimeMode.ARRIVAL, request.getTimeMode());
+        assertEquals(arrival, request.getRouteTime());
+        assertEquals(arrival, route.getArrivalStart());
+        assertEquals(arrival.minusSeconds(900), route.getDepartureStart());
+    }
+
+    @Test
+    void shouldKeepUserWaypointsWhenLastEventIsDeleted() {
+        Route route = prepareRoute(List.of());
+        route.setWaypoints(List.of(new Position(47.0, 3.0)));
+
+        service.delete(1L);
+
+        assertEquals(1, capturedRequest().getWaypoints().size());
+        assertEquals(47.0, capturedRequest().getWaypoints().getFirst().getLat());
+    }
 
     @Test
     void shouldDeleteAndFlushBeforeRecalculatingWithRemainingWaypoints() {
@@ -62,14 +94,15 @@ class EventServiceTest {
         assertEquals(1, request.getWaypoints().size());
         assertEquals(48.0, request.getWaypoints().getFirst().getLat());
         assertEquals(2.0, request.getWaypoints().getFirst().getLng());
-        assertEquals(route.getStartDate(), request.getRouteTime());
+        assertEquals(route.getDepartureStart(), request.getRouteTime());
+        assertEquals(RouteTimeMode.DEPARTURE, request.getTimeMode());
         assertEquals(route.getTractorId(), request.getTractorId());
         assertEquals(12000L, route.getDistanceMeters());
         assertEquals(900L, route.getDurationSeconds());
         assertEquals("updated-polyline", route.getPolyline());
         assertEquals(BigDecimal.valueOf(12.5), route.getFuelCost());
         assertEquals(BigDecimal.valueOf(3.0), route.getTollCost());
-        assertEquals(route.getStartDate().plusSeconds(900), route.getEndDate());
+        assertEquals(route.getDepartureStart().plusSeconds(900), route.getArrivalStart());
     }
 
     @Test
@@ -145,6 +178,7 @@ class EventServiceTest {
     private Event vehicleEvent() {
         Route route = new Route();
         route.setId(10L);
+        route.setService(new Service());
         CostParameter costParameter = new CostParameter();
         costParameter.setId(3L);
         costParameter.setLabel("Péage");
@@ -155,7 +189,8 @@ class EventServiceTest {
         Route route = new Route();
         route.setId(10L);
         route.setRouteType(GpsModeType.CHEAPEST);
-        route.setStartDate(OffsetDateTime.parse("2026-10-12T08:00:00+02:00"));
+        route.setService(new Service());
+        route.setDepartureStart(OffsetDateTime.parse("2026-10-12T08:00:00+02:00"));
         route.setTractorId(20L);
         Event event = Event.builder().id(1L).route(route).build();
         when(eventRepository.findById(1L)).thenReturn(Optional.of(event));

@@ -1,5 +1,7 @@
 package com.optiroute.backend.mapper;
 
+import java.time.OffsetDateTime;
+
 import com.optiroute.backend.dto.request.route.RouteRequest;
 import com.optiroute.backend.dto.request.transport.TransportRequest;
 import com.optiroute.backend.model.Position;
@@ -26,10 +28,13 @@ public class RouteRequestFactory {
 		destination.setLat(transport.destinationLat());
 		destination.setLng(transport.destinationLng());
 		request.setDestination(destination);
+		request.setWaypoints(transport.waypoints());
 
 		// Heure de départ
-		request.setRouteTime(transport.plannedStart());
-		request.setTimeMode(RouteTimeMode.DEPARTURE);
+		OffsetDateTime arrivalStart = transport.serviceTiming() == null ? null : transport.serviceTiming().arrivalStart();
+		request.setRouteTime(arrivalStart != null ? arrivalStart : transport.routeTime());
+		request.setTimeMode(arrivalStart != null ? RouteTimeMode.ARRIVAL
+				: transport.timeMode() == null ? RouteTimeMode.DEPARTURE : transport.timeMode());
 
 		// Mode de calcul (à adapter selon ton enum)
 		request.setMode(GpsModeType.FASTEST);

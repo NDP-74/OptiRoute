@@ -6,9 +6,14 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.optiroute.backend.entity.EntityUtils;
+import com.optiroute.backend.model.Position;
 import com.optiroute.backend.type.GpsModeType;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Getter
@@ -28,8 +33,16 @@ public class Route extends EntityUtils {
     private Long tractorId;
     private Long semiTrailerId;
 
-    private OffsetDateTime startDate;
-    private OffsetDateTime endDate;
+    @Column(name = "start_date")
+    private OffsetDateTime departureStart;
+    private OffsetDateTime departureEnd;
+    @Column(name = "end_date")
+    private OffsetDateTime arrivalStart;
+    private OffsetDateTime arrivalEnd;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private List<Position> waypoints = new ArrayList<>();
 
     private String originName;
     private String originAddress;
