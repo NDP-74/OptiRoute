@@ -1,5 +1,6 @@
 export interface EventCreateRequest {
     serviceId: number
+    routeId?: number
     costParameterId: number
     pointOfInterestId: number | null
     tractorId: number | null

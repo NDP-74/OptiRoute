@@ -3,6 +3,10 @@ package com.optiroute.backend.service.transport;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -54,21 +58,39 @@ public class TransportPlanningService {
         OffsetDateTime end = endDate.atStartOfDay(PLANNING_ZONE).toOffsetDateTime();
 
         List<Route> routes = routeRepository.findByDepartureStartGreaterThanEqualAndDepartureStartLessThan(start,end);
+        Map<Long, List<Route>> routesByServiceId = new HashMap<>();
+        if (!routes.isEmpty()) {
+            List<Long> serviceIds = routes.stream().map(route -> route.getService().getId()).distinct().toList();
+            routeRepository.findByServiceIdIn(serviceIds).stream()
+                .sorted(Comparator.comparing(Route::getId))
+                .forEach(route -> routesByServiceId.computeIfAbsent(route.getService().getId(), ignored -> new ArrayList<>()).add(route));
+        }
 
         List<TransportPlanningResponse> transports = routes.stream().map(route -> {
             var service = route.getService();
             TransportCostDetailsResponse costs = transportCostService.calculate(route);
+            List<Route> serviceRoutes = routesByServiceId.getOrDefault(service.getId(), List.of());
+            int routeNumber = 1;
+            for (int index = 0; index < serviceRoutes.size(); index++) {
+                if (serviceRoutes.get(index).getId().equals(route.getId())) {
+                    routeNumber = index + 1;
+                    break;
+                }
+            }
+            BigDecimal routeRevenue = ServiceRouteRevenueAllocator.allocate(service.getRevenue(), serviceRoutes, route);
+            double revenue = routeRevenue == null ? 0 : routeRevenue.doubleValue();
 
             Driver driver = route.getDriverId() == null ? null : driverRepository.findById(route.getDriverId()).orElse(null);
             String tractorRegistration = route.getTractorId() == null ? null : tractorRepository.findById(route.getTractorId()).map(Tractor::getRegistration).orElse(null);
             String semiTrailerRegistration = route.getSemiTrailerId() == null ? null
                 : semiTrailerRepository.findById(route.getSemiTrailerId()).map(SemiTrailer::getRegistration).orElse(null);
 
-            return new TransportPlanningResponse(service.getId(), service.getName(), driver != null ? driver.getId() : null,
+            return new TransportPlanningResponse(service.getId(), route.getId(), routeNumber, serviceRoutes.size(),
+                service.getName(), driver != null ? driver.getId() : null,
                 driver != null ? driver.getFirstName() + " " + driver.getLastName() : null, tractorRegistration, semiTrailerRegistration,
                 route.getDepartureStart(), route.getDepartureEnd(), route.getArrivalStart(), route.getArrivalEnd(),
                 route.getOriginName(), route.getDestinationName(), route.isEmptyTrip(), costs.totalCost(), costs.driver().totalCost(), costs.structure().totalCost(),
-                costs.vehicle().totalCost(), service.getRevenue() == null ? 0 : service.getRevenue().doubleValue());
+                costs.vehicle().totalCost(), revenue);
         }).toList();
 
         Map<Long, Set<LocalDate>> transportDatesByDriver = routes.stream().filter(route -> route.getDriverId() != null && route.getDepartureStart() != null)

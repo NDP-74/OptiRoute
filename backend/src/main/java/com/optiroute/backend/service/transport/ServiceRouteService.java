@@ -2,7 +2,7 @@ package com.optiroute.backend.service.transport;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.time.OffsetDateTime;
+import java.util.List;
 
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,28 +34,46 @@ public class ServiceRouteService {
 
     @Transactional
     public Service create(TransportRequest req, RouteDto routeDto) {
+        return create(req, List.of(new TransportRouteSegment(req, routeDto, false)));
+    }
+
+    @Transactional
+    public Service create(TransportRequest req, List<TransportRouteSegment> segments) {
         Service service = new Service();
         applyService(service,req);
         service = serviceRepository.save(service);
 
-        Route route = new Route();
-        route.setService(service);
-        applyRoute(route,req,routeDto);
-        routeRepository.save(route);
+        for (TransportRouteSegment segment : segments) {
+            Route route = new Route();
+            route.setService(service);
+            applyRoute(route, segment);
+            routeRepository.save(route);
+        }
 
         return service;
     }
 
     @Transactional
     public Service update(Long id, TransportRequest req, RouteDto routeDto) {
+        return update(id, req, List.of(new TransportRouteSegment(req, routeDto, false)));
+    }
+
+    @Transactional
+    public Service update(Long id, TransportRequest req, List<TransportRouteSegment> segments) {
         Service service = serviceRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Service not found with id " + id));
         applyService(service,req);
         service = serviceRepository.save(service);
 
-        Route route = routeRepository.findFirstByServiceId(id).orElseGet(Route::new);
-        route.setService(service);
-        applyRoute(route,req,routeDto);
-        routeRepository.save(route);
+        List<Route> existingRoutes = routeRepository.findByServiceIdOrderByIdAsc(id);
+        for (int index = 0; index < segments.size(); index++) {
+            Route route = index < existingRoutes.size() ? existingRoutes.get(index) : new Route();
+            route.setService(service);
+            applyRoute(route, segments.get(index));
+            routeRepository.save(route);
+        }
+        if (existingRoutes.size() > segments.size()) {
+            routeRepository.deleteAll(existingRoutes.subList(segments.size(), existingRoutes.size()));
+        }
 
         return service;
     }
@@ -92,12 +110,14 @@ public class ServiceRouteService {
     }
 
     // Les coûts driver/vehicle/structure restent null pour l'instant
-    private void applyRoute(Route route, TransportRequest req, RouteDto routeDto) {
+    private void applyRoute(Route route, TransportRouteSegment segment) {
+        TransportRequest req = segment.request();
+        RouteDto routeDto = segment.route();
         route.setDriverId(req.driverId());
         route.setTractorId(req.tractorId());
         route.setSemiTrailerId(req.semiTrailerId());
 
-        applyRouteTimes(route, req, routeDto);
+        applyRouteTimes(route, req, routeDto, segment.calculatedTimes());
         if (req.waypoints() != null) {
             route.setWaypoints(new ArrayList<>(req.waypoints()));
         }
@@ -123,9 +143,9 @@ public class ServiceRouteService {
         route.setTollCost(BigDecimal.valueOf(routeDto.getCosts().getTollCost()));
     }
 
-    private void applyRouteTimes(Route route, TransportRequest req, RouteDto routeDto) {
+    private void applyRouteTimes(Route route, TransportRequest req, RouteDto routeDto, boolean calculatedTimes) {
         Service service = route.getService();
-        if ("DASHDOC".equalsIgnoreCase(service.getExternalSource())) {
+        if (!calculatedTimes && "DASHDOC".equalsIgnoreCase(service.getExternalSource())) {
             route.setDepartureStart(service.getDepartureStart());
             route.setDepartureEnd(service.getDepartureEnd());
             route.setArrivalStart(service.getArrivalStart());

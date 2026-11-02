@@ -18,15 +18,6 @@ Distances → long
 Consommation → Double
 Dates → OffsetDateTime
 
---- Tables SQL ---
-
-Vérifier lien entre transport et transport estimate:
-    - Unifier ces tables ?
-    - modif vehicle_event:
-        ALTER TABLE vehicle_event
-        ALTER COLUMN event_date TYPE timestamptz
-        USING event_date::timestamp AT TIME ZONE 'Europe/Paris';
-
 --- Recheche d'itinéraire ---
 Vérifier qu'on gere correctement les departureMode:
 departureMode.value = request.timeMode === 'ARRIVAL' ? 'ARRIVALTIME' : 'PLANNED' -> n'a pas l'air bon
@@ -39,5 +30,6 @@ Optimiser la page PlanningView
 Filtre / Vue sur planning
 
 Formulaire dynamique avec verification des données (ok pour les couts)
-Retirer les champs "externalId" et "Source" des tables véhicules et customer (ou uniformiser) -> idem avec les champs "is_Active"
 DB -> créer un systeme de dataset -> répartie par entreprise + admin
+
+Séparer fonctionnement dashdoc / itinéraire manuel -> dans interface rajouté une box "simulation dashdoc" (avec horraire de service)

@@ -23,7 +23,7 @@ import { createPlanningGridStyle } from "@/utils/planningUtils";
 import type { PlanningDay, PlanningDriver } from "@/models/planning/planning";
 
 const emit = defineEmits<{
-    "transport-select": [transportId: number];
+    "transport-select": [selection: { serviceId: number; routeId: number }];
     "cost-detail-select": [driverId: number];
 }>();
 

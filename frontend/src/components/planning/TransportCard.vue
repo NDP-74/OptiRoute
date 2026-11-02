@@ -10,7 +10,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-    select: [transportId: number];
+    select: [selection: { serviceId: number; routeId: number }];
 }>();
 
 const tripLabel = computed(() => {
@@ -41,18 +41,24 @@ const formattedResult = computed(() => {
         transport.emptyTrip
             ? 'border-red-200 bg-red-50 hover:border-red-300 hover:bg-red-100'
             : 'border-emerald-200 bg-emerald-50 hover:border-emerald-300 hover:bg-emerald-100'
-    ]" @click="emit('select', transport.id)">
+    ]" @click="emit('select', { serviceId: transport.id, routeId: transport.routeId })">
         <div class="flex items-center justify-between gap-2">
             <div class="min-w-0 truncate text-sm font-semibold text-slate-800"> {{ transport.name }} </div>
 
-            <span :class="[
-                'inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold',
-                transport.emptyTrip
-                    ? 'border-red-200 bg-red-100 text-red-700'
-                    : 'border-emerald-200 bg-emerald-100 text-emerald-700'
-            ]">
-                {{ tripLabel }}
-            </span>
+            <div class="flex shrink-0 items-center gap-1.5">
+                <span v-if="transport.routeCount > 1"
+                    class="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                    {{ transport.routeNumber }} / {{ transport.routeCount }}
+                </span>
+                <span :class="[
+                    'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold',
+                    transport.emptyTrip
+                        ? 'border-red-200 bg-red-100 text-red-700'
+                        : 'border-emerald-200 bg-emerald-100 text-emerald-700'
+                ]">
+                    {{ tripLabel }}
+                </span>
+            </div>
         </div>
 
         <div class="mt-3 space-y-1 text-xs text-slate-600">

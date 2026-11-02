@@ -1,6 +1,6 @@
 # Synchronisation Dashdoc : services et trajets
 
-> Document de cadrage et guide de test. L'intégration Dashdoc de bout en bout et la création récursive des trajets ne sont pas encore implémentées. Les exemples ci-dessous simulent une entrée Dashdoc en appelant les API OptiRoute existantes.
+> Document de cadrage et guide de test. L'intégration Dashdoc de bout en bout et la création récursive des trajets ne sont pas encore implémentées. Le cas d'un conducteur `REGIONAL` avec `arrivalEnd` le lendemain crée maintenant deux trajets passant par son stationnement. Les exemples ci-dessous simulent une entrée Dashdoc en appelant les API OptiRoute existantes.
 
 ## 1. Modèle métier
 
@@ -230,7 +230,7 @@ Remplacer les coordonnées et les IDs par des données de test cohérentes. `way
 
 ### 4.3 Créer un service et un trajet Dashdoc simulés
 
-`POST /api/transports` appelle le calcul d'itinéraire puis crée un service et **un** trajet. Le code de création sélectionne la route la plus rapide. Il ne fait pas encore l'upsert externe, les valeurs par défaut de 45 minutes, ni le découpage multi-jours.
+`POST /api/transports` appelle le calcul d'itinéraire puis crée un service et sélectionne la route la plus rapide. Pour un conducteur `REGIONAL`, si `arrivalEnd` est le lendemain du départ prévu, il recalcule et enregistre deux trajets : origine → stationnement, puis stationnement → destination. Le départ du second trajet est déduit de `arrivalEnd - déchargement - durée du trajet`. Les autres cas multi-jours, l'upsert externe et les valeurs par défaut de 45 minutes ne sont pas encore implémentés.
 
 Le corps ci-dessous illustre le contrat OptiRoute actuel. Il reprend les champs de fenêtres qui seraient normalisés depuis Dashdoc et fournit explicitement les deux durées, car leur défaut d'import n'est pas encore câblé :
 

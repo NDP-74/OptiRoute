@@ -14,8 +14,9 @@ export const getPlanning = async (request: PlanningRequest): Promise<PlanningRes
     return response.data;
 };
 
-export const getTransportById = async (id: number): Promise<TransportDetail> => {
-    const response = await api.get<TransportDetail>(`/transports/${id}`);
+export const getTransportById = async (serviceId: number, routeId?: number): Promise<TransportDetail> => {
+    const url = routeId === undefined ? `/transports/${serviceId}` : `/transports/${serviceId}/routes/${routeId}`;
+    const response = await api.get<TransportDetail>(url);
 
     return response.data;
 };

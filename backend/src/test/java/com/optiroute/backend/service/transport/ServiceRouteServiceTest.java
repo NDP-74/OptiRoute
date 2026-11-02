@@ -13,6 +13,8 @@ import org.mockito.ArgumentCaptor;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.optiroute.backend.dto.request.transport.TransportRequest;
+import com.optiroute.backend.dto.response.cost.CostCategoryResponse;
+import com.optiroute.backend.dto.response.cost.TransportCostDetailsResponse;
 import com.optiroute.backend.dto.response.route.RouteCostDetailsDto;
 import com.optiroute.backend.dto.response.route.RouteDto;
 import com.optiroute.backend.entity.transport.Route;
@@ -91,7 +93,7 @@ class ServiceRouteServiceTest {
         route.setWaypoints(List.of(new Position(48, 2)));
         when(services.findById(1L)).thenReturn(Optional.of(existing));
         when(services.save(existing)).thenReturn(existing);
-        when(routes.findFirstByServiceId(1L)).thenReturn(Optional.of(route));
+        when(routes.findByServiceIdOrderByIdAsc(1L)).thenReturn(List.of(route));
 
         subject.update(1L, request, estimate());
 
@@ -146,7 +148,7 @@ class ServiceRouteServiceTest {
         route.setWaypoints(List.of(new Position(48, 2)));
         when(services.findById(1L)).thenReturn(Optional.of(existing));
         when(services.save(existing)).thenReturn(existing);
-        when(routes.findFirstByServiceId(1L)).thenReturn(Optional.of(route));
+        when(routes.findByServiceIdOrderByIdAsc(1L)).thenReturn(List.of(route));
 
         subject.update(1L, request, estimate());
 
@@ -161,8 +163,11 @@ class ServiceRouteServiceTest {
         route.setWaypoints(List.of(new Position(48, 2)));
         route.setArrivalStart(java.time.OffsetDateTime.parse("2026-10-29T10:00:00Z"));
         when(services.findById(1L)).thenReturn(Optional.of(service));
-        when(routes.findFirstByServiceId(1L)).thenReturn(Optional.of(route));
+        when(routes.findByServiceIdOrderByIdAsc(1L)).thenReturn(List.of(route));
         TransportCostService costs = mock(TransportCostService.class);
+        CostCategoryResponse emptyCosts = new CostCategoryResponse(List.of(), 0);
+        when(costs.calculate(any(Route.class))).thenReturn(
+            new TransportCostDetailsResponse(emptyCosts, emptyCosts, emptyCosts, 0));
         TransportDetailService details = new TransportDetailService(
             services, routes, null, null, null, null, costs);
 
@@ -171,8 +176,71 @@ class ServiceRouteServiceTest {
         assertEquals(45, response.serviceTiming().loadingDurationMinutes());
         assertEquals(route.getArrivalStart(), response.arrivalStart());
         assertEquals(48.0, response.waypoints().getFirst().getLat());
+        assertEquals(1, response.routes().size());
         route.setWaypoints(null);
         assertTrue(details.getDetail(1L).waypoints().isEmpty());
+    }
+
+    @Test
+    void shouldReturnOnlySelectedRouteWithItsOwnCostsAndRevenue() {
+        Service service = new Service();
+        service.setRevenue(new java.math.BigDecimal("1000.00"));
+        Route first = new Route();
+        first.setId(11L);
+        first.setDistanceMeters(300_000L);
+        Route second = new Route();
+        second.setId(12L);
+        second.setDistanceMeters(500_000L);
+        when(services.findById(1L)).thenReturn(Optional.of(service));
+        when(routes.findByServiceIdOrderByIdAsc(1L)).thenReturn(List.of(first, second));
+        CostCategoryResponse firstVehicle = new CostCategoryResponse(List.of(), 100);
+        CostCategoryResponse secondVehicle = new CostCategoryResponse(List.of(), 200);
+        CostCategoryResponse noCosts = new CostCategoryResponse(List.of(), 0);
+        TransportCostService costs = mock(TransportCostService.class);
+        when(costs.calculate(first)).thenReturn(new TransportCostDetailsResponse(firstVehicle, noCosts, noCosts, 100));
+        when(costs.calculate(second)).thenReturn(new TransportCostDetailsResponse(secondVehicle, noCosts, noCosts, 200));
+        TransportDetailService details = new TransportDetailService(
+            services, routes, null, null, null, null, costs);
+
+        var response = details.getDetail(1L, 12L);
+
+        assertEquals(12L, response.routeId());
+        assertEquals(2, response.routeNumber());
+        assertEquals(2, response.routeCount());
+        assertEquals(625.0, response.revenue().doubleValue());
+        assertEquals(200.0, response.costs().totalCost());
+        assertEquals(1, response.routes().size());
+        assertEquals(12L, response.routes().getFirst().routeId());
+        assertEquals(200.0, response.routes().getFirst().costs().vehicle().totalCost());
+    }
+
+    @Test
+    void shouldSaveSeveralRouteSegmentsUnderTheSameService() throws Exception {
+        TransportRequest firstRequest = mapper.readValue("""
+            {"originName":"Départ","destinationName":"Stationnement","originLat":48.0,"originLng":2.0,
+             "destinationLat":47.0,"destinationLng":3.0,"routeTime":"2026-10-29T08:00:00+01:00",
+             "timeMode":"DEPARTURE"}
+            """, TransportRequest.class);
+        TransportRequest secondRequest = mapper.readValue("""
+            {"originName":"Stationnement","destinationName":"Livraison","originLat":47.0,"originLng":3.0,
+             "destinationLat":46.0,"destinationLng":4.0,"routeTime":"2026-10-30T10:30:00+01:00",
+             "timeMode":"ARRIVAL"}
+            """, TransportRequest.class);
+        when(services.save(any(Service.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Service service = subject.create(firstRequest, List.of(
+            new TransportRouteSegment(firstRequest, estimate(), true),
+            new TransportRouteSegment(secondRequest, estimate(), true)));
+
+        ArgumentCaptor<Route> capture = ArgumentCaptor.forClass(Route.class);
+        verify(routes, times(2)).save(capture.capture());
+        List<Route> savedRoutes = capture.getAllValues();
+        assertSame(service, savedRoutes.get(0).getService());
+        assertSame(service, savedRoutes.get(1).getService());
+        assertEquals("Stationnement", savedRoutes.get(0).getDestinationName());
+        assertEquals("Stationnement", savedRoutes.get(1).getOriginName());
+        assertEquals(secondRequest.routeTime().minusSeconds(900), savedRoutes.get(1).getDepartureStart());
+        assertEquals(secondRequest.routeTime(), savedRoutes.get(1).getArrivalStart());
     }
 
     @Test

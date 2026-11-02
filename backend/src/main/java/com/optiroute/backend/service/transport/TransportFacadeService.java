@@ -3,6 +3,7 @@ package com.optiroute.backend.service.transport;
 import com.optiroute.backend.dto.request.route.RouteRequest;
 import com.optiroute.backend.dto.request.transport.TransportFromRouteRequest;
 import com.optiroute.backend.dto.request.transport.TransportRequest;
+import com.optiroute.backend.dto.response.route.RouteDto;
 import com.optiroute.backend.dto.response.route.RoutesResponse;
 import com.optiroute.backend.entity.transport.Service;
 import com.optiroute.backend.mapper.RouteRequestFactory;
@@ -20,23 +21,30 @@ public class TransportFacadeService {
 
     private final RouteRequestFactory routeRequestFactory;
     private final RouteOptimizationService routeOptimizationService;
+    private final RegionalTransportRoutePlanner regionalTransportRoutePlanner;
 
     @Transactional
     public Service createTransport(TransportRequest request) {
         RouteRequest routeRequest = routeRequestFactory.fromTransport(request);
+        routeRequest.setDriverId(request.driverId());
         RoutesResponse routeResponse = routeOptimizationService.calculateRoute(routeRequest);
 
-        return serviceRouteService.create(request,routeResponse);
+        RouteDto selectedRoute = routeResponse.getRoutes().stream()
+            .min((first, second) -> Long.compare(first.getDuration(), second.getDuration()))
+            .orElseThrow(() -> new IllegalArgumentException("No route available"));
+        return serviceRouteService.create(request, regionalTransportRoutePlanner.plan(request, selectedRoute));
     }
 
     @Transactional
     public Service createFromRoute(TransportFromRouteRequest request) {
-        return serviceRouteService.create(request.transport(),request.selectedRoute());
+        return serviceRouteService.create(request.transport(),
+            regionalTransportRoutePlanner.plan(request.transport(), request.selectedRoute()));
     }
 
     @Transactional
     public Service updateFromRoute(Long id, TransportFromRouteRequest request) {
-        return serviceRouteService.update(id,request.transport(),request.selectedRoute());
+        return serviceRouteService.update(id, request.transport(),
+            regionalTransportRoutePlanner.plan(request.transport(), request.selectedRoute()));
     }
 
     @Transactional

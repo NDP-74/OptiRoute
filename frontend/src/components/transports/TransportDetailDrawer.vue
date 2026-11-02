@@ -97,6 +97,7 @@ const handleEdit = () => {
 const props = defineProps<{
     open: boolean;
     transportId: number | null;
+    routeId: number | null;
 }>();
 
 const emit = defineEmits<{
@@ -110,6 +111,7 @@ const transport = ref<TransportDetail | null>(null);
 const events = ref<EventResponse[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
+const eventsForRoute = (routeId: number) => events.value.filter((event) => event.routeId === routeId);
 
 const customerAddress = computed<string | null>(() => transport.value?.customerAddress ?? null);
 
@@ -174,9 +176,9 @@ const tripClasses = computed<string>(() => {
         : "border-emerald-200 bg-emerald-100 text-emerald-700";
 });
 
-async function loadEvents(id: number): Promise<void> {
+async function loadEvents(id: number, routeId: number | null): Promise<void> {
     try {
-        events.value = await getEventsByService(id);
+        events.value = await getEventsByService(id, routeId ?? undefined);
     } catch (exception) {
         console.error(exception);
         events.value = [];
@@ -194,8 +196,8 @@ async function loadTransport(): Promise<void> {
     error.value = null;
 
     try {
-        transport.value = await getTransportById(props.transportId);
-        await loadEvents(props.transportId);
+        transport.value = await getTransportById(props.transportId, props.routeId ?? undefined);
+        await loadEvents(props.transportId, props.routeId);
     } catch (exception) {
         console.error(exception);
 
@@ -207,7 +209,7 @@ async function loadTransport(): Promise<void> {
 }
 
 watch(
-    () => [props.open, props.transportId] as const,
+    () => [props.open, props.transportId, props.routeId] as const,
     ([open]) => {
         eventToDelete.value = null;
         if (open) {
@@ -238,6 +240,10 @@ watch(
 
                 <p v-if="transport" class="mt-0.5 truncate text-sm text-slate-500">
                     {{ transport.originName }} → {{ transport.destinationName }}
+                </p>
+                <p v-if="transport && transport.routeCount > 1"
+                    class="mt-1 inline-flex rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                    Trajet {{ transport.routeNumber }} / {{ transport.routeCount }}
                 </p>
             </div>
         </template>
@@ -292,10 +298,10 @@ watch(
                         :value="formatTimeWindow(transport.departureStart, transport.departureEnd)" />
                     <TransportDetailItem v-if="transport.arrivalStart || transport.arrivalEnd" label="Arrivée"
                         :value="formatTimeWindow(transport.arrivalStart, transport.arrivalEnd)" />
-                    <TransportDetailItem v-if="transport.serviceTiming?.loadingDurationMinutes != null" label="Chargement"
-                        :value="`${transport.serviceTiming.loadingDurationMinutes} min`" />
-                    <TransportDetailItem v-if="transport.serviceTiming?.unloadingDurationMinutes != null" label="Déchargement"
-                        :value="`${transport.serviceTiming.unloadingDurationMinutes} min`" />
+                    <TransportDetailItem v-if="transport.serviceTiming?.loadingDurationMinutes != null"
+                        label="Chargement" :value="`${transport.serviceTiming.loadingDurationMinutes} min`" />
+                    <TransportDetailItem v-if="transport.serviceTiming?.unloadingDurationMinutes != null"
+                        label="Déchargement" :value="`${transport.serviceTiming.unloadingDurationMinutes} min`" />
                 </div>
             </section>
 
@@ -326,56 +332,50 @@ watch(
                     Itinéraire
                 </h3>
 
-                <div class="mt-4">
-                    <div class="flex gap-3">
-                        <div class="mt-1 h-3 w-3 shrink-0 rounded-full bg-emerald-500" />
-
-                        <div class="min-w-0">
-                            <p class="text-xs font-medium text-slate-400">
-                                Départ
-                            </p>
-
-                            <p class="mt-0.5 text-sm font-semibold text-slate-800">
-                                {{ transport.originName }}
-                            </p>
-
-                            <p class="text-xs text-slate-500">
-                                {{ transport.originAddress || "Adresse non renseignée" }}
-                            </p>
+                <div class="mt-4 space-y-4">
+                    <div v-for="(route, index) in transport.routes" :key="route.routeId"
+                        class="rounded-lg border border-slate-200 p-3">
+                        <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            Trajet {{ transport.routeNumber }}
+                        </p>
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <TransportDetailItem v-if="route.departureStart || route.departureEnd" label="Départ"
+                                :value="formatTimeWindow(route.departureStart, route.departureEnd)" />
+                            <TransportDetailItem v-if="route.arrivalStart || route.arrivalEnd" label="Arrivée"
+                                :value="formatTimeWindow(route.arrivalStart, route.arrivalEnd)" />
                         </div>
-                    </div>
-
-                    <div class="ml-[5px] h-6 border-l border-dashed border-slate-300" />
-
-                    <div class="flex gap-3">
-                        <div class="mt-1 h-3 w-3 shrink-0 rounded-full bg-blue-500" />
-
-                        <div class="min-w-0">
-                            <p class="text-xs font-medium text-slate-400">
-                                Destination
-                            </p>
-
-                            <p class="mt-0.5 text-sm font-semibold text-slate-800">
-                                {{ transport.destinationName }}
-                            </p>
-
-                            <p class="text-xs text-slate-500">
-                                {{ transport.destinationAddress || "Adresse non renseignée" }}
-                            </p>
+                        <div class="mt-3 flex gap-3">
+                            <div class="mt-1 h-3 w-3 shrink-0 rounded-full bg-emerald-500" />
+                            <div class="min-w-0">
+                                <p class="text-xs font-medium text-slate-400">Départ</p>
+                                <p class="mt-0.5 text-sm font-semibold text-slate-800">{{ route.originName }}</p>
+                                <p class="text-xs text-slate-500">{{ route.originAddress || "Adresse non renseignée" }}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="ml-[5px] h-6 border-l border-dashed border-slate-300" />
+                        <div class="flex gap-3">
+                            <div class="mt-1 h-3 w-3 shrink-0 rounded-full bg-blue-500" />
+                            <div class="min-w-0">
+                                <p class="text-xs font-medium text-slate-400">Destination</p>
+                                <p class="mt-0.5 text-sm font-semibold text-slate-800">{{ route.destinationName }}</p>
+                                <p class="text-xs text-slate-500">{{ route.destinationAddress || "Adresse non" +
+                                    " renseignée" }}</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 grid grid-cols-2 gap-3">
+                            <TransportMetricCard label="Distance" :value="formatDistance(route.distanceMeters)" />
+                            <TransportMetricCard label="Durée estimée"
+                                :value="formatDurationSeconds(route.durationSeconds)" />
                         </div>
                     </div>
                 </div>
 
-                <div class="mt-5 grid grid-cols-2 gap-3">
-                    <TransportMetricCard label="Distance" :value="formatDistance(transport.distanceMeters)" />
-
-                    <TransportMetricCard label="Durée estimée"
-                        :value="formatDurationSeconds(transport.durationSeconds)" />
-                </div>
             </section>
 
             <!-- Carte -->
-            <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <section v-for="(route, index) in transport.routes" :key="route.routeId"
+                class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-200 px-4 py-3">
                     <h3 class="text-sm font-semibold text-slate-900">
                         Carte du trajet
@@ -383,7 +383,7 @@ watch(
                 </div>
 
                 <div class="h-64">
-                    <TransportRouteMap :polyline="transport.polyline" :events="events" />
+                    <TransportRouteMap :polyline="route.polyline" :events="eventsForRoute(route.routeId)" />
                 </div>
             </section>
 
@@ -433,8 +433,7 @@ watch(
                             <button type="button"
                                 class="rounded-lg p-1.5 text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                                 :aria-label="`Supprimer l’événement ${event.costParameterLabel}`"
-                                title="Supprimer l’événement" :disabled="deletingEvent"
-                                @click="eventToDelete = event">
+                                title="Supprimer l’événement" :disabled="deletingEvent" @click="eventToDelete = event">
                                 <Trash2 class="h-4 w-4" />
                             </button>
                         </div>
@@ -636,8 +635,7 @@ watch(
     <AssignEventModal :show="showEventModal" :transport="transport" @close="showEventModal = false"
         @created="handleEventsChanged" />
 
-    <ConfirmDeleteModal :show="eventToDelete !== null" :loading="deletingEvent"
-        title="Supprimer l’événement"
+    <ConfirmDeleteModal :show="eventToDelete !== null" :loading="deletingEvent" title="Supprimer l’événement"
         :message="`Voulez-vous vraiment supprimer l’événement « ${eventToDelete?.costParameterLabel ?? ''} » ? Cette action est irréversible et l’itinéraire sera recalculé.`"
         @close="closeDeleteEventModal" @confirm="confirmDeleteEvent" />
 

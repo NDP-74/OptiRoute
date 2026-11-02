@@ -1,10 +1,16 @@
 package com.optiroute.backend.service.transport;
 
 import java.util.List;
+import java.util.function.Function;
+import java.math.BigDecimal;
 import com.optiroute.backend.dto.request.transport.ServiceTiming;
 import org.springframework.stereotype.Service;
 
+import jakarta.persistence.EntityNotFoundException;
 import com.optiroute.backend.dto.response.transport.TransportDetailResponse;
+import com.optiroute.backend.dto.response.transport.TransportRouteDetailResponse;
+import com.optiroute.backend.dto.response.cost.CostCategoryResponse;
+import com.optiroute.backend.dto.response.cost.TransportCostDetailsResponse;
 import com.optiroute.backend.entity.Customer;
 import com.optiroute.backend.entity.driver.Driver;
 import com.optiroute.backend.entity.vehicle.SemiTrailer;
@@ -33,9 +39,31 @@ public class TransportDetailService {
     private final TransportCostService transportCostService;
 
     public TransportDetailResponse getDetail(Long serviceId) {
+        return getDetail(serviceId, null);
+    }
 
+    public TransportDetailResponse getDetail(Long serviceId, Long routeId) {
         com.optiroute.backend.entity.transport.Service service = serviceRepository.findById(serviceId).orElseThrow(() -> new RuntimeException("Service not found"));
-        Route route = routeRepository.findFirstByServiceId(serviceId).orElseThrow(() -> new RuntimeException("Route not found"));
+        List<Route> allServiceRoutes = routeRepository.findByServiceIdOrderByIdAsc(serviceId);
+        if (allServiceRoutes.isEmpty()) {
+            throw new RuntimeException("Route not found");
+        }
+        int routeNumber = 1;
+        List<Route> routes = allServiceRoutes;
+        if (routeId != null) {
+            routeNumber = -1;
+            for (int index = 0; index < allServiceRoutes.size(); index++) {
+                if (allServiceRoutes.get(index).getId().equals(routeId)) {
+                    routeNumber = index + 1;
+                    break;
+                }
+            }
+            if (routeNumber < 1) {
+                throw new EntityNotFoundException("Route " + routeId + " not found for service " + serviceId);
+            }
+            routes = List.of(allServiceRoutes.get(routeNumber - 1));
+        }
+        Route route = routes.getFirst();
 
         Driver driver = route.getDriverId() == null ? null : driverRepository.findById(route.getDriverId()).orElse(null);
         Tractor tractor = route.getTractorId() == null ? null : tractorRepository.findById(route.getTractorId()).orElse(null);
@@ -45,10 +73,16 @@ public class TransportDetailService {
         if (service.getCustomerId() != null) {
             customer = customerRepository.findById(service.getCustomerId()).orElse(null);
         }
+        List<TransportRouteDetailResponse> routeDetails = routes.stream().map(this::toRouteDetail).toList();
+        TransportCostDetailsResponse costs = routeId == null
+            ? aggregateCosts(routeDetails)
+            : routeDetails.getFirst().costs();
+        BigDecimal revenue = ServiceRouteRevenueAllocator.allocate(service.getRevenue(), allServiceRoutes, route);
 
         return new TransportDetailResponse(
 
-            service.getId(), service.getName(), service.getStatus(), route.isEmptyTrip(),
+            service.getId(), route.getId(), routeNumber, allServiceRoutes.size(),
+            service.getName(), service.getStatus(), route.isEmptyTrip(),
 
             driver != null ? driver.getId() : null, driver != null ? driver.getFirstName() + " " + driver.getLastName() : null, driver != null ? driver.getLogin() : null,
 
@@ -66,10 +100,36 @@ public class TransportDetailService {
 
             route.getPolyline(), route.getRouteType(),
 
-            transportCostService.calculate(route), service.getRevenue(),
+            costs, revenue,
             new ServiceTiming(service.getLoadingDurationMinutes(), service.getUnloadingDurationMinutes(),
                 service.getDepartureStart(), service.getDepartureEnd(), service.getArrivalStart(), service.getArrivalEnd()),
             route.getDepartureStart(), route.getDepartureEnd(), route.getArrivalStart(), route.getArrivalEnd(),
-            route.getWaypoints() == null ? List.of() : route.getWaypoints());
+            route.getWaypoints() == null ? List.of() : route.getWaypoints(),
+            routeDetails);
+    }
+
+    private TransportRouteDetailResponse toRouteDetail(Route route) {
+        return new TransportRouteDetailResponse(route.getId(), route.isEmptyTrip(), route.getOriginName(),
+            route.getOriginAddress(), route.getOriginLat(), route.getOriginLng(), route.getDestinationName(),
+            route.getDestinationAddress(), route.getDestinationLat(), route.getDestinationLng(),
+            route.getDistanceMeters(), route.getDurationSeconds(), route.getPolyline(), route.getRouteType(),
+            route.getDepartureStart(), route.getDepartureEnd(), route.getArrivalStart(), route.getArrivalEnd(),
+            route.getWaypoints() == null ? List.of() : route.getWaypoints(), transportCostService.calculate(route));
+    }
+
+    private TransportCostDetailsResponse aggregateCosts(List<TransportRouteDetailResponse> routes) {
+        List<TransportCostDetailsResponse> costs = routes.stream().map(TransportRouteDetailResponse::costs).toList();
+        CostCategoryResponse vehicle = aggregateCategory(costs, TransportCostDetailsResponse::vehicle);
+        CostCategoryResponse driver = aggregateCategory(costs, TransportCostDetailsResponse::driver);
+        CostCategoryResponse structure = aggregateCategory(costs, TransportCostDetailsResponse::structure);
+        double total = costs.stream().mapToDouble(TransportCostDetailsResponse::totalCost).sum();
+        return new TransportCostDetailsResponse(vehicle, driver, structure, total);
+    }
+
+    private CostCategoryResponse aggregateCategory(List<TransportCostDetailsResponse> routeCosts,
+        Function<TransportCostDetailsResponse, CostCategoryResponse> categoryExtractor) {
+        List<CostCategoryResponse> categories = routeCosts.stream().map(categoryExtractor).toList();
+        return new CostCategoryResponse(categories.stream().flatMap(category -> category.costs().stream()).toList(),
+            categories.stream().mapToDouble(CostCategoryResponse::totalCost).sum());
     }
 }

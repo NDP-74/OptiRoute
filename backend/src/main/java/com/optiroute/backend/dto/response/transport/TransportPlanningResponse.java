@@ -4,7 +4,7 @@ import java.time.OffsetDateTime;
 
 public record TransportPlanningResponse(
 
-        Long id, String name,
+        Long id, Long routeId, int routeNumber, int routeCount, String name,
 
         Long driverId, String driverName,
 

@@ -2,8 +2,8 @@ import api from "./axios";
 
 import type { EventCreateRequest, EventResponse } from "@/models/Event";
 
-export const getEventsByService = async (serviceId: number): Promise<EventResponse[]> => {
-    const response = await api.get<EventResponse[]>("/events", { params: { serviceId } });
+export const getEventsByService = async (serviceId: number, routeId?: number): Promise<EventResponse[]> => {
+    const response = await api.get<EventResponse[]>("/events", { params: { serviceId, routeId } });
 
     return response.data;
 };

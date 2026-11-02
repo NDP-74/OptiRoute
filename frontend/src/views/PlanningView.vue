@@ -9,7 +9,8 @@
         <CostDetailDrawer :open="selectedCostDetailDriverId !== null" :driver="selectedCostDetailDriver"
             @close="selectedCostDetailDriverId = null" />
 
-        <TransportDetailDrawer :open="selectedTransportId !== null" :transport-id="selectedTransportId"
+        <TransportDetailDrawer :open="selectedTransport !== null" :transport-id="selectedTransport?.serviceId ?? null"
+            :route-id="selectedTransport?.routeId ?? null"
             @close="closeTransport" @deleted="handleTransportDeleted" @updated="loadCurrentPeriod" @edit="openEditModal" />
 
         <PlanningRouteModal :show="showRouteModal" :editing-transport="editingTransport" :events="editingEvents" @close="closeRouteModal"
@@ -35,22 +36,22 @@ import type { EventResponse } from "@/models/Event";
 import { formatParisDateKey } from "@/utils/formatters";
 
 
-const selectedTransportId = ref<number | null>(null);
+const selectedTransport = ref<{ serviceId: number; routeId: number } | null>(null);
 const selectedCostDetailDriverId = ref<number | null>(null);
 const showRouteModal = ref(false);
 const editingTransport = ref<TransportDetail | null>(null);
 const editingEvents = ref<EventResponse[]>([]);
 
 function closePlanningDrawers(): void {
-    selectedTransportId.value = null;
+    selectedTransport.value = null;
     selectedCostDetailDriverId.value = null;
 }
 
-function openTransport(transportId: number): void {
+function openTransport(selection: { serviceId: number; routeId: number }): void {
     closePlanningDrawers();
-    selectedTransportId.value = transportId;
+    selectedTransport.value = selection;
 }
-function closeTransport(): void { selectedTransportId.value = null; }
+function closeTransport(): void { selectedTransport.value = null; }
 function openCostDetail(driverId: number): void {
     closePlanningDrawers();
     selectedCostDetailDriverId.value = driverId;

@@ -72,6 +72,7 @@ const submit = async () => {
 
         await createEvent({
             serviceId: props.transport.id,
+            routeId: props.transport.routeId,
             costParameterId: costParameterId.value,
             pointOfInterestId: pointOfInterestId.value,
             tractorId: target.value === 'tractor' ? props.transport.tractorId : null,

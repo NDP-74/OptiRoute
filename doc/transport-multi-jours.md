@@ -2,19 +2,22 @@
 
 > Spécification fonctionnelle préparatoire. Les points restant à arbitrer sont regroupés en fin de document.
 
-## Première étape implémentée : données et points de passage
+## Étapes implémentées : données, points de passage et Régional sur deux jours
 
 - `Service` conserve `loadingDurationMinutes`, `unloadingDurationMinutes` et les fenêtres sources `departureStart`, `departureEnd`, `arrivalStart`, `arrivalEnd`.
-- `Route` conserve quatre bornes calculées : `departureStart`, `departureEnd`, `arrivalStart`, `arrivalEnd`. Elles ne sont jamais saisies par l'utilisateur. En import Dashdoc, elles reprennent les quatre bornes sources du service ; en création manuelle, seules les bornes minimales calculées à partir de l'heure de recherche et de la durée d'itinéraire sont renseignées, les bornes maximales restent nulles.
+- `Route` conserve quatre bornes : `departureStart`, `departureEnd`, `arrivalStart`, `arrivalEnd`. Elles ne sont jamais saisies par l'utilisateur. Pour un trajet unique Dashdoc, elles reprennent les quatre bornes sources du service ; pour un trajet découpé, elles sont calculées par segment. En création manuelle, seules les bornes minimales calculées à partir de l'heure de recherche et de la durée d'itinéraire sont renseignées, les bornes maximales restent nulles.
 - Les champs entité `startDate` / `endDate` sont supprimés. Les bornes minimales départ/arrivée réutilisent les colonnes physiques existantes `start_date` / `end_date` pour préserver les données, et les dates calculées remplacent `plannedStart` / `plannedEnd` dans les contrats API et le planning.
 - `Route.waypoints` est une colonne PostgreSQL `jsonb` contenant la liste ordonnée des positions utilisateur (`lat`, `lng`, `name`, `address`), sans les points liés aux événements.
 - Les requêtes de création/modification acceptent `waypoints` et un objet `serviceTiming` regroupant les durées et fenêtres sources du service. Elles n'acceptent pas de bornes de route ; celles-ci sont calculées côté serveur et retournées dans les réponses. Les champs `externalId` et `externalSource` permettent de distinguer une création manuelle d'une source Dashdoc.
 - Les durées et fenêtres sont optionnelles ; les durées négatives et les fenêtres inversées sont refusées. Aucune valeur de 45 minutes n'est imposée à une saisie manuelle : cette initialisation reste à câbler avec le futur import Dashdoc.
 - Le formulaire permet la saisie optionnelle des fenêtres sources du service, mais jamais des bornes calculées de route. Les points utilisateur sont restaurés à la réouverture et conservés lors d'un recalcul lié aux événements ; les points d'événements sont ajoutés après les points utilisateur dans l'ordre des événements.
 - En création manuelle, les bornes minimales de Route sont déduites de l'heure/mode de recherche et de la durée retenue ; les bornes maximales restent nulles même si le service a des fenêtres sources manuelles. Pour une source `DASHDOC`, les quatre bornes Service sont copiées sur Route.
+- Pour un conducteur `REGIONAL`, si `arrivalEnd` tombe le lendemain de la date de départ prévue, la création produit deux trajets rattachés au même service : origine initiale → stationnement (avec les waypoints) puis stationnement → destination (sans waypoints). Le second trajet est calculé pour arriver à `arrivalEnd` moins la durée de déchargement ; son heure de départ est déduite de sa durée routière.
+- Ce premier découpage s'applique à une seule nuit. Les heures du premier trajet conservent l'heure de départ ou d'arrivée déjà fournie lorsqu'elle existe. Les règles de repos, les missions de plus de deux jours et les autres types de conducteur restent à implémenter.
+- Le planning expose les trajets séparément et répartit le CA du service au prorata des distances, avec le reliquat d'arrondi sur le dernier trajet. La fiche détail expose chaque segment.
 - Le schéma est enrichi par Hibernate avec la configuration existante `spring.jpa.hibernate.ddl-auto=update`. Les nouvelles colonnes sont nullables pour les données existantes ; les anciens points utilisateur non enregistrés ne peuvent pas être reconstruits depuis cette évolution.
 
-Cette étape ne réalise pas encore le découpage multi-jours, la propagation automatique des plages, le calcul du départ à partir de la livraison maximale ni la répartition du CA.
+Les règles complètes de découpage récursif, la propagation de toutes les plages horaires et le calcul des départs pour les missions multi-jours restent à implémenter.
 
 ## 1. Objectif et vocabulaire
 
@@ -348,13 +351,13 @@ La création ou mise à jour du service et de ses trajets doit être cohérente 
 
 ## 11. Impacts identifiés dans l'existant
 
-Le modèle actuel permet déjà à plusieurs `Route` de référencer un même `Service`, mais les traitements ne sont pas encore entièrement multi-trajets :
+Le modèle permet à plusieurs `Route` de référencer un même `Service`. Le premier cas multi-trajets est câblé, mais les traitements ne sont pas encore complets :
 
-- la création enregistre actuellement un seul trajet ;
-- la mise à jour ne traite que le premier trajet du service ;
-- la fiche détail ne récupère que le premier trajet ;
-- le planning affiche le CA total du service pour chaque trajet ;
-- les fenêtres sources sont désormais conservées sur le service, mais leur propagation et le découpage restent à implémenter.
+- la création découpe le cas `REGIONAL` dont l'arrivée maximale est le lendemain en deux trajets passant par le stationnement ;
+- la mise à jour remplace ou ajuste les trajets du service selon le découpage recalculé ;
+- la fiche détail et le planning exposent les segments, avec un identifiant de route distinct ;
+- le planning répartit le CA par distance au lieu de le répéter sur chaque trajet ;
+- la propagation complète des fenêtres sources et le découpage récursif restent à implémenter.
 
 L'évolution complète couvre les sujets suivants ; la section « Première étape implémentée » précise ceux déjà câblés :
 
@@ -381,6 +384,7 @@ L'évolution complète couvre les sujets suivants ; la section « Première éta
 | Estimation à 20 h | Quelles données temporelles PTV/HERE permettent de positionner précisément la coupure sur le tracé ? |
 | Mesure de proximité | Confirmer la faisabilité de la distance à vol d'oiseau au tracé, ou retenir explicitement le détour si plus simple avec les API. |
 | Propagation sur plusieurs jours | Comment décliner le calcul à rebours du départ sur chaque reprise, en intégrant les interruptions nocturnes et la dépendance temporelle des durées ? |
+| Horaires du premier jour régional | Quelle heure utiliser pour déterminer le retour du premier jour vers le stationnement quand seule la borne `arrivalEnd` du lendemain est connue ? |
 | Manutention multi-points | Comment appliquer les deux durées du service si une mission comporte plusieurs chargements ou déchargements ? |
 | Chargé la veille | Quelle donnée permet de déterminer cet état de manière fiable ? |
 | Créneaux multiples | Comment sélectionner un créneau parmi plusieurs possibilités ? |
@@ -403,6 +407,8 @@ Ces points ne doivent pas être transformés en hypothèses implicites dans le c
 - Un import Dashdoc initialise ces durées à 45 minutes chacune ; une synchronisation préserve les ajustements manuels.
 - Les durées de manutention s'appliquent aux opérations réelles et ne sont pas dupliquées lors d'un découpage nocturne.
 - La destination du premier trajet correspond à l'origine du second.
+- Pour un `REGIONAL` dont `arrivalEnd` est le lendemain, deux trajets passent par le stationnement et le second vise `arrivalEnd - déchargement`.
+- Les revenus présentés dans le planning sont répartis entre les trajets et leur somme égale exactement le CA du service.
 - Un grand régional utilise son stationnement uniquement si les deux conditions sont remplies.
 - Une distance exactement égale à 50 km ne satisfait pas la règle « moins de 50 km ».
 - Une arrivée exactement à la borne haute respecte la fenêtre.

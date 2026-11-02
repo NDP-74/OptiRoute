@@ -9,7 +9,8 @@ import com.optiroute.backend.model.Position;
 import com.optiroute.backend.type.GpsModeType;
 import com.optiroute.backend.dto.response.cost.TransportCostDetailsResponse;
 
-public record TransportDetailResponse(Long id, String name, String status, boolean emptyTrip,
+public record TransportDetailResponse(Long id, Long routeId, int routeNumber, int routeCount,
+        String name, String status, boolean emptyTrip,
 
         // Driver
         Long driverId, String driverName, String driverLogin,
@@ -39,5 +40,6 @@ public record TransportDetailResponse(Long id, String name, String status, boole
         ServiceTiming serviceTiming,
         OffsetDateTime departureStart, OffsetDateTime departureEnd,
         OffsetDateTime arrivalStart, OffsetDateTime arrivalEnd,
-        List<Position> waypoints) {
+        List<Position> waypoints,
+        List<TransportRouteDetailResponse> routes) {
 }

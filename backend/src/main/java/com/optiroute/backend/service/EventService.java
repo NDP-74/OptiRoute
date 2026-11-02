@@ -61,7 +61,10 @@ public class EventService {
             throw new IllegalArgumentException("Exactly one of tractor or semi-trailer must be provided");
         }
 
-        Route route = routeRepository.findFirstByServiceId(request.serviceId()).orElseThrow(() -> new EntityNotFoundException("Route not found for service " + request.serviceId()));
+        Route route = request.routeId() == null
+            ? routeRepository.findFirstByServiceId(request.serviceId()).orElseThrow(() -> new EntityNotFoundException("Route not found for service " + request.serviceId()))
+            : routeRepository.findById(request.routeId()).filter(candidate -> candidate.getService().getId().equals(request.serviceId()))
+                .orElseThrow(() -> new EntityNotFoundException("Route " + request.routeId() + " not found for service " + request.serviceId()));
 
         CostParameter costParameter = costParameterRepository.findById(request.costParameterId())
                 .orElseThrow(() -> new EntityNotFoundException("Cost parameter not found with id " + request.costParameterId()));
@@ -114,7 +117,17 @@ public class EventService {
 
     @Transactional(readOnly = true)
     public List<EventResponse> getByService(Long serviceId) {
-        return routeRepository.findFirstByServiceId(serviceId).map(route -> eventRepository.findByRouteIdOrderByIdAsc(route.getId()).stream().map(this::toResponse).toList()).orElse(List.of());
+        return getByService(serviceId, null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<EventResponse> getByService(Long serviceId, Long routeId) {
+        Route route = routeId == null
+            ? routeRepository.findFirstByServiceId(serviceId).orElse(null)
+            : routeRepository.findById(routeId).filter(candidate -> candidate.getService().getId().equals(serviceId))
+                .orElseThrow(() -> new EntityNotFoundException("Route " + routeId + " not found for service " + serviceId));
+        return route == null ? List.of()
+            : eventRepository.findByRouteIdOrderByIdAsc(route.getId()).stream().map(this::toResponse).toList();
     }
 
             @Transactional(readOnly = true)

@@ -45,6 +45,11 @@ public class TransportController {
         return ResponseEntity.ok(transportDetailService.getDetail(id));
     }
 
+    @GetMapping("/{serviceId}/routes/{routeId}")
+    public ResponseEntity<TransportDetailResponse> getRouteDetail(@PathVariable Long serviceId, @PathVariable Long routeId) {
+        return ResponseEntity.ok(transportDetailService.getDetail(serviceId, routeId));
+    }
+
     @PostMapping("/from-route")
     public ResponseEntity<Service> createFromRoute(@Valid @RequestBody TransportFromRouteRequest request) {
         Service service = transportFacadeService.createFromRoute(request);

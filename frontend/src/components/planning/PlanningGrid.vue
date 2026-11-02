@@ -70,7 +70,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   retry: [];
-  "transport-select": [transportId: number];
+  "transport-select": [selection: { serviceId: number; routeId: number }];
   "cost-detail-select": [driverId: number];
 }>();
 

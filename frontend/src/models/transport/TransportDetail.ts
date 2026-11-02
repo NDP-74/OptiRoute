@@ -19,8 +19,34 @@ export interface TransportCosts {
     totalCost: number;
 }
 
+export interface TransportRouteDetail {
+    routeId: number;
+    emptyTrip: boolean;
+    originName: string;
+    originAddress: string | null;
+    originLat: number;
+    originLng: number;
+    destinationName: string;
+    destinationAddress: string | null;
+    destinationLat: number;
+    destinationLng: number;
+    distanceMeters: number | null;
+    durationSeconds: number | null;
+    polyline: string | null;
+    routeType: "FASTEST" | "CHEAPEST" | null;
+    departureStart: string | null;
+    departureEnd: string | null;
+    arrivalStart: string | null;
+    arrivalEnd: string | null;
+    waypoints: Position[];
+    costs: TransportCosts;
+}
+
 export interface TransportDetail extends TimeWindows {
     id: number;
+    routeId: number;
+    routeNumber: number;
+    routeCount: number;
     name: string;
     status: TransportStatus;
     emptyTrip: boolean;
@@ -59,4 +85,5 @@ export interface TransportDetail extends TimeWindows {
     revenue: number;
     serviceTiming: ServiceTiming;
     waypoints: Position[];
+    routes: TransportRouteDetail[];
 }

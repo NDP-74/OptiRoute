@@ -60,7 +60,7 @@ function notificationIcon(type: NotificationType) {
 
 <template>
     <Teleport to="body">
-        <div class="pointer-events-none fixed inset-x-0 top-4 z-[100] flex flex-col items-center gap-3 px-4">
+        <div class="pointer-events-none fixed inset-x-0 top-4 z-[9999] flex flex-col items-center gap-3 px-4">
             <TransitionGroup enter-active-class="transition duration-200 ease-out"
                 enter-from-class="-translate-y-3 opacity-0" enter-to-class="translate-y-0 opacity-100"
                 leave-active-class="transition duration-150 ease-in" leave-from-class="translate-y-0 opacity-100"

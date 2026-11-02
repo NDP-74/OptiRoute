@@ -1,5 +1,8 @@
 export interface PlanningTransport {
     id: number;
+    routeId: number;
+    routeNumber: number;
+    routeCount: number;
     name: string;
 
     emptyTrip: boolean;

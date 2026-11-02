@@ -11,6 +11,10 @@ import com.optiroute.backend.entity.transport.Route;
 public interface RouteRepository extends JpaRepository<Route, Long> {
     Optional<Route> findFirstByServiceId(Long serviceId);
 
+    List<Route> findByServiceIdOrderByIdAsc(Long serviceId);
+
+    List<Route> findByServiceIdIn(List<Long> serviceIds);
+
     List<Route> findByDepartureStartGreaterThanEqualAndDepartureStartLessThan(OffsetDateTime start, OffsetDateTime end);
 
     List<Route> findByDriverIdAndDepartureStartGreaterThanEqualAndDepartureStartLessThan(Long driverId, OffsetDateTime start, OffsetDateTime end);
