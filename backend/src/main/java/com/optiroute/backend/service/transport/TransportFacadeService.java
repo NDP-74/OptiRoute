@@ -21,7 +21,7 @@ public class TransportFacadeService {
 
     private final RouteRequestFactory routeRequestFactory;
     private final RouteOptimizationService routeOptimizationService;
-    private final RegionalTransportRoutePlanner regionalTransportRoutePlanner;
+    private final TransportRoutePlanner transportRoutePlanner;
 
     @Transactional
     public Service createTransport(TransportRequest request) {
@@ -32,19 +32,19 @@ public class TransportFacadeService {
         RouteDto selectedRoute = routeResponse.getRoutes().stream()
             .min((first, second) -> Long.compare(first.getDuration(), second.getDuration()))
             .orElseThrow(() -> new IllegalArgumentException("No route available"));
-        return serviceRouteService.create(request, regionalTransportRoutePlanner.plan(request, selectedRoute));
+        return serviceRouteService.create(request, transportRoutePlanner.plan(request, selectedRoute));
     }
 
     @Transactional
     public Service createFromRoute(TransportFromRouteRequest request) {
         return serviceRouteService.create(request.transport(),
-            regionalTransportRoutePlanner.plan(request.transport(), request.selectedRoute()));
+            transportRoutePlanner.plan(request.transport(), request.selectedRoute()));
     }
 
     @Transactional
     public Service updateFromRoute(Long id, TransportFromRouteRequest request) {
         return serviceRouteService.update(id, request.transport(),
-            regionalTransportRoutePlanner.plan(request.transport(), request.selectedRoute()));
+            transportRoutePlanner.plan(request.transport(), request.selectedRoute()));
     }
 
     @Transactional

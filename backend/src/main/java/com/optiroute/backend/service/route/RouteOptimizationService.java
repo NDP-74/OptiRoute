@@ -13,6 +13,7 @@ import com.optiroute.backend.type.driver.DriverCostType;
 import lombok.RequiredArgsConstructor;
 
 import com.optiroute.backend.model.TruckConfiguration;
+import com.optiroute.backend.model.RouteTimeline;
 import com.optiroute.backend.mapper.TruckConfigurationFactory;
 
 import org.springframework.stereotype.Service;
@@ -30,6 +31,10 @@ public class RouteOptimizationService {
     private final FuelPriceService fuelPriceService;
     private final DriverService driverService;
     private final TruckConfigurationFactory truckConfigurationFactory;
+
+    public RouteTimeline calculateTimeline(RouteRequest request) {
+        return routingService.calculateTimeline(request, truckConfigurationFactory.createDefault(request.isEmptyTrip()));
+    }
 
     public RoutesResponse calculateRoute(RouteRequest request) {
         return calculateRoute(request,null);

@@ -27,6 +27,21 @@ class HereApiClientTest {
         verifyTimeParameter(RouteTimeMode.DEPARTURE, "departureTime", "arrivalTime");
     }
 
+    @Test
+    void shouldRequestGranularTimedGeometryOnlyWhenNeeded() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        HereApiProperties properties = new HereApiProperties();
+        properties.setApiKey("test-key");
+        HereApiClient client = new HereApiClient(builder, properties);
+        server.expect(request -> assertTrue(request.getURI().getQuery()
+            .contains("spans=duration,length,dynamicSpeedInfo")))
+            .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
+        client.getRoutes("47,1", "49,3", List.of(), "2026-10-29T18:00:00Z",
+            RouteTimeMode.DEPARTURE, new TruckConfiguration(), false, 0, true);
+        server.verify();
+    }
+
     private void verifyTimeParameter(RouteTimeMode mode, String expected, String absent) {
         RestClient.Builder builder = RestClient.builder();
         MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
@@ -38,6 +53,7 @@ class HereApiClientTest {
             assertTrue(query.contains(expected + "=2026-10-29T10:00:00Z"));
             assertFalse(query.contains(absent + "="));
             assertTrue(query.contains("via=48,2"));
+            assertFalse(query.contains("spans="));
         }).andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
 
         client.getRoutes("47,1", "49,3", List.of("48,2"), "2026-10-29T10:00:00Z",

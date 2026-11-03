@@ -24,6 +24,11 @@ public class HereApiClient {
 
     public String getRoutes(String origin, String destination, List<String> viaPoints, String routeTime, RouteTimeMode timeMode,
         TruckConfiguration truckConfiguration, boolean avoidTolls, int alternatives) {
+        return getRoutes(origin, destination, viaPoints, routeTime, timeMode, truckConfiguration, avoidTolls, alternatives, false);
+    }
+
+    public String getRoutes(String origin, String destination, List<String> viaPoints, String routeTime, RouteTimeMode timeMode,
+        TruckConfiguration truckConfiguration, boolean avoidTolls, int alternatives, boolean timedGeometry) {
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString("https://router.hereapi.com/v8/routes").queryParam("origin",origin)
             .queryParam("destination",destination).queryParam("alternatives",alternatives).queryParam("return","polyline,summary,tolls").queryParam("transportMode","truck")
             .queryParam("routingMode","fast")
@@ -33,6 +38,10 @@ public class HereApiClient {
             .queryParam("vehicle[axleCount]",truckConfiguration.getAxleCount()).queryParam("vehicle[speedCap]",truckConfiguration.getMaxSpeed())
 
             .queryParam(timeMode == RouteTimeMode.ARRIVAL ? "arrivalTime" : "departureTime",routeTime).queryParam("apikey",properties.getApiKey());
+
+        if (timedGeometry) {
+            uriBuilder.queryParam("spans", "duration,length,dynamicSpeedInfo");
+        }
 
         if (viaPoints != null) {
             for (String viaPoint : viaPoints) {

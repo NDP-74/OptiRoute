@@ -1,6 +1,6 @@
 # Synchronisation Dashdoc : services et trajets
 
-> Document de cadrage et guide de test. L'intégration Dashdoc de bout en bout et la création récursive des trajets ne sont pas encore implémentées. Le cas d'un conducteur `REGIONAL` avec `arrivalEnd` le lendemain crée maintenant deux trajets passant par son stationnement. Les exemples ci-dessous simulent une entrée Dashdoc en appelant les API OptiRoute existantes.
+> Document de cadrage et guide de test. L'intégration Dashdoc de bout en bout reste à implémenter. Le découpage récurrent à 20 h avec HERE est disponible, même sans fenêtres sources. Pas de conduite jusqu'à 5 h par défaut ; un départ plus tôt est autorisé si nécessaire pour respecter la livraison. Les régionaux passent par leur stationnement et peuvent y arriver après 20 h. Les exemples ci-dessous simulent une entrée Dashdoc avec les API OptiRoute existantes.
 
 ## 1. Modèle métier
 
@@ -118,7 +118,7 @@ Les quatre bornes calculées d'un trajet sont :
 - `arrivalStart` : arrivée minimale ;
 - `arrivalEnd` : arrivée maximale.
 
-Pour le calcul de l'itinéraire et de ses informations, prendre comme référence l'**heure minimale d'arrivée**, en mode « Arriver à ». En import, les quatre fenêtres du service sont disponibles comme données sources et alimentent les bornes correspondantes du trajet initial. Les bornes de route ne sont pas des champs à saisir dans l'interface.
+Pour le calcul initial de l'itinéraire, prendre comme référence l'**heure minimale d'arrivée**, en mode « Arriver à ». La planification nocturne recalcule ensuite chaque portion à son horaire effectif : arrivée à 20 h pour une coupure, reprise le lendemain pour la suite. Les fenêtres sources restent sur le service ; les bornes de route ne sont pas des champs à saisir dans l'interface.
 
 Pour une création manuelle, seule l'heure de recherche et le calcul de durée déterminent les bornes minimales ; les bornes maximales restent nulles. Pour Dashdoc, la synchronisation doit distinguer les fenêtres sources enregistrées sur le service des horaires effectivement calculés pour chacun des trajets.
 
@@ -130,7 +130,7 @@ La synchronisation doit pouvoir produire **plusieurs trajets rattachés au même
 
 - Si un déplacement doit continuer après 20 h, couper à la position estimée du camion à **20 h**.
 - Pour un grand routier (`LONG_HAUL`), estimer cette position à partir du temps de parcours cumulé sur le tracé ; ne pas utiliser une simple proportion des kilomètres. Il s'agit d'une position théorique, sans recherche d'aire de stationnement.
-- Pour un grand régional (`SHORT_DISTANCE`), utiliser le stationnement si le trajet passe à moins de 50 km et si la livraison reste faisable depuis ce stationnement selon les contraintes horaires. Sinon, appliquer la coupure estimée à 20 h. Mesurer la proximité à vol d'oiseau du stationnement au tracé, ou utiliser le détour routier si c'est plus simple avec PTV/HERE ; le choix retenu doit être constant.
+- Pour un grand régional (`SHORT_DISTANCE`), utiliser le stationnement si sa distance minimale à vol d'oiseau aux segments du tracé est strictement inférieure à 50 km et si la livraison reste faisable le lendemain en repartant à partir de 5 h, déchargement compris. La proximité est calculée localement sur la géométrie HERE, puis deux calculs routiers vérifient le détour réel et les horaires. Sinon, appliquer la coupure sur route à 20 h ; l'exception de reprise avant 5 h reste possible uniquement dans ce mode Grand routier.
 - Pour un régional (`REGIONAL`), utiliser le stationnement comme point d'arrêt.
 - Pour les trajets de retour au stationnement retenus par ces règles, aucune heure obligatoire d'arrivée n'est imposée : le retour peut dépasser 20 h.
 - La coupure à 20 h ne crée pas une livraison ni un déchargement.
@@ -144,7 +144,7 @@ départ = heure maximale de livraison
          - durée de l'itinéraire
 ```
 
-Cette formule remplace la règle de départ à 05 h. Si le véhicule est déjà chargé, ne pas déduire une nouvelle fois la durée de chargement.
+Cette formule concerne une portion sans nuit. Pour plusieurs journées, le calcul tient compte des créneaux de conduite : pas de conduite de 20 h à 05 h, départ le plus tardif compatible avec la livraison, avant 05 h seulement si nécessaire. Sans échéance, reprise à 05 h. Si le véhicule est déjà chargé, ne pas déduire une nouvelle fois la durée de chargement.
 
 Les origines/destinations successives doivent se rejoindre exactement. Les détours vers le stationnement sont de vrais tronçons routiers et contribuent aux distances et coûts.
 
@@ -230,7 +230,7 @@ Remplacer les coordonnées et les IDs par des données de test cohérentes. `way
 
 ### 4.3 Créer un service et un trajet Dashdoc simulés
 
-`POST /api/transports` appelle le calcul d'itinéraire puis crée un service et sélectionne la route la plus rapide. Pour un conducteur `REGIONAL`, si `arrivalEnd` est le lendemain du départ prévu, il recalcule et enregistre deux trajets : origine → stationnement, puis stationnement → destination. Le départ du second trajet est déduit de `arrivalEnd - déchargement - durée du trajet`. Les autres cas multi-jours, l'upsert externe et les valeurs par défaut de 45 minutes ne sont pas encore implémentés.
+`POST /api/transports` calcule l'itinéraire puis planifie la mission. Pour `REGIONAL`, une mission nécessitant une nuit passe par le stationnement. Pour `SHORT_DISTANCE`, ce choix dépend des deux conditions ci-dessus. Les autres cas suivent la coupure à 20 h estimée par HERE, autant de nuits que nécessaire, même sans `serviceTiming`. L'upsert externe et les valeurs par défaut de 45 minutes restent à implémenter.
 
 Le corps ci-dessous illustre le contrat OptiRoute actuel. Il reprend les champs de fenêtres qui seraient normalisés depuis Dashdoc et fournit explicitement les deux durées, car leur défaut d'import n'est pas encore câblé :
 
@@ -313,21 +313,141 @@ Invoke-RestMethod `
 
 `endDate` est une borne exclusive dans le service de planning. Les dates minimales des trajets déterminent le jour affiché.
 
+### 4.5 Tester un Grand routier avec coupure à 20 h (HERE)
+
+Configurer `routing.provider=here` et une clé HERE valide. Réutiliser `$baseUrl` et `$headers` de la section 4.1. Remplacer `driverId` par un conducteur existant de type `LONG_HAUL`, ainsi que les identifiants de véhicule. La date de livraison doit être le lendemain de celle du chargement en `Europe/Paris`.
+
+```powershell
+$longHaulBody = @'
+{
+  "name": "Test Grand routier - Lille vers Nice",
+  "externalId": "dashdoc-test-long-haul-20261103-001",
+  "externalSource": "DASHDOC",
+  "driverId": 1,
+  "tractorId": 1,
+  "emptyTrip": false,
+  "routeTime": "2026-11-03T16:00:00+01:00",
+  "timeMode": "DEPARTURE",
+  "originName": "Lille",
+  "originLat": 50.6292,
+  "originLng": 3.0573,
+  "destinationName": "Nice",
+  "destinationLat": 43.7102,
+  "destinationLng": 7.2620,
+  "revenue": 1500.00,
+  "serviceTiming": {
+    "loadingDurationMinutes": 45,
+    "unloadingDurationMinutes": 45,
+    "departureStart": "2026-11-03T16:00:00+01:00",
+    "departureEnd": "2026-11-03T18:00:00+01:00",
+    "arrivalStart": "2026-11-04T13:00:00+01:00",
+    "arrivalEnd": "2026-11-04T16:00:00+01:00"
+  },
+  "waypoints": []
+}
+'@
+
+$created = Invoke-RestMethod `
+    -Method Post `
+    -Uri "$baseUrl/api/transports" `
+    -Headers $headers `
+    -ContentType "application/json" `
+    -Body $longHaulBody
+
+$detail = Invoke-RestMethod `
+    -Method Get `
+    -Uri "$baseUrl/api/transports/$($created.id)" `
+    -Headers $headers
+
+$detail.routes
+```
+
+Le calcul de progression part ici à 16 h 45, après chargement. Les horaires réels dépendent de la réponse HERE ; ce payload n'est pas un résultat de routage garanti.
+
+Vérifier :
+
+1. Un service, deux trajets : le premier arrive le 3 novembre à `20:00:00+01:00`, le second part le 4 novembre.
+2. Destination du premier et origine du second ont les mêmes coordonnées.
+3. Le second arrive à 15 h 15, avant les 45 minutes de déchargement. Son départ vaut 15 h 15 moins sa durée routière, sans nouveau chargement.
+4. Les waypoints ajoutés au test apparaissent sur la portion correspondante, dans l'ordre initial.
+5. Chaque portion possède sa géométrie, sa durée, sa distance et ses coûts. Le CA est réparti par distance, sans duplication.
+6. La création depuis un itinéraire (`POST /api/transports/from-route`) et sa modification (`PUT /api/transports/{id}/from-route`) appliquent la même règle.
+
+Cas limites :
+
+- Trajet achevé avant 20 h ou exactement à 20 h : pas de portion fictive. Départ demandé à partir de 20 h : report au lendemain à 5 h.
+- Livraison à J+2 et au-delà : répéter la coupure chaque soir à 20 h si nécessaire. Sans `serviceTiming`, un trajet de 10 h partant à 15 h est découpé en 15 h–20 h puis 5 h–10 h.
+- Avec une livraison à 12 h le lendemain, ce même trajet reprend à 7 h ; avec une livraison à 9 h, il reprend exceptionnellement à 4 h. Le chargement est supposé terminé à 15 h dans ces exemples.
+- Départ calculé du deuxième trajet sur la veille : HTTP `422`, code `TRANSPORT_PLANNING_ERROR`, et aucune sauvegarde partielle.
+- Le recalcul du premier trajet exige un départ avant la fin du chargement : même erreur de planning, pas de décalage silencieux.
+- `routing.provider=ptv` pour un cas nécessitant la chronologie : HTTP `422` indiquant que HERE est requis.
+- Durée de chargement/déchargement absente : zéro pour le calcul, sans appliquer automatiquement les 45 minutes prévues pour le futur import.
+
+Le point à 20 h reste une estimation théorique sur la route, sans validation d'un stationnement réel. Le découpage répète les nuits à l'arrêt ; il n'ajoute pas les pauses réglementaires.
+
+Tests automatisés ciblés, sans requête réelle au fournisseur ni base de données :
+
+```powershell
+Set-Location backend
+.\mvnw.cmd "-Dtest=HereApiClientTest,RouteHereParserTest,RoutingServiceTest,FlexiblePolylineDecoderTest,RouteGeometryTest,RouteTimelineTest,TransportRoutePlannerTest,TransportFacadeServiceTest,ServiceRouteServiceTest,GlobalExceptionHandlerTest" test
+```
+
+### 4.6 Tester le Grand régional et le choix du stationnement
+
+Réutiliser le payload `$longHaulBody` de la section 4.5 avec un conducteur existant de type `SHORT_DISTANCE`, possédant un stationnement à proximité du tracé Lille–Nice. Choisir les coordonnées à partir du tracé retourné par `POST /api/routes/calculate`, pas de la ligne droite Lille–Nice.
+
+```powershell
+$shortDistance = $longHaulBody | ConvertFrom-Json
+$shortDistance.driverId = 2 # Remplacer par l'ID du Grand regional de test.
+$shortDistance.name = "Test Grand regional - stationnement"
+$shortDistance.externalId = "dashdoc-test-short-distance-20261103-001"
+
+$created = Invoke-RestMethod `
+    -Method Post `
+    -Uri "$baseUrl/api/transports" `
+    -Headers $headers `
+    -ContentType "application/json" `
+    -Body ($shortDistance | ConvertTo-Json -Depth 10)
+
+$detail = Invoke-RestMethod `
+    -Method Get `
+    -Uri "$baseUrl/api/transports/$($created.id)" `
+    -Headers $headers
+
+$detail.routes
+```
+
+Le conducteur et son stationnement doivent être configurés via les écrans/API existants avant ce test. Chaque POST crée un nouveau service ; utiliser des identifiants externes de test distincts.
+
+Vérifications :
+
+| Cas | Résultat attendu |
+|---|---|
+| Stationnement à moins de 50 km et livraison faisable le lendemain à partir de 5 h | Destination du premier trajet et origine du second = stationnement ; départ du second à partir de 5 h |
+| Reprise calculée à 5 h exactement | Stationnement accepté |
+| Stationnement à 50 km exactement ou au-delà | Coupure sur route à 20 h |
+| Proche à vol d'oiseau, mais détour routier imposant une reprise avant 5 h | Stationnement refusé, règle Grand routier conservée |
+| Retour au stationnement trop long pour permettre la reprise calculée | Stationnement refusé, pas de chevauchement entre portions |
+| Coordonnées de stationnement absentes | Règle Grand routier |
+| Livraison sur plusieurs journées | Décision réévaluée à chaque nuit ; stationnement retenu seulement si la livraison devient réalisable le lendemain |
+
+Le retour au stationnement retenu peut dépasser 20 h. Les waypoints sont répartis selon la projection du stationnement sur le tracé et restent ordonnés ; les coûts et le CA portent uniquement sur les trajets finalement enregistrés. Pour les seuils précis, les tests automatisés contrôlent 49 999 m, 50 000 m et 50 001 m sans dépendre d'une réponse HERE réelle.
+
 ## 5. Tests d'acceptation de la future synchronisation
 
 1. Un service Dashdoc nouveau est créé avec `externalSource = DASHDOC` et une clé externe stable.
 2. Le service conserve les fenêtres chargement/livraison sources et les durées initialisées à 45 minutes lorsqu'elles sont absentes.
 3. La route initiale est calculée en mode « Arriver à » sur la borne basse d'arrivée.
-4. Les quatre bornes de source alimentent les bornes de la route initiale ; les routes manuelles n'ont pas de bornes maximales inventées.
+4. Les bornes sources sont conservées sur le service ; les horaires de chaque portion sont calculés, sans bornes maximales inventées.
 5. Un service sur plusieurs journées produit plusieurs `Route` ordonnées, rattachées au même service, avec des waypoints persistés et réutilisés au recalcul.
 6. La coupure sur route est à la position estimée à 20 h ; un retour au stationnement peut dépasser cette heure.
-7. La règle du conducteur, la formule de départ sans seuil de 05 h, et l'exclusion des pauses sont appliquées.
+7. La règle du conducteur, la coupure 20 h–05 h avec départ anticipé seulement si nécessaire, et l'exclusion des pauses sont appliquées.
 8. Les coûts sont calculés par trajet et les revenus répartis au prorata des kilomètres ; leur somme est égale au CA source.
 9. Réimporter deux fois le même événement Dashdoc met à jour le même service et ne duplique ni service ni trajets.
 10. Une mise à jour des fenêtres ou points logistiques recalcule les trajets concernés sans écraser une durée de manutention personnalisée ni les trajets protégés par la politique de synchronisation.
 11. Une erreur de routage/sauvegarde est remontée et n'enregistre pas une synchronisation partielle.
 
-Les scénarios 5 à 11 ne sont pas couverts par le simple POST de test ci-dessus ; ils nécessitent l'implémentation du service d'import et de la logique multi-trajets.
+Le POST permet de vérifier les découpages nocturnes, le stationnement des grands régionaux, les coûts et le CA, ainsi que l'absence de sauvegarde partielle en cas de conflit. L'idempotence et les politiques de synchronisation restent à implémenter.
 
 ## 6. Éléments à finaliser pour l'intégration réelle
 
@@ -336,6 +456,6 @@ Les scénarios 5 à 11 ne sont pas couverts par le simple POST de test ci-dessus
 - Correspondance entre livraison Dashdoc, client, conducteur, véhicule, stationnement et état déjà chargé.
 - Valeur par défaut 45 minutes appliquée à l'import et distinction entre valeur importée et correction manuelle.
 - Upsert idempotent et politique d'écrasement des trajets modifiés, commencés, terminés ou annulés.
-- Calcul de la position à 20 h à partir des données de segments disponibles auprès de PTV/HERE.
-- Découpage récursif, création de plusieurs routes, calcul des plages propres à chaque portion, coûts et répartition du CA.
+- Adaptateur PTV vers la chronologie du tracé (le calcul à 20 h est disponible avec HERE).
+- Propagation complète des bornes maximales ; le stationnement grand régional, le découpage nocturne multi-jours, les coûts et la répartition du CA sont disponibles.
 - Représentation des horaires ou opérations multiples si le contrat Dashdoc comporte plusieurs points logistiques.

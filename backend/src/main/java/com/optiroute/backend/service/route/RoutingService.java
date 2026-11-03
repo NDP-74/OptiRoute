@@ -12,9 +12,11 @@ import com.optiroute.backend.client.HereApiClient;
 import com.optiroute.backend.client.PtvApiClient;
 import com.optiroute.backend.dto.request.route.RouteRequest;
 import com.optiroute.backend.model.TruckConfiguration;
+import com.optiroute.backend.model.RouteTimeline;
 import com.optiroute.backend.type.GpsModeType;
 import com.optiroute.backend.type.RouteTimeMode;
 import com.optiroute.backend.utils.CommonUtils;
+import com.optiroute.backend.exception.TransportPlanningException;
 
 @Service
 public class RoutingService {
@@ -35,6 +37,24 @@ public class RoutingService {
 
     public boolean isHere() {
         return "here".equalsIgnoreCase(provider);
+    }
+
+    public RouteTimeline calculateTimeline(RouteRequest request, TruckConfiguration truckConfiguration) {
+        if (!isHere()) {
+            throw new TransportPlanningException("Le découpage à 20 h nécessite actuellement le fournisseur HERE.");
+        }
+        List<String> via = request.getWaypoints() == null ? List.of() : request.getWaypoints().stream()
+            .map(point -> point.getLat() + "," + point.getLng()).toList();
+        String raw = hereApiClient.getRoutes(
+            request.getOrigin().getLat() + "," + request.getOrigin().getLng(),
+            request.getDestination().getLat() + "," + request.getDestination().getLng(),
+            via, CommonUtils.formatTime(request.getRouteTime()), request.getTimeMode(), truckConfiguration,
+            request.getMode() == GpsModeType.CHEAPEST, 0, true);
+        RouteTimeline timeline = routeHereParser.parseTimeline(raw);
+        if (timeline.portions().getLast().sectionIndex() != via.size()) {
+            throw new TransportPlanningException("Les sections HERE ne correspondent pas aux points de passage du service.");
+        }
+        return timeline;
     }
 
     public Map<GpsModeType, RoutePtvParser.ParsedRoute> calculateRoutes(RouteRequest request, TruckConfiguration truckConfiguration, double driverHourlyRate) {

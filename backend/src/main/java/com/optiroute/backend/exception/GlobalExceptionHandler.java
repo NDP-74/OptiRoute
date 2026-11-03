@@ -14,6 +14,14 @@ import com.optiroute.backend.dto.response.ApiErrorResponse;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(TransportPlanningException.class)
+    public ResponseEntity<ApiErrorResponse> handleTransportPlanningException(TransportPlanningException exception,
+            HttpServletRequest request) {
+        return ResponseEntity.unprocessableEntity().body(new ApiErrorResponse(
+            HttpStatus.UNPROCESSABLE_ENTITY.value(), "TRANSPORT_PLANNING_ERROR", exception.getMessage(),
+            request.getRequestURI(), Instant.now()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponse> handleValidationException(MethodArgumentNotValidException exception,
             HttpServletRequest request) {

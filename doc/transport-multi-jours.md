@@ -2,22 +2,41 @@
 
 > Spécification fonctionnelle préparatoire. Les points restant à arbitrer sont regroupés en fin de document.
 
-## Étapes implémentées : données, points de passage et Régional sur deux jours
+## Étapes implémentées : données, points de passage et coupures nocturnes multi-jours
 
 - `Service` conserve `loadingDurationMinutes`, `unloadingDurationMinutes` et les fenêtres sources `departureStart`, `departureEnd`, `arrivalStart`, `arrivalEnd`.
-- `Route` conserve quatre bornes : `departureStart`, `departureEnd`, `arrivalStart`, `arrivalEnd`. Elles ne sont jamais saisies par l'utilisateur. Pour un trajet unique Dashdoc, elles reprennent les quatre bornes sources du service ; pour un trajet découpé, elles sont calculées par segment. En création manuelle, seules les bornes minimales calculées à partir de l'heure de recherche et de la durée d'itinéraire sont renseignées, les bornes maximales restent nulles.
+- `Route` conserve quatre bornes : `departureStart`, `departureEnd`, `arrivalStart`, `arrivalEnd`. Elles ne sont jamais saisies par l'utilisateur. La planification calcule désormais les horaires de chaque trajet, même pour Dashdoc et pour un trajet unique ; les bornes maximales restent nulles. Les fenêtres sources restent sur le service.
 - Les champs entité `startDate` / `endDate` sont supprimés. Les bornes minimales départ/arrivée réutilisent les colonnes physiques existantes `start_date` / `end_date` pour préserver les données, et les dates calculées remplacent `plannedStart` / `plannedEnd` dans les contrats API et le planning.
 - `Route.waypoints` est une colonne PostgreSQL `jsonb` contenant la liste ordonnée des positions utilisateur (`lat`, `lng`, `name`, `address`), sans les points liés aux événements.
 - Les requêtes de création/modification acceptent `waypoints` et un objet `serviceTiming` regroupant les durées et fenêtres sources du service. Elles n'acceptent pas de bornes de route ; celles-ci sont calculées côté serveur et retournées dans les réponses. Les champs `externalId` et `externalSource` permettent de distinguer une création manuelle d'une source Dashdoc.
 - Les durées et fenêtres sont optionnelles ; les durées négatives et les fenêtres inversées sont refusées. Aucune valeur de 45 minutes n'est imposée à une saisie manuelle : cette initialisation reste à câbler avec le futur import Dashdoc.
 - Le formulaire permet la saisie optionnelle des fenêtres sources du service, mais jamais des bornes calculées de route. Les points utilisateur sont restaurés à la réouverture et conservés lors d'un recalcul lié aux événements ; les points d'événements sont ajoutés après les points utilisateur dans l'ordre des événements.
-- En création manuelle, les bornes minimales de Route sont déduites de l'heure/mode de recherche et de la durée retenue ; les bornes maximales restent nulles même si le service a des fenêtres sources manuelles. Pour une source `DASHDOC`, les quatre bornes Service sont copiées sur Route.
-- Pour un conducteur `REGIONAL`, si `arrivalEnd` tombe le lendemain de la date de départ prévue, la création produit deux trajets rattachés au même service : origine initiale → stationnement (avec les waypoints) puis stationnement → destination (sans waypoints). Le second trajet est calculé pour arriver à `arrivalEnd` moins la durée de déchargement ; son heure de départ est déduite de sa durée routière.
-- Ce premier découpage s'applique à une seule nuit. Les heures du premier trajet conservent l'heure de départ ou d'arrivée déjà fournie lorsqu'elle existe. Les règles de repos, les missions de plus de deux jours et les autres types de conducteur restent à implémenter.
+- En création manuelle ou Dashdoc, les bornes minimales de Route représentent la conduite effectivement planifiée, pas la simple copie des créneaux logistiques.
+- Pour un conducteur `REGIONAL`, une mission nécessitant une nuit passe par son stationnement : origine initiale → stationnement (avec les waypoints), puis stationnement → destination (sans waypoints). Le retour peut dépasser 20 h. Une destination inaccessible avant 20 h depuis le stationnement est signalée comme incompatible.
+- Les grands régionaux (`SHORT_DISTANCE`) utilisent leur stationnement s'il est à moins de 50 km du tracé et si la livraison reste réalisable le lendemain en repartant à partir de 5 h. Sinon, ils appliquent la coupure sur route à 20 h.
+- Les grands routiers, les grands régionaux non éligibles au stationnement et les trajets sans conducteur affecté suivent la coupure sur route à 20 h dès que la conduite doit se poursuivre. Cela s'applique sans fenêtre source et au-delà de J+1, autant de nuits que nécessaire. Les pauses réglementaires restent exclues.
 - Le planning expose les trajets séparément et répartit le CA du service au prorata des distances, avec le reliquat d'arrondi sur le dernier trajet. La fiche détail expose chaque segment.
 - Le schéma est enrichi par Hibernate avec la configuration existante `spring.jpa.hibernate.ddl-auto=update`. Les nouvelles colonnes sont nullables pour les données existantes ; les anciens points utilisateur non enregistrés ne peuvent pas être reconstruits depuis cette évolution.
 
-Les règles complètes de découpage récursif, la propagation de toutes les plages horaires et le calcul des départs pour les missions multi-jours restent à implémenter.
+La propagation de toutes les bornes maximales et l'import Dashdoc réel restent à implémenter.
+
+### Coupure nocturne : découpage HERE à 20 h implémenté
+
+- La règle est locale à `Europe/Paris`, changements d'heure inclus : pas de conduite entre 20 h et 5 h, sauf reprise avant 5 h indispensable à une livraison et retour au stationnement retenu pour un régional ou grand régional. Le test d'éligibilité au stationnement du grand régional, lui, n'autorise jamais de reprise avant 5 h.
+- Le calcul de progression commence à `departureStart + loadingDurationMinutes` lorsque la fenêtre de chargement est renseignée. Sinon, l'heure/mode de recherche est utilisé ; en mode arrivée, le départ est déterminé à rebours en retirant aussi les périodes nocturnes. Une durée de manutention absente vaut zéro sans modifier la valeur source.
+- HERE est interrogé avec `return=polyline,summary,tolls` et `spans=duration,length,dynamicSpeedInfo`. `dynamicSpeedInfo` donne une granularité plus fine que les seules durées et distances.
+- Les flexible polylines sont décodées par section. Chaque span relie son `offset` au suivant, ou à la fin de la section ; sa longueur n'est pas un nombre de points. Les durées des spans sont ramenées à la durée totale de leur section pour absorber les arrondis.
+- La position à 20 h est trouvée par cumul des durées puis interpolation en distance sur la géométrie du span concerné. Aucun ratio global distance/durée ni temps de pause n'est utilisé.
+- Une arrivée routière à 20 h exactement ne crée pas de portion vide. Un départ demandé à partir de 20 h est reporté au lendemain à 5 h. Un départ avant 5 h est reporté à 5 h sauf si ce report rend la livraison impossible.
+- Le trajet du jour est recalculé en mode arrivée à 20 h. La suite est planifiée à partir de 5 h le lendemain, ou au plus tard dans les créneaux de conduite disponibles pour atteindre la livraison. La cible finale est `arrivalEnd - unloadingDurationMinutes` (ou `arrivalStart` sans borne haute, ou `routeTime` en mode arrivée sans fenêtre). Sans échéance, la reprise est à 5 h. Aucun chargement n'est retranché une nouvelle fois.
+- Si la conduite restante ne tient pas entre 5 h et l'échéance, le calcul avance exceptionnellement la reprise avant 5 h, au plus tôt à minuit le lendemain de la coupure. S'il faut repartir avant cette date, le planning est refusé. Toutes les coupures suivantes restent à 20 h.
+- Les deux trajets utilisent les mêmes coordonnées d'arrêt. Les waypoints sont répartis selon les sections traversées ; un waypoint situé exactement au point de coupure devient une extrémité, sans être ajouté une seconde fois. Le mode rapide/économique sélectionné est conservé.
+- Le recalcul peut modifier les durées. S'il impose de partir avant l'heure disponible, de chevaucher la coupure précédente ou de dépasser la livraison maximale, le planning est refusé sans sauvegarde partielle. Les tronçons restants sont recalculés à leur propre horaire.
+- Les conflits métier retournent HTTP `422`, code `TRANSPORT_PLANNING_ERROR`, avec une explication. Une chronologie HERE absente ou invalide provoque une erreur, sans estimation silencieuse de remplacement.
+- Le découpage est commun à `POST /api/transports`, `POST /api/transports/from-route` et `PUT /api/transports/{id}/from-route`. Les coûts sont recalculés séparément ; les mécanismes existants répartissent le CA.
+- Le point d'arrêt est théorique, pas une aire de stationnement validée. PTV ne fournit pas encore la chronologie normalisée : un découpage demandé avec ce fournisseur est explicitement refusé.
+
+Les paramètres des spans sont décrits dans la [documentation HERE](https://docs.here.com/routing/docs/routing-v8-span). Un exemple de test API figure dans le [guide Dashdoc](./synchronisation-dashdoc.md#45-tester-un-grand-routier-avec-coupure-à-20-h-here).
 
 ## 1. Objectif et vocabulaire
 
@@ -122,7 +141,9 @@ Ces plages opérationnelles ne remplacent pas les fenêtres de chargement/livrai
 
 ### 4.2 Référence technique du calcul
 
-**Le calcul de l'itinéraire et de ses informations se base toujours sur l'heure minimale d'arrivée**, en mode « Arriver à ».
+**Le calcul initial de l'itinéraire se base sur l'heure minimale d'arrivée**, en mode « Arriver à », lorsque cette source est disponible.
+
+La planification nocturne recalcule chaque portion à son propre horaire effectif : départ disponible pour la progression du jour, arrivée à 20 h pour la coupure, puis départ le lendemain ou arrivée finale dans la fenêtre. Une échéance maximale peut donc devenir la cible d'arrivée finale retenue.
 
 Les bornes maximales servent à représenter la flexibilité, à vérifier la faisabilité et à déterminer le départ selon la formule ci-dessous ; elles ne constituent pas une seconde référence de calcul des kilomètres, de la durée ou des autres informations de l'itinéraire.
 
@@ -151,6 +172,8 @@ Une fenêtre horaire ne représente pas une durée de manutention. Les durées d
 
 Cette exclusion ne supprime pas les règles métier de découpage à 20 h et de retour au stationnement décrites dans ce document.
 
+La plage **20 h–5 h est une indisponibilité métier**, distincte des pauses réglementaires. Elle ne s'ajoute ni à la durée routière ni aux kilomètres ni aux coûts routiers ; elle décale le calendrier des trajets.
+
 ### 4.5 Détermination du départ
 
 Pour tous les types de conducteurs, le départ est déterminé par :
@@ -161,7 +184,11 @@ Départ = date/heure maximale de livraison
          − durée de l'itinéraire
 ```
 
-Cette règle **remplace toutes les anciennes règles de départ à 05 h**, y compris le premier départ des régionaux non chargés. Aucune limite minimale de 05 h n'est appliquée.
+Cette formule s'applique directement à une portion sans coupure. Pour plusieurs journées, retirer uniquement les temps de conduite dans les créneaux disponibles, en conservant les nuits à l'arrêt ; une simple soustraction de la durée totale ne suffit pas.
+
+Par défaut, pas de conduite de 20 h à 5 h. Le départ retenu est le plus tardif compatible avec la livraison ; il peut donc être après 5 h. Un départ avant 5 h est autorisé seulement si nécessaire pour respecter l'échéance, sans supprimer ni retarder la coupure à 20 h. Sans échéance de livraison, reprendre à 5 h.
+
+Exemple : départ à 15 h, 10 h de conduite, livraison le lendemain à 12 h → première portion 15 h–20 h (5 h), nuit à l'arrêt, seconde portion 7 h–12 h (5 h). Si la livraison est à 9 h, la seconde portion commence exceptionnellement à 4 h.
 
 Si le camion est déjà chargé, la durée de chargement restant à effectuer vaut zéro. Une opération déjà réalisée ne doit pas être déduite à nouveau à chaque reprise.
 
@@ -212,11 +239,22 @@ Il faudra déterminer cette position sur le tracé à partir de la progression t
 Utiliser le lieu de stationnement du conducteur **uniquement si les deux conditions suivantes sont remplies** :
 
 1. Le trajet passe à **moins de 50 km** du stationnement.
-2. La livraison reste réalisable en repartant du stationnement selon la formule de la section 4.5, en respectant la borne haute de livraison et la chronologie de la mission.
+2. La livraison reste réalisable **le lendemain en repartant à partir de 5 h**, en respectant la borne haute de livraison, le déchargement et la chronologie de la mission. Une reprise à 5 h exactement est admise ; un départ avant 5 h n'est pas autorisé pour retenir le stationnement.
 
 Cette vérification doit intégrer les déplacements et opérations restant à effectuer.
 
-La proximité correspond par défaut à la **distance minimale à vol d'oiseau entre le stationnement et le tracé**, et non à la seule distance aux extrémités. Si les API PTV/HERE permettent plus simplement de calculer le détour via le stationnement, cette mesure peut être retenue à la place. Le choix technique doit être explicite : ne pas mélanger les deux mesures dans une même décision.
+La proximité implémentée est la **distance minimale à vol d'oiseau entre le stationnement et les segments du tracé**, pas seulement ses sommets. Le calcul local projette le point sur chaque segment de grand cercle sur une sphère de rayon 6 371 000 m, en bornant la projection aux extrémités du segment. Le seuil est strict : `distance < 50 000 m`. La mesure est indépendante du fournisseur et n'utilise pas la distance routière ni le détour.
+
+La géométrie décodée de HERE est réutilisée ; aucun service externe de distance ou de proximité n'est appelé. Pour PTV, ce calcul géographique restera inchangé une fois son adaptateur de géométrie/chronologie disponible.
+
+Lorsque le stationnement est proche :
+
+1. Repérer sa projection la plus proche sur le trajet restant. Répartir les waypoints selon la section correspondante, en conservant chaque waypoint sur l'une des deux portions, y compris si la projection tombe exactement dessus. En cas de passages multiples à la même distance, retenir le premier dans l'ordre du tracé.
+2. Calculer réellement le trajet origine du jour → stationnement avec les waypoints précédents.
+3. Calculer réellement stationnement → destination avec les waypoints restants. La cible est la borne haute de livraison moins le déchargement (borne basse à défaut), limitée à 20 h le lendemain. Sans échéance source, calculer un départ à 5 h.
+4. Accepter uniquement si le départ calculé est à partir de 5 h le lendemain, après l'arrivée au stationnement, et si la livraison routière se termine au plus tard à 20 h et avant l'échéance.
+
+Les durées et coûts retenus sont ceux de ces itinéraires routiers réels, pas ceux de la projection géographique. Une rivière, un accès éloigné ou un détour peuvent donc invalider un stationnement pourtant proche à vol d'oiseau.
 
 Si les deux conditions sont remplies :
 
@@ -228,6 +266,10 @@ Il n'y a pas d'heure obligatoire d'arrivée au stationnement : le retour peut se
 Sinon :
 
 - appliquer la règle du grand routier, avec estimation d'un arrêt à 20 h.
+
+La décision est réévaluée sur le trajet restant à chaque nuit ; si la destination nécessite encore plusieurs jours depuis le stationnement, celui-ci n'est pas retenu pour cette nuit. Sans coordonnées de stationnement, appliquer aussi la règle du grand routier. Une réponse de routage invalide ou une panne fournisseur reste une erreur explicite, pas un repli silencieux.
+
+Le test est déclenché si la conduite dépasse 20 h ou si l'échéance de livraison est un jour ultérieur ; il ne crée pas de détour pour un trajet réalisable et livré le même jour. Les portions candidates non retenues ne sont pas enregistrées.
 
 ### 6.3 Régional — `REGIONAL`
 
@@ -244,7 +286,7 @@ Si cette obligation rend la mission irréalisable, signaler le conflit. Ne pas a
 | Type de conducteur | Point d'arrêt |
 |---|---|
 | Grand routier | Position estimée à 20 h exactement |
-| Grand régional | Stationnement si proximité et livraison réalisable avec le départ calculé ; sinon règle grand routier |
+| Grand régional | Stationnement si distance au tracé < 50 km et livraison réalisable le lendemain avec départ ≥ 5 h ; sinon règle grand routier |
 | Régional | Stationnement, sans heure obligatoire de retour |
 
 ## 7. Import du planning des conducteurs régionaux
@@ -274,7 +316,7 @@ Créer le premier déplacement :
 - **Référence technique de calcul** : arrivée minimale au premier point de chargement ;
 - **État** : trajet à vide jusqu'au chargement.
 
-Il n'y a plus de départ imposé à 05 h. Le déplacement d'approche et la suite de la mission doivent être vérifiés ensemble pour respecter les fenêtres de chargement et de livraison.
+Le départ est à partir de 05 h par défaut, au plus tard pour respecter la livraison ; il peut être avancé si indispensable. Le déplacement d'approche et la suite de la mission doivent être vérifiés ensemble pour respecter les fenêtres de chargement et de livraison.
 
 Vérifier ensuite sa compatibilité avec la fenêtre de chargement :
 
@@ -353,11 +395,13 @@ La création ou mise à jour du service et de ses trajets doit être cohérente 
 
 Le modèle permet à plusieurs `Route` de référencer un même `Service`. Le premier cas multi-trajets est câblé, mais les traitements ne sont pas encore complets :
 
-- la création découpe le cas `REGIONAL` dont l'arrivée maximale est le lendemain en deux trajets passant par le stationnement ;
+- la création découpe les missions `REGIONAL` nécessitant une nuit en passant par le stationnement, avec maintien de l'exception de retour après 20 h ;
+- les autres types suivent les coupures HERE à 20 h sur autant de nuits que nécessaire, même sans fenêtres de service ;
 - la mise à jour remplace ou ajuste les trajets du service selon le découpage recalculé ;
 - la fiche détail et le planning exposent les segments, avec un identifiant de route distinct ;
 - le planning répartit le CA par distance au lieu de le répéter sur chaque trajet ;
-- la propagation complète des fenêtres sources et le découpage récursif restent à implémenter.
+- le grand régional choisit son stationnement après contrôle géographique local et vérification routière d'une reprise à partir de 5 h ;
+- la propagation complète des fenêtres sources reste à implémenter.
 
 L'évolution complète couvre les sujets suivants ; la section « Première étape implémentée » précise ceux déjà câblés :
 
@@ -371,19 +415,19 @@ L'évolution complète couvre les sujets suivants ; la section « Première éta
 8. Le comportement des événements et ajustements manuels lors d'un recalcul.
 9. La synchronisation sans doublons.
 10. La persistance et l'affichage des quatre bornes horaires de chaque trajet.
-11. L'utilisation systématique de l'arrivée minimale comme référence de calcul des itinéraires.
+11. L'utilisation de l'arrivée minimale pour le calcul initial, puis des horaires effectivement retenus pour chaque portion.
 12. La saisie des durées de chargement/déchargement sur le service et leur initialisation à 45 minutes chacune lors des imports Dashdoc.
 13. Le découpage récursif sans limite de jours, avec estimation de position à 20 h et exception pour les retours au stationnement.
-14. Le calcul du départ selon la livraison maximale, sans limite de 05 h et sans recompter un chargement déjà effectué.
+14. Le calcul du départ selon la livraison maximale dans les créneaux de conduite, reprise avant 05 h seulement si nécessaire, sans recompter un chargement déjà effectué.
 15. La saisie optionnelle des plages horaires dans l'interface.
 
 ## 12. Points à arbitrer avant développement
 
 | Sujet | Décision nécessaire |
 |---|---|
-| Estimation à 20 h | Quelles données temporelles PTV/HERE permettent de positionner précisément la coupure sur le tracé ? |
-| Mesure de proximité | Confirmer la faisabilité de la distance à vol d'oiseau au tracé, ou retenir explicitement le détour si plus simple avec les API. |
-| Propagation sur plusieurs jours | Comment décliner le calcul à rebours du départ sur chaque reprise, en intégrant les interruptions nocturnes et la dépendance temporelle des durées ? |
+| Estimation à 20 h | HERE est câblé ; quel adaptateur de chronologie retenir pour PTV ? |
+| Mesure de proximité | Implémentée à vol d'oiseau sur les segments du tracé ; ne pas substituer une mesure de détour sans évolution métier explicite. |
+| Propagation sur plusieurs jours | Le calcul à rebours et les nuits sont câblés ; quelle recherche d'alternatives ajouter lorsqu'un recalcul dépendant de l'heure rend le planning proposé incompatible ? |
 | Horaires du premier jour régional | Quelle heure utiliser pour déterminer le retour du premier jour vers le stationnement quand seule la borne `arrivalEnd` du lendemain est connue ? |
 | Manutention multi-points | Comment appliquer les deux durées du service si une mission comporte plusieurs chargements ou déchargements ? |
 | Chargé la veille | Quelle donnée permet de déterminer cet état de manière fiable ? |
@@ -401,7 +445,7 @@ Ces points ne doivent pas être transformés en hypothèses implicites dans le c
 - Un retour au stationnement retenu peut se terminer après 20 h, sans coupure intermédiaire imposée à 20 h.
 - Les fenêtres sources restent disponibles après calcul.
 - Chaque trajet porte et affiche un départ minimal/maximal et une arrivée minimale/maximale cohérents.
-- L'itinéraire et ses informations sont toujours calculés à partir de l'arrivée minimale retenue, et non d'une borne maximale.
+- Le calcul initial vise l'arrivée minimale source ; les portions sont recalculées selon leurs horaires effectifs et les échéances retenues.
 - Les temps de pause ne sont pas ajoutés au calcul des horaires ou à l'estimation de progression à 20 h.
 - Les durées de chargement/déchargement sont stockées sur le service et saisissables manuellement.
 - Un import Dashdoc initialise ces durées à 45 minutes chacune ; une synchronisation préserve les ajustements manuels.
@@ -414,7 +458,7 @@ Ces points ne doivent pas être transformés en hypothèses implicites dans le c
 - Une arrivée exactement à la borne haute respecte la fenêtre.
 - Un régional conserve la règle du retour au stationnement ; toute impossibilité est signalée.
 - Un régional déjà chargé utilise « Arriver à » la borne basse de livraison.
-- Le départ de tous les conducteurs suit la formule « livraison maximale − chargement restant − durée d'itinéraire », sans limite minimale de 05 h.
+- Le départ est le plus tardif compatible avec la livraison et les coupures de 20 h à 05 h ; une reprise avant 05 h n'est autorisée que si nécessaire, sans recompter le chargement.
 - Un chargement effectué la veille n'est pas déduit à nouveau pour calculer la reprise.
 - Les plages horaires proviennent de Dashdoc ou des champs manuels optionnels de l'interface ; les bornes absentes ne sont pas inventées.
 - Les coûts correspondent aux trajets et aux journées réels.
