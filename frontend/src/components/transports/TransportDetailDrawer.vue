@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 
-import { Trash2, Edit3, CalendarPlus, MapPin, Coins, Zap } from "lucide-vue-next";
+import { Trash2, Edit3, CalendarPlus, MapPin, Coins, Zap, ChevronLeft, ChevronRight } from "lucide-vue-next";
 import AssignEventModal from "@/components/transports/AssignEventModal.vue";
 import { getTransportById } from "@/api/planningApi";
 import { deleteEvent, getEventsByService } from "@/api/eventApi";
@@ -34,6 +34,8 @@ const showDeleteModal = ref(false)
 const showEventModal = ref(false)
 const eventToDelete = ref<EventResponse | null>(null)
 const deletingEvent = ref(false)
+const loadingEvents = ref(false)
+const selectedRouteId = ref<number | null>(null)
 const notification = useNotification()
 
 const askDeleteTransport = () => {
@@ -86,12 +88,21 @@ const confirmDeleteEvent = async () => {
     }
 }
 
+async function selectRoute(index: number): Promise<void> {
+    const route = transport.value?.routes[index];
+    if (!route || route.routeId === selectedRouteId.value || props.transportId === null) return;
+
+    selectedRouteId.value = route.routeId;
+    eventToDelete.value = null;
+    await loadEvents(props.transportId, route.routeId);
+}
+
 const handleEdit = () => {
-    if (!transport.value) {
+    if (!activeTransport.value) {
         return
     }
 
-    emit('edit', transport.value, events.value)
+    emit('edit', activeTransport.value, events.value)
 }
 
 const props = defineProps<{
@@ -112,6 +123,35 @@ const events = ref<EventResponse[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
 const eventsForRoute = (routeId: number) => events.value.filter((event) => event.routeId === routeId);
+const activeRouteIndex = computed(() => {
+    const routes = transport.value?.routes ?? [];
+    const index = routes.findIndex((route) => route.routeId === selectedRouteId.value);
+    return index >= 0 ? index : 0;
+});
+const activeRoute = computed(() => transport.value?.routes[activeRouteIndex.value] ?? null);
+const activeTransport = computed<TransportDetail | null>(() => {
+    if (!transport.value || !activeRoute.value) return transport.value;
+
+    return {
+        ...transport.value,
+        ...activeRoute.value,
+        id: transport.value.id,
+        name: transport.value.name,
+        status: transport.value.status,
+        driverId: transport.value.driverId,
+        driverName: transport.value.driverName,
+        driverEmail: transport.value.driverEmail,
+        tractorId: transport.value.tractorId,
+        tractorRegistration: transport.value.tractorRegistration,
+        semiTrailerId: transport.value.semiTrailerId,
+        semiTrailerRegistration: transport.value.semiTrailerRegistration,
+        customerId: transport.value.customerId,
+        customerName: transport.value.customerName,
+        customerAddress: transport.value.customerAddress,
+        serviceTiming: transport.value.serviceTiming,
+        revenue: activeRoute.value.revenue ?? 0,
+    };
+});
 
 const customerAddress = computed<string | null>(() => transport.value?.customerAddress ?? null);
 
@@ -149,21 +189,21 @@ const statusClasses = computed<string>(() => {
 });
 
 const routeModeLabel = computed<string | null>(() => {
-    switch (transport.value?.routeType) {
+    switch (activeRoute.value?.routeType) {
         case "FASTEST": return "Itinéraire le plus rapide";
         case "CHEAPEST": return "Itinéraire le plus économique";
         default: return null;
     }
 });
 
-const routeModeIcon = computed(() => transport.value?.routeType === "CHEAPEST" ? Coins : Zap);
+const routeModeIcon = computed(() => activeRoute.value?.routeType === "CHEAPEST" ? Coins : Zap);
 
 const tripLabel = computed<string>(() => {
     if (!transport.value) {
         return "";
     }
 
-    return transport.value.emptyTrip ? "Trajet à vide" : "Trajet en charge";
+    return activeTransport.value?.emptyTrip ? "Trajet à vide" : "Trajet en charge";
 });
 
 const tripClasses = computed<string>(() => {
@@ -171,23 +211,27 @@ const tripClasses = computed<string>(() => {
         return "border-slate-200 bg-slate-100 text-slate-700";
     }
 
-    return transport.value.emptyTrip
+    return activeTransport.value?.emptyTrip
         ? "border-red-200 bg-red-100 text-red-700"
         : "border-emerald-200 bg-emerald-100 text-emerald-700";
 });
 
 async function loadEvents(id: number, routeId: number | null): Promise<void> {
+    loadingEvents.value = true;
     try {
         events.value = await getEventsByService(id, routeId ?? undefined);
     } catch (exception) {
         console.error(exception);
         events.value = [];
+    } finally {
+        loadingEvents.value = false;
     }
 }
 
 async function loadTransport(): Promise<void> {
     if (props.transportId === null) {
         transport.value = null;
+        selectedRouteId.value = null;
         events.value = [];
         return;
     }
@@ -196,8 +240,12 @@ async function loadTransport(): Promise<void> {
     error.value = null;
 
     try {
-        transport.value = await getTransportById(props.transportId, props.routeId ?? undefined);
-        await loadEvents(props.transportId, props.routeId);
+        const requestedRouteId = selectedRouteId.value ?? props.routeId;
+        transport.value = await getTransportById(props.transportId, requestedRouteId ?? undefined);
+        selectedRouteId.value = transport.value.routes.some((route) => route.routeId === requestedRouteId)
+            ? requestedRouteId
+            : transport.value.routeId;
+        await loadEvents(props.transportId, selectedRouteId.value);
     } catch (exception) {
         console.error(exception);
 
@@ -210,12 +258,14 @@ async function loadTransport(): Promise<void> {
 
 watch(
     () => [props.open, props.transportId, props.routeId] as const,
-    ([open]) => {
+    ([open, , routeId]) => {
         eventToDelete.value = null;
         if (open) {
+            selectedRouteId.value = routeId;
             void loadTransport();
         } else {
             transport.value = null;
+            selectedRouteId.value = null;
             error.value = null;
         }
     },
@@ -229,22 +279,42 @@ watch(
     <AppDetailDrawer :open="open" :title="transport?.name ?? 'Détail du transport'" @close="emit('close')">
 
         <template #header>
-            <div class="min-w-0">
-                <p class="text-xs font-medium uppercase tracking-wide text-blue-600">
-                    Détails de l'itinéraire
-                </p>
+            <div class="flex min-w-0 items-center justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="text-xs font-medium uppercase tracking-wide text-blue-600">
+                        Détails de l'itinéraire
+                    </p>
 
-                <h2 class="mt-1 truncate text-lg font-semibold text-slate-900">
-                    {{ transport?.name ?? "Chargement..." }}
-                </h2>
+                    <h2 class="mt-1 truncate text-lg font-semibold text-slate-900">
+                        {{ transport?.name ?? "Chargement..." }}
+                    </h2>
 
-                <p v-if="transport" class="mt-0.5 truncate text-sm text-slate-500">
-                    {{ transport.originName }} → {{ transport.destinationName }}
-                </p>
-                <p v-if="transport && transport.routeCount > 1"
-                    class="mt-1 inline-flex rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
-                    Trajet {{ transport.routeNumber }} / {{ transport.routeCount }}
-                </p>
+                    <p v-if="activeRoute" class="mt-0.5 truncate text-sm text-slate-500">
+                        {{ activeRoute.originName }} → {{ activeRoute.destinationName }}
+                    </p>
+                </div>
+
+                <div v-if="transport && transport.routes.length > 1"
+                    class="flex shrink-0 items-center gap-1">
+                    <button type="button"
+                        class="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-2 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                        aria-label="Itinéraire précédent" :disabled="activeRouteIndex === 0 || loadingEvents"
+                        @click="selectRoute(activeRouteIndex - 1)">
+                        <ChevronLeft class="h-4 w-4" />
+                        <span class="hidden sm:inline">Précédent</span>
+                    </button>
+                    <span class="min-w-10 text-center text-xs font-semibold text-slate-600">
+                        {{ activeRouteIndex + 1 }} / {{ transport.routes.length }}
+                    </span>
+                    <button type="button"
+                        class="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-2 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                        aria-label="Itinéraire suivant"
+                        :disabled="activeRouteIndex >= transport.routes.length - 1 || loadingEvents"
+                        @click="selectRoute(activeRouteIndex + 1)">
+                        <span class="hidden sm:inline">Suivant</span>
+                        <ChevronRight class="h-4 w-4" />
+                    </button>
+                </div>
             </div>
         </template>
 
@@ -273,7 +343,7 @@ watch(
             </button>
         </div>
 
-        <div v-else-if="transport" class="space-y-4 p-4">
+        <div v-else-if="activeTransport" class="space-y-4 p-4">
             <!-- Statut et horaires -->
             <section class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div class="flex items-center justify-between gap-3">
@@ -294,14 +364,14 @@ watch(
                 </div>
 
                 <div class="mt-4 grid grid-cols-2 gap-4">
-                    <TransportDetailItem v-if="transport.departureStart || transport.departureEnd" label="Départ"
-                        :value="formatTimeWindow(transport.departureStart, transport.departureEnd)" />
-                    <TransportDetailItem v-if="transport.arrivalStart || transport.arrivalEnd" label="Arrivée"
-                        :value="formatTimeWindow(transport.arrivalStart, transport.arrivalEnd)" />
-                    <TransportDetailItem v-if="transport.serviceTiming?.loadingDurationMinutes != null"
-                        label="Chargement" :value="`${transport.serviceTiming.loadingDurationMinutes} min`" />
-                    <TransportDetailItem v-if="transport.serviceTiming?.unloadingDurationMinutes != null"
-                        label="Déchargement" :value="`${transport.serviceTiming.unloadingDurationMinutes} min`" />
+                    <TransportDetailItem v-if="activeTransport.departureStart || activeTransport.departureEnd" label="Départ"
+                        :value="formatTimeWindow(activeTransport.departureStart, activeTransport.departureEnd)" />
+                    <TransportDetailItem v-if="activeTransport.arrivalStart || activeTransport.arrivalEnd" label="Arrivée"
+                        :value="formatTimeWindow(activeTransport.arrivalStart, activeTransport.arrivalEnd)" />
+                    <TransportDetailItem v-if="activeTransport.serviceTiming?.loadingDurationMinutes != null"
+                        label="Chargement" :value="`${activeTransport.serviceTiming.loadingDurationMinutes} min`" />
+                    <TransportDetailItem v-if="activeTransport.serviceTiming?.unloadingDurationMinutes != null"
+                        label="Déchargement" :value="`${activeTransport.serviceTiming.unloadingDurationMinutes} min`" />
                 </div>
             </section>
 
@@ -312,15 +382,15 @@ watch(
                 </h3>
 
                 <div class="mt-4 grid gap-4 sm:grid-cols-2">
-                    <TransportDetailBlock title="Chauffeur" :primary="transport.driverName"
-                        :secondary="transport.driverEmail" />
+                    <TransportDetailBlock title="Chauffeur" :primary="activeTransport.driverName"
+                        :secondary="activeTransport.driverEmail" />
 
-                    <TransportDetailBlock title="Donneur d’ordre" :primary="transport.customerName"
+                    <TransportDetailBlock title="Donneur d’ordre" :primary="activeTransport.customerName"
                         :secondary="customerAddress" />
 
-                    <TransportDetailBlock title="Tracteur" :primary="transport.tractorRegistration" />
+                    <TransportDetailBlock title="Tracteur" :primary="activeTransport.tractorRegistration" />
 
-                    <TransportDetailBlock title="Semi-remorque" :primary="transport.semiTrailerRegistration" />
+                    <TransportDetailBlock title="Semi-remorque" :primary="activeTransport.semiTrailerRegistration" />
 
 
                 </div>
@@ -332,49 +402,42 @@ watch(
                     Itinéraire
                 </h3>
 
-                <div class="mt-4 space-y-4">
-                    <div v-for="(route, index) in transport.routes" :key="route.routeId"
-                        class="rounded-lg border border-slate-200 p-3">
-                        <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                            Trajet {{ transport.routeNumber }}
-                        </p>
-                        <div class="grid gap-3 sm:grid-cols-2">
-                            <TransportDetailItem v-if="route.departureStart || route.departureEnd" label="Départ"
-                                :value="formatTimeWindow(route.departureStart, route.departureEnd)" />
-                            <TransportDetailItem v-if="route.arrivalStart || route.arrivalEnd" label="Arrivée"
-                                :value="formatTimeWindow(route.arrivalStart, route.arrivalEnd)" />
+                <div v-if="activeRoute" class="mt-4">
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <TransportDetailItem v-if="activeRoute.departureStart || activeRoute.departureEnd" label="Départ"
+                            :value="formatTimeWindow(activeRoute.departureStart, activeRoute.departureEnd)" />
+                        <TransportDetailItem v-if="activeRoute.arrivalStart || activeRoute.arrivalEnd" label="Arrivée"
+                            :value="formatTimeWindow(activeRoute.arrivalStart, activeRoute.arrivalEnd)" />
+                    </div>
+                    <div class="mt-3 flex gap-3">
+                        <div class="mt-1 h-3 w-3 shrink-0 rounded-full bg-emerald-500" />
+                        <div class="min-w-0">
+                            <p class="text-xs font-medium text-slate-400">Départ</p>
+                            <p class="mt-0.5 text-sm font-semibold text-slate-800">{{ activeRoute.originName }}</p>
+                            <p class="text-xs text-slate-500">{{ activeRoute.originAddress || "Adresse non renseignée" }}
+                            </p>
                         </div>
-                        <div class="mt-3 flex gap-3">
-                            <div class="mt-1 h-3 w-3 shrink-0 rounded-full bg-emerald-500" />
-                            <div class="min-w-0">
-                                <p class="text-xs font-medium text-slate-400">Départ</p>
-                                <p class="mt-0.5 text-sm font-semibold text-slate-800">{{ route.originName }}</p>
-                                <p class="text-xs text-slate-500">{{ route.originAddress || "Adresse non renseignée" }}
-                                </p>
-                            </div>
+                    </div>
+                    <div class="ml-[5px] h-6 border-l border-dashed border-slate-300" />
+                    <div class="flex gap-3">
+                        <div class="mt-1 h-3 w-3 shrink-0 rounded-full bg-blue-500" />
+                        <div class="min-w-0">
+                            <p class="text-xs font-medium text-slate-400">Destination</p>
+                            <p class="mt-0.5 text-sm font-semibold text-slate-800">{{ activeRoute.destinationName }}</p>
+                            <p class="text-xs text-slate-500">{{ activeRoute.destinationAddress || "Adresse non renseignée" }}</p>
                         </div>
-                        <div class="ml-[5px] h-6 border-l border-dashed border-slate-300" />
-                        <div class="flex gap-3">
-                            <div class="mt-1 h-3 w-3 shrink-0 rounded-full bg-blue-500" />
-                            <div class="min-w-0">
-                                <p class="text-xs font-medium text-slate-400">Destination</p>
-                                <p class="mt-0.5 text-sm font-semibold text-slate-800">{{ route.destinationName }}</p>
-                                <p class="text-xs text-slate-500">{{ route.destinationAddress || "Adresse non" +
-                                    " renseignée" }}</p>
-                            </div>
-                        </div>
-                        <div class="mt-4 grid grid-cols-2 gap-3">
-                            <TransportMetricCard label="Distance" :value="formatDistance(route.distanceMeters)" />
-                            <TransportMetricCard label="Durée estimée"
-                                :value="formatDurationSeconds(route.durationSeconds)" />
-                        </div>
+                    </div>
+                    <div class="mt-4 grid grid-cols-2 gap-3">
+                        <TransportMetricCard label="Distance" :value="formatDistance(activeRoute.distanceMeters)" />
+                        <TransportMetricCard label="Durée estimée"
+                            :value="formatDurationSeconds(activeRoute.durationSeconds)" />
                     </div>
                 </div>
 
             </section>
 
             <!-- Carte -->
-            <section v-for="(route, index) in transport.routes" :key="route.routeId"
+            <section v-if="activeRoute"
                 class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-200 px-4 py-3">
                     <h3 class="text-sm font-semibold text-slate-900">
@@ -383,7 +446,7 @@ watch(
                 </div>
 
                 <div class="h-64">
-                    <TransportRouteMap :polyline="route.polyline" :events="eventsForRoute(route.routeId)" />
+                    <TransportRouteMap :polyline="activeRoute.polyline" :events="eventsForRoute(activeRoute.routeId)" />
                 </div>
             </section>
 
@@ -394,13 +457,16 @@ watch(
                         Événements
                     </h3>
 
+                    <span v-if="loadingEvents" class="text-xs text-slate-500">
+                        Chargement...
+                    </span>
                     <span v-if="events.length > 0"
                         class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
                         {{ events.length }}
                     </span>
                 </div>
 
-                <p v-if="events.length === 0" class="mt-3 text-sm text-slate-500">
+                <p v-if="events.length === 0 && !loadingEvents" class="mt-3 text-sm text-slate-500">
                     Aucun événement assigné à ce transport.
                 </p>
 
@@ -457,14 +523,14 @@ watch(
                                 </p>
 
                                 <p class="mt-0.5 text-xs text-slate-500">
-                                    {{ transport.costs.vehicle.costs.length }}
-                                    {{ transport.costs.vehicle.costs.length > 1 ? "Coûts" : "Coût" }}
+                                    {{ activeTransport.costs.vehicle.costs.length }}
+                                    {{ activeTransport.costs.vehicle.costs.length > 1 ? "Coûts" : "Coût" }}
                                 </p>
                             </div>
 
                             <div class="flex items-center gap-3">
                                 <span class="text-sm font-semibold text-slate-900">
-                                    {{ formatCurrency(transport.costs.vehicle.totalCost) }}
+                                    {{ formatCurrency(activeTransport.costs.vehicle.totalCost) }}
                                 </span>
 
                                 <svg class="h-4 w-4 text-slate-400 transition-transform group-open:rotate-180"
@@ -476,7 +542,7 @@ watch(
 
                         <div class="border-t border-slate-100 px-4">
                             <div class="divide-y divide-slate-100">
-                                <TransportCostRow v-for="cost in transport.costs.vehicle.costs"
+                                <TransportCostRow v-for="cost in activeTransport.costs.vehicle.costs"
                                     :key="`vehicle-${cost.label}`" :label="cost.label" :amount="cost.amount" />
                             </div>
                         </div>
@@ -491,14 +557,14 @@ watch(
                                 </p>
 
                                 <p class="mt-0.5 text-xs text-slate-500">
-                                    {{ transport.costs.driver.costs.length }}
-                                    {{ transport.costs.driver.costs.length > 1 ? "Coûts" : "Coût" }}
+                                    {{ activeTransport.costs.driver.costs.length }}
+                                    {{ activeTransport.costs.driver.costs.length > 1 ? "Coûts" : "Coût" }}
                                 </p>
                             </div>
 
                             <div class="flex items-center gap-3">
                                 <span class="text-sm font-semibold text-slate-900">
-                                    {{ formatCurrency(transport.costs.driver.totalCost) }}
+                                    {{ formatCurrency(activeTransport.costs.driver.totalCost) }}
                                 </span>
 
                                 <svg class="h-4 w-4 text-slate-400 transition-transform group-open:rotate-180"
@@ -510,7 +576,7 @@ watch(
 
                         <div class="border-t border-slate-100 px-4">
                             <div class="divide-y divide-slate-100">
-                                <TransportCostRow v-for="cost in transport.costs.driver.costs"
+                                <TransportCostRow v-for="cost in activeTransport.costs.driver.costs"
                                     :key="`driver-${cost.label}`" :label="cost.label" :amount="cost.amount" />
                             </div>
                         </div>
@@ -525,14 +591,14 @@ watch(
                                 </p>
 
                                 <p class="mt-0.5 text-xs text-slate-500">
-                                    {{ transport.costs.structure.costs.length }}
-                                    {{ transport.costs.structure.costs.length > 1 ? "Coûts" : "Coût" }}
+                                    {{ activeTransport.costs.structure.costs.length }}
+                                    {{ activeTransport.costs.structure.costs.length > 1 ? "Coûts" : "Coût" }}
                                 </p>
                             </div>
 
                             <div class="flex items-center gap-3">
                                 <span class="text-sm font-semibold text-slate-900">
-                                    {{ formatCurrency(transport.costs.structure.totalCost) }}
+                                    {{ formatCurrency(activeTransport.costs.structure.totalCost) }}
                                 </span>
 
                                 <svg class="h-4 w-4 text-slate-400 transition-transform group-open:rotate-180"
@@ -544,7 +610,7 @@ watch(
 
                         <div class="border-t border-slate-100 px-4">
                             <div class="divide-y divide-slate-100">
-                                <TransportCostRow v-for="cost in transport.costs.structure.costs"
+                                <TransportCostRow v-for="cost in activeTransport.costs.structure.costs"
                                     :key="`structure-${cost.label}`" :label="cost.label" :amount="cost.amount" />
                             </div>
                         </div>
@@ -557,7 +623,7 @@ watch(
                         </span>
 
                         <span class="text-xl font-semibold">
-                            {{ formatCurrency(transport.costs.totalCost) }}
+                            {{ formatCurrency(activeTransport.costs.totalCost) }}
                         </span>
                     </div>
                 </div>
@@ -578,26 +644,26 @@ watch(
                         </span>
 
                         <span class="text-base font-semibold text-slate-900">
-                            {{ formatCurrency(transport.revenue) }}
+                            {{ formatCurrency(activeTransport.revenue) }}
                         </span>
                     </div>
 
                     <!-- Résultat -->
-                    <div class="mt-2 flex items-center justify-between rounded-lg border px-4 py-3" :class="transport.revenue - transport.costs.totalCost < 0
+                    <div class="mt-2 flex items-center justify-between rounded-lg border px-4 py-3" :class="activeTransport.revenue - activeTransport.costs.totalCost < 0
                         ? 'border-red-200 bg-red-50'
                         : 'border-emerald-200 bg-emerald-50'">
                         <div>
-                            <p class="text-sm font-semibold" :class="transport.revenue - transport.costs.totalCost < 0
+                            <p class="text-sm font-semibold" :class="activeTransport.revenue - activeTransport.costs.totalCost < 0
                                 ? 'text-red-700'
                                 : 'text-emerald-700'">
                                 Résultat
                             </p>
                         </div>
 
-                        <span class="text-xl font-bold" :class="transport.revenue - transport.costs.totalCost < 0
+                        <span class="text-xl font-bold" :class="activeTransport.revenue - activeTransport.costs.totalCost < 0
                             ? 'text-red-600'
                             : 'text-emerald-600'">
-                            {{ formatCurrency(transport.revenue - transport.costs.totalCost) }}
+                            {{ formatCurrency(activeTransport.revenue - activeTransport.costs.totalCost) }}
                         </span>
                     </div>
                 </div>
@@ -605,7 +671,7 @@ watch(
         </div>
 
         <!-- Actions -->
-        <template v-if="transport" #footer>
+        <template v-if="activeTransport" #footer>
             <div class="flex items-center justify-between gap-3">
                 <button type="button"
                     class="inline-flex items-center gap-2 rounded-xl border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
@@ -632,7 +698,7 @@ watch(
         </template>
     </AppDetailDrawer>
 
-    <AssignEventModal :show="showEventModal" :transport="transport" @close="showEventModal = false"
+    <AssignEventModal :show="showEventModal" :transport="activeTransport" @close="showEventModal = false"
         @created="handleEventsChanged" />
 
     <ConfirmDeleteModal :show="eventToDelete !== null" :loading="deletingEvent" title="Supprimer l’événement"

@@ -21,6 +21,8 @@ export interface TransportCosts {
 
 export interface TransportRouteDetail {
     routeId: number;
+    routeNumber: number;
+    routeCount: number;
     emptyTrip: boolean;
     originName: string;
     originAddress: string | null;
@@ -40,6 +42,7 @@ export interface TransportRouteDetail {
     arrivalEnd: string | null;
     waypoints: Position[];
     costs: TransportCosts;
+    revenue: number | null;
 }
 
 export interface TransportDetail extends TimeWindows {

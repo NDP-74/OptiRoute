@@ -27,6 +27,7 @@ import { formatCurrency, formatDateTime, formatDistance, formatDurationSeconds }
 
 import {
     Building2,
+    CalendarClock,
     Clock,
     Fuel,
     ListChecks,
@@ -80,6 +81,7 @@ const windowFields = [
     { key: 'arrivalEnd', label: 'Arrivée maximale' },
 ] as const
 const serviceWindows = reactive({ departureStart: '', departureEnd: '', arrivalStart: '', arrivalEnd: '' })
+const isDashdocSimulationEnabled = ref(false)
 
 function localDate(value?: string | null): string {
     if (!value) return ''
@@ -220,6 +222,9 @@ async function initializeFromProps() {
     for (const { key } of windowFields) {
         serviceWindows[key] = localDate(props.editingTransport?.serviceTiming?.[key])
     }
+    isDashdocSimulationEnabled.value = props.editingTransport
+        ? windowFields.some(({ key }) => Boolean(props.editingTransport?.serviceTiming?.[key]))
+        : false
 
     if (props.editingTransport) {
         const transport = props.editingTransport
@@ -268,7 +273,9 @@ async function saveRoute() {
 
     try {
         isSaving.value = true
-        const sourceWindows = serializeWindows(serviceWindows)
+        const sourceWindows = isDashdocSimulationEnabled.value
+            ? serializeWindows(serviceWindows)
+            : { departureStart: null, departureEnd: null, arrivalStart: null, arrivalEnd: null }
         if ((sourceWindows.departureStart && sourceWindows.departureEnd && sourceWindows.departureStart > sourceWindows.departureEnd)
             || (sourceWindows.arrivalStart && sourceWindows.arrivalEnd && sourceWindows.arrivalStart > sourceWindows.arrivalEnd)) {
             throw new Error('Une borne minimale ne peut pas dépasser la borne maximale.')
@@ -392,8 +399,8 @@ onMounted(async () => {
             <!-- BODY -->
             <div class="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden">
 
-                <!-- TOP ROW : ASSIGNMENT & SEARCH -->
-                <div class="grid min-h-0 flex-1 gap-5 lg:grid-cols-3">
+                <!-- TOP ROW : ASSIGNMENT, SEARCH, SIMULATION & MAP -->
+                <div class="grid min-h-0 flex-1 gap-5 lg:grid-cols-4">
 
                     <!-- COLUMN 1 : ASSIGNMENT -->
                     <section class="min-h-0 pr-1">
@@ -489,7 +496,8 @@ onMounted(async () => {
                                     class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20" />
                             </div>
                             <fieldset class="space-y-2">
-                                <legend class="text-sm font-semibold text-slate-700">Durées du service (minutes)</legend>
+                                <legend class="text-sm font-semibold text-slate-700">Durées des services (minutes)
+                                </legend>
                                 <label class="block text-xs text-slate-500">
                                     Chargement
                                     <input v-model.number="loadingDurationMinutes" type="number" min="0" step="1"
@@ -498,14 +506,6 @@ onMounted(async () => {
                                 <label class="block text-xs text-slate-500">
                                     Déchargement
                                     <input v-model.number="unloadingDurationMinutes" type="number" min="0" step="1"
-                                        class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" />
-                                </label>
-                            </fieldset>
-                            <fieldset class="space-y-2">
-                                <legend class="text-sm font-semibold text-slate-700">Fenêtres sources du service (optionnelles)</legend>
-                                <label v-for="field in windowFields" :key="field.key" class="block text-xs text-slate-500">
-                                    {{ field.label }}
-                                    <input v-model="serviceWindows[field.key]" type="datetime-local" step="1"
                                         class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" />
                                 </label>
                             </fieldset>
@@ -546,6 +546,70 @@ onMounted(async () => {
                             </button>
                         </div>
                     </section>
+
+                    <!-- COLUMN 3 : DASHDOC SIMULATION -->
+                    <section class="min-h-0">
+                        <div class="h-full space-y-4 overflow-auto rounded-2xl border border-slate-200 bg-white p-4">
+                            <div class="flex items-start gap-3">
+                                <span class="rounded-xl bg-indigo-50 p-2 text-indigo-600">
+                                    <CalendarClock :size="18" />
+                                </span>
+                                <div>
+                                    <h3 class="text-sm font-semibold text-slate-800">Simulation Dashdoc</h3>
+                                    <p class="mt-1 text-xs leading-5 text-slate-500">
+                                        Ajoutez les créneaux de chargement et livraison pour simuler la planification
+                                        d'un service Dashdoc.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <label
+                                class="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-indigo-100 bg-indigo-50/60 px-3 py-3">
+                                <span class="min-w-0">
+                                    <span class="block text-sm font-medium text-slate-800">
+                                        Activer la simulation
+                                    </span>
+                                    <span class="mt-0.5 block text-xs text-slate-500">
+                                        {{ isDashdocSimulationEnabled ? 'Les créneaux seront pris en compte.' :
+                                            'Création manuelle classique.' }}
+                                    </span>
+                                </span>
+                                <span class="relative inline-flex h-6 w-11 shrink-0 items-center">
+                                    <input v-model="isDashdocSimulationEnabled" type="checkbox" class="peer sr-only"
+                                        aria-label="Activer la simulation Dashdoc" />
+                                    <span
+                                        class="absolute inset-0 rounded-full bg-slate-300 transition peer-checked:bg-indigo-600 peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-500 peer-focus-visible:ring-offset-2"></span>
+                                    <span
+                                        class="absolute left-1 h-4 w-4 rounded-full bg-white shadow transition peer-checked:translate-x-5"></span>
+                                </span>
+                            </label>
+
+                            <fieldset v-if="isDashdocSimulationEnabled" class="space-y-3">
+                                <legend class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                    Fenêtres horaires du service
+                                </legend>
+                                <template v-for="field in windowFields" :key="field.key">
+                                    <label v-if="field.key !== 'departureStart' && field.key !== 'departureEnd'"
+                                        class="block text-xs font-medium text-slate-600">
+                                        {{ field.label }}
+                                        <input v-model="serviceWindows[field.key]" type="datetime-local" step="1"
+                                            class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                                    </label>
+                                </template>
+                                <p class="text-xs leading-5 text-slate-500">
+                                    Les horaires sont facultatifs. Sans créneau d'arrivée, le découpage selon les
+                                    contraintes du service ne sera pas simulé.
+                                </p>
+                            </fieldset>
+                            <div v-else class="rounded-xl border border-dashed border-slate-200 px-3 py-4 text-center">
+                                <p class="text-sm font-medium text-slate-600">Simulation désactivée</p>
+                                <p class="mt-1 text-xs leading-5 text-slate-500">
+                                    Activez-la pour saisir les fenêtres horaires et tester le comportement Dashdoc.
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+
                     <!-- MAP & SUMMARY -->
                     <section class="flex min-h-0 min-w-0 flex-col gap-4">
                         <div

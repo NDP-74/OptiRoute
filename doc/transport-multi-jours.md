@@ -10,7 +10,7 @@
 - `Route.waypoints` est une colonne PostgreSQL `jsonb` contenant la liste ordonnée des positions utilisateur (`lat`, `lng`, `name`, `address`), sans les points liés aux événements.
 - Les requêtes de création/modification acceptent `waypoints` et un objet `serviceTiming` regroupant les durées et fenêtres sources du service. Elles n'acceptent pas de bornes de route ; celles-ci sont calculées côté serveur et retournées dans les réponses. Les champs `externalId` et `externalSource` permettent de distinguer une création manuelle d'une source Dashdoc.
 - Les durées et fenêtres sont optionnelles ; les durées négatives et les fenêtres inversées sont refusées. Aucune valeur de 45 minutes n'est imposée à une saisie manuelle : cette initialisation reste à câbler avec le futur import Dashdoc.
-- Le formulaire permet la saisie optionnelle des fenêtres sources du service, mais jamais des bornes calculées de route. Les points utilisateur sont restaurés à la réouverture et conservés lors d'un recalcul lié aux événements ; les points d'événements sont ajoutés après les points utilisateur dans l'ordre des événements.
+- Le formulaire regroupe les fenêtres sources facultatives dans une colonne « Simulation Dashdoc », activable ou désactivable. Quand elle est désactivée, les fenêtres ne sont pas envoyées et sont effacées sur une modification. Les bornes calculées de route ne sont jamais saisies. Les points utilisateur sont restaurés à la réouverture et conservés lors d'un recalcul lié aux événements ; les points d'événements sont ajoutés après les points utilisateur dans l'ordre des événements.
 - En création manuelle ou Dashdoc, les bornes minimales de Route représentent la conduite effectivement planifiée, pas la simple copie des créneaux logistiques.
 - Pour un conducteur `REGIONAL`, une mission nécessitant une nuit passe par son stationnement : origine initiale → stationnement (avec les waypoints), puis stationnement → destination (sans waypoints). Le retour peut dépasser 20 h. Une destination inaccessible avant 20 h depuis le stationnement est signalée comme incompatible.
 - Les grands régionaux (`SHORT_DISTANCE`) utilisent leur stationnement s'il est à moins de 50 km du tracé et si la livraison reste réalisable le lendemain en repartant à partir de 5 h. Sinon, ils appliquent la coupure sur route à 20 h.
@@ -76,7 +76,7 @@ Le service doit conserver les contraintes sources, indépendamment des horaires 
 
 Ces valeurs doivent être des **dates et heures complètes**, pas uniquement des heures.
 
-Les plages horaires sont importées depuis Dashdoc. Pour une création depuis l'interface, elles sont renseignées dans des champs manuels **optionnels**. Une borne absente ne doit pas être inventée ; si elle est indispensable à un calcul, l'impossibilité de réaliser ce calcul doit être signalée.
+Les plages horaires sont importées depuis Dashdoc. Pour une création depuis l'interface, elles sont renseignées dans la colonne optionnelle « Simulation Dashdoc ». Une borne absente ne doit pas être inventée ; si elle est indispensable à un calcul, l'impossibilité de réaliser ce calcul doit être signalée.
 
 Les horaires calculés des trajets ne doivent pas remplacer ces contraintes : elles restent nécessaires pour recalculer la mission ou vérifier un arrêt intermédiaire.
 

@@ -1,6 +1,7 @@
 package com.optiroute.backend.service.transport;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import java.math.BigDecimal;
 import com.optiroute.backend.dto.request.transport.ServiceTiming;
@@ -73,10 +74,13 @@ public class TransportDetailService {
         if (service.getCustomerId() != null) {
             customer = customerRepository.findById(service.getCustomerId()).orElse(null);
         }
-        List<TransportRouteDetailResponse> routeDetails = routes.stream().map(this::toRouteDetail).toList();
+        List<TransportRouteDetailResponse> routeDetails = allServiceRoutes.stream()
+            .map(serviceRoute -> toRouteDetail(serviceRoute, service, allServiceRoutes)).toList();
+        TransportRouteDetailResponse selectedRouteDetail = routeDetails.stream()
+            .filter(routeDetail -> Objects.equals(routeDetail.routeId(), route.getId())).findFirst().orElseThrow();
         TransportCostDetailsResponse costs = routeId == null
             ? aggregateCosts(routeDetails)
-            : routeDetails.getFirst().costs();
+            : selectedRouteDetail.costs();
         BigDecimal revenue = ServiceRouteRevenueAllocator.allocate(service.getRevenue(), allServiceRoutes, route);
 
         return new TransportDetailResponse(
@@ -108,13 +112,22 @@ public class TransportDetailService {
             routeDetails);
     }
 
-    private TransportRouteDetailResponse toRouteDetail(Route route) {
-        return new TransportRouteDetailResponse(route.getId(), route.isEmptyTrip(), route.getOriginName(),
+    private TransportRouteDetailResponse toRouteDetail(Route route,
+        com.optiroute.backend.entity.transport.Service service, List<Route> serviceRoutes) {
+        int routeNumber = 1;
+        for (int index = 0; index < serviceRoutes.size(); index++) {
+            if (Objects.equals(serviceRoutes.get(index).getId(), route.getId())) {
+                routeNumber = index + 1;
+                break;
+            }
+        }
+        return new TransportRouteDetailResponse(route.getId(), routeNumber, serviceRoutes.size(), route.isEmptyTrip(), route.getOriginName(),
             route.getOriginAddress(), route.getOriginLat(), route.getOriginLng(), route.getDestinationName(),
             route.getDestinationAddress(), route.getDestinationLat(), route.getDestinationLng(),
             route.getDistanceMeters(), route.getDurationSeconds(), route.getPolyline(), route.getRouteType(),
             route.getDepartureStart(), route.getDepartureEnd(), route.getArrivalStart(), route.getArrivalEnd(),
-            route.getWaypoints() == null ? List.of() : route.getWaypoints(), transportCostService.calculate(route));
+            route.getWaypoints() == null ? List.of() : route.getWaypoints(), transportCostService.calculate(route),
+            ServiceRouteRevenueAllocator.allocate(service.getRevenue(), serviceRoutes, route));
     }
 
     private TransportCostDetailsResponse aggregateCosts(List<TransportRouteDetailResponse> routes) {

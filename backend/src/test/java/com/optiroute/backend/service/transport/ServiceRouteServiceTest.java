@@ -160,6 +160,7 @@ class ServiceRouteServiceTest {
         Service service = new Service();
         service.setLoadingDurationMinutes(45);
         Route route = new Route();
+        route.setId(1L);
         route.setWaypoints(List.of(new Position(48, 2)));
         route.setArrivalStart(java.time.OffsetDateTime.parse("2026-10-29T10:00:00Z"));
         when(services.findById(1L)).thenReturn(Optional.of(service));
@@ -182,7 +183,7 @@ class ServiceRouteServiceTest {
     }
 
     @Test
-    void shouldReturnOnlySelectedRouteWithItsOwnCostsAndRevenue() {
+    void shouldReturnAllRoutesAndKeepSelectedRouteCostsAndRevenueInSummary() {
         Service service = new Service();
         service.setRevenue(new java.math.BigDecimal("1000.00"));
         Route first = new Route();
@@ -209,9 +210,11 @@ class ServiceRouteServiceTest {
         assertEquals(2, response.routeCount());
         assertEquals(625.0, response.revenue().doubleValue());
         assertEquals(200.0, response.costs().totalCost());
-        assertEquals(1, response.routes().size());
-        assertEquals(12L, response.routes().getFirst().routeId());
-        assertEquals(200.0, response.routes().getFirst().costs().vehicle().totalCost());
+        assertEquals(2, response.routes().size());
+        assertEquals(11L, response.routes().getFirst().routeId());
+        assertEquals(100.0, response.routes().getFirst().costs().vehicle().totalCost());
+        assertEquals(12L, response.routes().get(1).routeId());
+        assertEquals(200.0, response.routes().get(1).costs().vehicle().totalCost());
     }
 
     @Test

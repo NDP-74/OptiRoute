@@ -1,6 +1,7 @@
 package com.optiroute.backend.dto.response.transport;
 
 import java.time.OffsetDateTime;
+import java.math.BigDecimal;
 import java.util.List;
 
 import com.optiroute.backend.dto.response.cost.TransportCostDetailsResponse;
@@ -9,6 +10,8 @@ import com.optiroute.backend.type.GpsModeType;
 
 public record TransportRouteDetailResponse(
     Long routeId,
+    int routeNumber,
+    int routeCount,
     boolean emptyTrip,
     String originName,
     String originAddress,
@@ -27,5 +30,6 @@ public record TransportRouteDetailResponse(
     OffsetDateTime arrivalStart,
     OffsetDateTime arrivalEnd,
     List<Position> waypoints,
-    TransportCostDetailsResponse costs) {
+    TransportCostDetailsResponse costs,
+    BigDecimal revenue) {
 }
