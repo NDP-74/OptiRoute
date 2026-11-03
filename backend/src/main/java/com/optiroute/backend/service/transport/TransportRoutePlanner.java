@@ -51,11 +51,13 @@ class TransportRoutePlanner {
             return List.of(new TransportRouteSegment(transport, selectedRoute, false));
         }
         departure = normalizeDeparture(departure, deadline, selectedRoute.getDuration());
+        boolean departureIsFixed = (timing != null && timing.departureStart() != null)
+            || (transport.routeTime() != null && transport.timeMode() != RouteTimeMode.ARRIVAL);
         GpsModeType mode = selectedRoute.getType() == null ? GpsModeType.FASTEST : selectedRoute.getType();
         Driver driver = transport.driverId() == null ? null : driverService.getEntityById(transport.driverId());
         boolean regional = driver != null && driver.getDriverType() == DriverType.REGIONAL;
         TransportRequest current = timedRequest(transport, departure, RouteTimeMode.DEPARTURE);
-        OffsetDateTime availableFrom = departure;
+        OffsetDateTime availableFrom = departureIsFixed ? departure : null;
         List<TransportRouteSegment> segments = new ArrayList<>();
 
         if (regional && deadline != null && date(deadline).isAfter(date(departure))) {
@@ -67,11 +69,22 @@ class TransportRoutePlanner {
             RouteDto route = calculate(current, mode);
             OffsetDateTime start = current.timeMode() == RouteTimeMode.ARRIVAL
                 ? current.routeTime().minusSeconds(route.getDuration()) : current.routeTime();
-            if (start.isBefore(availableFrom)) {
+            if (availableFrom != null && start.isBefore(availableFrom)) {
                 throw conflict("le départ recalculé précède la disponibilité du conducteur après la coupure.");
             }
             OffsetDateTime cutoff = at(date(start), 20);
-            boolean overnight = start.plusSeconds(route.getDuration()).isAfter(cutoff)
+            OffsetDateTime arrival = start.plusSeconds(route.getDuration());
+            if (!arrival.isAfter(cutoff) && deadline != null && arrival.isAfter(deadline)) {
+                current = timedRequest(current, deadline, RouteTimeMode.ARRIVAL);
+                route = calculate(current, mode);
+                start = current.routeTime().minusSeconds(route.getDuration());
+                if (availableFrom != null && start.isBefore(availableFrom)) {
+                    throw conflict("le départ recalculé précède la disponibilité du conducteur après la coupure.");
+                }
+                cutoff = at(date(start), 20);
+                arrival = start.plusSeconds(route.getDuration());
+            }
+            boolean overnight = arrival.isAfter(cutoff)
                 || (deadline != null && date(deadline).isAfter(date(start)));
             RouteTimeline timeline = null;
             if (overnight && driver != null && driver.getDriverType() == DriverType.SHORT_DISTANCE
@@ -84,8 +97,8 @@ class TransportRoutePlanner {
                     return segments;
                 }
             }
-            if (!start.plusSeconds(route.getDuration()).isAfter(cutoff)) {
-                if (deadline != null && start.plusSeconds(route.getDuration()).isAfter(deadline)) {
+            if (!arrival.isAfter(cutoff)) {
+                if (deadline != null && arrival.isAfter(deadline)) {
                     throw conflict("la livraison ne peut pas être réalisée dans la fenêtre prévue.");
                 }
                 segments.add(new TransportRouteSegment(current, route, true));

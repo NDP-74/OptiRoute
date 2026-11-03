@@ -139,6 +139,24 @@ class TransportRoutePlannerTest {
     }
 
     @Test
+    void shouldRecalculateDepartureWhenTheActualRouteIsLongerThanTheArrivalEstimate() {
+        OffsetDateTime deadline = time("2026-11-04T11:00:00+01:00");
+        TransportRequest source = copy(request("2026-11-04T09:47:00+01:00", null, 73.0 / 60),
+            7L, deadline, RouteTimeMode.ARRIVAL, null, List.of());
+        doAnswer(invocation -> responseWithDuration(74 * 60))
+            .when(routing).calculateRoute(any(), any());
+
+        var segments = planner.plan(source, selected(73.0 / 60));
+
+        assertEquals(1, segments.size());
+        assertEquals(RouteTimeMode.ARRIVAL, segments.getFirst().request().timeMode());
+        assertEquals(deadline, segments.getFirst().request().routeTime());
+        assertEquals(time("2026-11-04T09:46:00+01:00"), departure(segments.getFirst()));
+        assertEquals(deadline, arrival(segments.getFirst()));
+        verify(routing, times(2)).calculateRoute(any(), any());
+    }
+
+    @Test
     void shouldNotDiscardExplicitDepartureWhenOnlyDeliveryWindowIsPresent() {
         TransportRequest source = request("2026-11-03T15:00:00+01:00", null, 10);
         source = copy(source, 7L, source.routeTime(), RouteTimeMode.DEPARTURE,
@@ -431,6 +449,12 @@ class TransportRoutePlannerTest {
     private RoutesResponse response(RouteRequest request) {
         RoutesResponse response = new RoutesResponse();
         response.setRoutes(List.of(selected(timeline(request).durationSeconds() / 3600.0)));
+        return response;
+    }
+
+    private RoutesResponse responseWithDuration(long durationSeconds) {
+        RoutesResponse response = new RoutesResponse();
+        response.setRoutes(List.of(selected(durationSeconds / 3600.0)));
         return response;
     }
 
