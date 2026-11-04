@@ -6,7 +6,7 @@ import com.optiroute.backend.entity.cost.CostCondition;
 import java.util.List;
 
 public interface CostConditionRepository extends JpaRepository<CostCondition, Long> {
-    List<CostCondition> findByCostParameterId(Long costParameterId);
+    List<CostCondition> findByCostRuleId(Long costRuleId);
 
-    void deleteByCostParameterId(Long costParameterId);
+    void deleteByCostRuleId(Long costRuleId);
 }

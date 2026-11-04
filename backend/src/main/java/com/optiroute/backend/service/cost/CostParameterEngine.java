@@ -18,12 +18,12 @@ import java.util.List;
 public class CostParameterEngine {
 
     private final CostParameterRepository costParameterRepository;
-    private final CostConditionService costConditionService;
+    private final CostRuleService costRuleService;
     private final WorkingDaysService workingDaysService;
 
-    public CostParameterEngine(CostParameterRepository costParameterRepository, CostConditionService costConditionService, WorkingDaysService workingDaysService) {
+    public CostParameterEngine(CostParameterRepository costParameterRepository, CostRuleService costRuleService, WorkingDaysService workingDaysService) {
         this.costParameterRepository = costParameterRepository;
-        this.costConditionService = costConditionService;
+        this.costRuleService = costRuleService;
         this.workingDaysService = workingDaysService;
     }
 
@@ -57,10 +57,10 @@ public class CostParameterEngine {
 
     private boolean isApplicable(CostParameter parameter, CostCalculationContext context, List<CostCalculationContext> dailyContexts) {
         if (parameter.getUnit() != com.optiroute.backend.type.cost.CostParameterUnitType.EUR_PER_DAY) {
-            return costConditionService.isApplicable(parameter,context);
+            return costRuleService.isApplicable(parameter,context);
         }
 
-        return dailyContexts.stream().anyMatch(dailyContext -> costConditionService.isApplicable(parameter,dailyContext));
+        return dailyContexts.stream().anyMatch(dailyContext -> costRuleService.isApplicable(parameter,dailyContext));
     }
 
     private double calculateAmount(CostParameter parameter, CostCalculationContext context) {

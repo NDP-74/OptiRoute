@@ -6,15 +6,18 @@ import org.springframework.transaction.annotation.Transactional;
 import com.optiroute.backend.entity.cost.CostParameter;
 import com.optiroute.backend.repository.cost.CostParameterRepository;
 
+import com.optiroute.backend.entity.cost.CostRule;
+import com.optiroute.backend.repository.cost.CostRuleRepository;
 import com.optiroute.backend.entity.cost.CostCondition;
 import com.optiroute.backend.repository.cost.CostConditionRepository;
 import com.optiroute.backend.dto.response.cost.CostParameterResponse;
 import com.optiroute.backend.dto.response.cost.CostParameterLightResponse;
+import com.optiroute.backend.dto.response.cost.CostRuleResponse;
 import com.optiroute.backend.dto.response.cost.CostConditionResponse;
 import com.optiroute.backend.dto.request.cost.CreateCostParameterRequest;
 import com.optiroute.backend.dto.request.cost.UpdateCostParameterRequest;
+import com.optiroute.backend.dto.request.cost.CostRuleRequest;
 import com.optiroute.backend.dto.request.cost.CostConditionRequest;
-import com.optiroute.backend.type.cost.CostParameterAssignmentType;
 
 import java.util.List;
 
@@ -23,10 +26,12 @@ import java.util.List;
 public class CostParameterService {
 
     private final CostParameterRepository costParameterRepository;
+    private final CostRuleRepository costRuleRepository;
     private final CostConditionRepository costConditionRepository;
 
-    public CostParameterService(CostParameterRepository costParameterRepository, CostConditionRepository costConditionRepository) {
+    public CostParameterService(CostParameterRepository costParameterRepository, CostRuleRepository costRuleRepository, CostConditionRepository costConditionRepository) {
         this.costParameterRepository = costParameterRepository;
+        this.costRuleRepository = costRuleRepository;
         this.costConditionRepository = costConditionRepository;
     }
 
@@ -44,7 +49,9 @@ public class CostParameterService {
 
         parameter = costParameterRepository.save(parameter);
 
-        replaceConditions(parameter, request.conditions());
+        if (request.rule() != null) {
+            createRule(parameter,request.rule());
+        }
 
         return getById(parameter.getId());
     }
@@ -64,7 +71,17 @@ public class CostParameterService {
 
         costParameterRepository.save(parameter);
 
-        replaceConditions(parameter, request.conditions());
+        /*
+         * PUT = remplacement complet de la règle.
+         *
+         * On supprime toujours l'ancienne règle,
+         * puis on recrée celle envoyée par le frontend.
+         */
+        deleteRule(parameter);
+
+        if (request.rule() != null) {
+            createRule(parameter,request.rule());
+        }
 
         return getById(id);
     }
@@ -88,7 +105,7 @@ public class CostParameterService {
 
         CostParameter parameter = costParameterRepository.findById(id).orElseThrow(() -> new RuntimeException("Cost parameter not found"));
 
-        costConditionRepository.deleteByCostParameterId(parameter.getId());
+        deleteRule(parameter);
 
         costParameterRepository.delete(parameter);
     }
@@ -104,17 +121,20 @@ public class CostParameterService {
         return toResponse(parameter);
     }
 
-    private void replaceConditions(CostParameter parameter, List<CostConditionRequest> requests) {
-        costConditionRepository.deleteByCostParameterId(parameter.getId());
-        if (parameter.getAssignmentType() == CostParameterAssignmentType.MANUAL
-            || parameter.getAssignmentType() == CostParameterAssignmentType.ALWAYS || requests == null) {
-            return;
-        }
+    private void createRule(CostParameter parameter, CostRuleRequest request) {
 
-        for (CostConditionRequest conditionRequest : requests) {
+        CostRule rule = new CostRule();
+
+        rule.setCostParameterId(parameter.getId());
+        rule.setLogicalOperator(request.logicalOperator());
+
+        rule = costRuleRepository.save(rule);
+
+        for (CostConditionRequest conditionRequest : request.conditions()) {
+
             CostCondition condition = new CostCondition();
 
-            condition.setCostParameter(parameter);
+            condition.setCostRuleId(rule.getId());
             condition.setSource(conditionRequest.source());
             condition.setField(conditionRequest.field());
             condition.setOperator(conditionRequest.operator());
@@ -124,11 +144,36 @@ public class CostParameterService {
         }
     }
 
+    private void deleteRule(CostParameter parameter) {
+
+        List<CostRule> rules = costRuleRepository.findByCostParameterId(parameter.getId());
+
+        for (CostRule rule : rules) {
+
+            costConditionRepository.deleteByCostRuleId(rule.getId());
+
+            costRuleRepository.delete(rule);
+        }
+    }
+
     private CostParameterResponse toResponse(CostParameter parameter) {
-        List<CostConditionResponse> conditions = costConditionRepository.findByCostParameterId(parameter.getId()).stream()
-            .map(condition -> new CostConditionResponse(condition.getId(), condition.getSource(), condition.getField(), condition.getOperator(), condition.getValue()))
-            .toList();
+
+        CostRuleResponse ruleResponse = null;
+
+        List<CostRule> rules = costRuleRepository.findByCostParameterId(parameter.getId());
+
+        if (!rules.isEmpty()) {
+
+            CostRule rule = rules.get(0);
+
+            List<CostConditionResponse> conditions = costConditionRepository.findByCostRuleId(rule.getId()).stream()
+                .map(condition -> new CostConditionResponse(condition.getId(), condition.getSource(), condition.getField(), condition.getOperator(), condition.getValue()))
+                .toList();
+
+            ruleResponse = new CostRuleResponse(rule.getId(), rule.getLogicalOperator(), conditions);
+        }
+
         return new CostParameterResponse(parameter.getId(), parameter.getCategory(), parameter.getLabel(), parameter.getValue(), parameter.getUnit(), parameter.isActive(), parameter.getAssignmentType(),
-            conditions);
+            ruleResponse);
     }
 }

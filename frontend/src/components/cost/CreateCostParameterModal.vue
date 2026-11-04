@@ -58,7 +58,7 @@ const submitCostParameter = async () => {
             unit: form.unit,
             active: form.active,
             assignmentType: form.assignmentType,
-            conditions: form.conditions,
+            rule: form.rule,
         }
 
         await createCostParameter(payload)

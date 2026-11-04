@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from "vue"
 
-import { Edit3, Trash2, WalletCards, Info, ListChecks } from "lucide-vue-next"
+import { Edit3, Settings2, Trash2, WalletCards, Info, ListChecks } from "lucide-vue-next"
 
 import AppDetailDrawer from "@/components/ui/AppDetailDrawer.vue"
 import DetailSection from "@/components/ui/DetailSection.vue"
@@ -164,22 +164,41 @@ const formatCondition = (condition: CostCondition) => {
 
                 <DetailRow label="Libellé" :value="costParameter.label" />
 
-                <DetailRow label="Coût"
-                    :value="`${formatNumber(costParameter.value)} ${formatUnit(costParameter.unit)}`" />
+                <DetailRow label="Type d'assignation" :value="assignmentTypeLabels[costParameter.assignmentType]" />
+
+                <DetailRow label="Statut" :value="costParameter.active ? 'Actif' : 'Désactivé'" />
             </DetailSection>
 
             <!-- Valeur -->
 
             <DetailSection title="Valeur" :icon="WalletCards">
-                <DetailRow label="Statut" :value="costParameter.active ? 'Actif' : 'Désactivé'" />
-
-                <DetailRow label="Logique d'application" :value="assignmentTypeLabels[costParameter.assignmentType]" />
+                <DetailRow label="Coût"
+                    :value="`${formatNumber(costParameter.value)} ${formatUnit(costParameter.unit)}`" />
             </DetailSection>
 
             <!-- Conditions -->
-            <DetailSection v-if="costParameter.conditions.length > 0" title="Conditions" :icon="ListChecks">
+
+            <DetailSection title="Logique" :icon="Settings2">
+                <div class="min-h-[44px] flex items-center px-1">
+                    <p class="text-sm leading-5 text-slate-600">
+                        <template v-if="!costParameter.rule">
+                            Ce coût est toujours applicable.
+                        </template>
+
+                        <template v-else-if="costParameter.rule.logicalOperator === 'AND'">
+                            Toutes les conditions doivent être respectées.
+                        </template>
+
+                        <template v-else>
+                            Au moins une condition doit être respectée.
+                        </template>
+                    </p>
+                </div>
+            </DetailSection>
+
+            <DetailSection v-if="costParameter.rule" title="Conditions" :icon="ListChecks">
                 <div class="space-y-3 py-3">
-                    <div v-for="condition in costParameter.conditions" :key="condition.id"
+                    <div v-for="condition in costParameter.rule.conditions" :key="condition.id"
                         class="rounded-xl border border-slate-200 bg-white px-4 py-3">
                         <p class="text-xs font-medium uppercase tracking-wide text-slate-500">
                             {{ conditionSourceLabels[condition.source] ?? condition.source }}

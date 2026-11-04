@@ -7,15 +7,13 @@ export const createEmptyCostParameterForm = (): CostParameterFormData => ({
     value: 0,
     unit: "EUR_PER_TRIP",
     active: true,
-    assignmentType: "ALWAYS",
-    conditions: [],
+    assignmentType: "AUTOMATIC",
+    rule: null,
 })
 
 export const assignmentTypeLabels: Record<CostParameterAssignmentType, string> = {
-    ALWAYS: "Toujours applicable",
-    ALL_CONDITIONS: "Toutes les conditions doivent être respectées",
-    ANY_CONDITION: "Au moins une condition doit être respectée",
-    MANUAL: "Rattaché obligatoirement à un événement",
+    AUTOMATIC: "Automatique",
+    MANUAL: "Manuelle",
 }
 
 export type CostOption<T extends string> = {

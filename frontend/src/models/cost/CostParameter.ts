@@ -1,4 +1,4 @@
-import type { CostConditionField, CostConditionOperator, CostParameterCategory, CostParameterUnit, CostConditionSource, CostParameterAssignmentType } from '@/types/CostParameterType'
+import type { CostConditionField, CostConditionOperator, CostRuleLogicalOperator, CostParameterCategory, CostParameterUnit, CostConditionSource, CostParameterAssignmentType } from '@/types/CostParameterType'
 
 /* CostCondition */
 
@@ -15,6 +15,19 @@ export interface CostConditionRequest {
     field: CostConditionField
     operator: CostConditionOperator
     value: string
+}
+
+/* CostRule */
+
+export interface CostRule {
+    id: number
+    logicalOperator: CostRuleLogicalOperator
+    conditions: CostCondition[]
+}
+
+export interface CostRuleRequest {
+    logicalOperator: CostRuleLogicalOperator
+    conditions: CostConditionRequest[]
 }
 
 /* CostParameter */
@@ -37,7 +50,7 @@ export interface CostParameter {
     unit: CostParameterUnit
     active: boolean
     assignmentType: CostParameterAssignmentType
-    conditions: CostCondition[]
+    rule: CostRule | null
 }
 
 export interface CreateCostParameterRequest {
@@ -47,7 +60,7 @@ export interface CreateCostParameterRequest {
     unit: CostParameterUnit
     active: boolean
     assignmentType: CostParameterAssignmentType
-    conditions: CostConditionRequest[]
+    rule: CostRuleRequest | null
 }
 
 export interface UpdateCostParameterRequest {
@@ -57,7 +70,7 @@ export interface UpdateCostParameterRequest {
     unit: CostParameterUnit
     active: boolean
     assignmentType: CostParameterAssignmentType
-    conditions: CostConditionRequest[]
+    rule: CostRuleRequest | null
 }
 
 export interface CostParameterFormData {
@@ -67,5 +80,5 @@ export interface CostParameterFormData {
     unit: CostParameterUnit
     active: boolean
     assignmentType: CostParameterAssignmentType
-    conditions: CostConditionRequest[]
+    rule: CostRuleRequest | null
 }
