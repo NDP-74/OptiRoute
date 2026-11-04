@@ -4,9 +4,11 @@ import { ArrowUpDown, Clock, LockKeyhole, Plus, X } from 'lucide-vue-next'
 import HereAutocompleteInput from './HereAutocompleteInput.vue'
 
 import { calculateRoute } from '@/api/here/mapsApi'
+import { getApiErrorMessage } from '@/api/utils'
+import { useNotification } from '@/composables/useNotification'
 
 import type { Position } from '@/models/route/Position'
-import type { RouteRequest, RouteWaypoint } from '@/models/route/Route'
+import type { RouteRequest, RouteResponse, RouteWaypoint } from '@/models/route/Route'
 
 interface RoutePlace {
     name: string
@@ -17,6 +19,7 @@ interface RoutePlace {
 
 const props = defineProps<{
     initialRequest?: RouteRequest | null
+    serviceTiming?: { routeTime?: string; timeMode: 'DEPARTURE' | 'ARRIVAL' }
 }>()
 
 const tractorId = defineModel<number | null>('tractorId', { default: null })
@@ -28,17 +31,21 @@ const emptyTrip = defineModel<boolean>('emptyTrip', { default: false })
 const departureMode = ref('NOW')
 const isSubmitting = ref(false)
 const MAX_WAYPOINTS = 10
+const notification = useNotification()
 
-const emit = defineEmits(['route-calculated'])
+const emit = defineEmits<{
+    'route-calculated': [data: { response: RouteResponse; request: RouteRequest }]
+    changed: []
+}>()
 
 const form = reactive({
     origin: null as RoutePlace | null,
     destination: null as RoutePlace | null,
     waypoints: [] as (RoutePlace | null)[],
 
-    routeTime: null as any,
+    routeTime: null as string | null,
 
-    mode: 'FASTEST',
+    mode: 'FASTEST' as RouteRequest['mode'],
 })
 
 function toPlace(position: RouteWaypoint): RoutePlace {
@@ -75,6 +82,14 @@ function applyInitialRequest(request: RouteRequest | null | undefined) {
 }
 
 watch(() => props.initialRequest, applyInitialRequest, { immediate: true })
+let formRevision = 0
+function markChanged() {
+    formRevision++
+    emit('changed')
+}
+watch(form, markChanged, { flush: 'sync' })
+watch(departureMode, markChanged, { flush: 'sync' })
+watch(() => props.serviceTiming, markChanged, { flush: 'sync', deep: true })
 
 // Functions
 
@@ -168,21 +183,24 @@ async function submit() {
     }
 
     isSubmitting.value = true
+    const revision = formRevision
 
     try {
-        const effectiveRouteTime = toOffsetDateTime(form.routeTime) ?? new Date().toISOString()
+        const effectiveRouteTime = props.serviceTiming
+            ? props.serviceTiming.routeTime ?? new Date().toISOString()
+            : toOffsetDateTime(form.routeTime) ?? new Date().toISOString()
 
         const waypoints = form.waypoints
             .filter((place): place is RoutePlace => place !== null)
             .map(place => ({ ...toPosition(place), eventId: place.eventId }))
 
-        const payload = {
+        const payload: RouteRequest = {
             origin: toPosition(form.origin),
             destination: toPosition(form.destination),
             waypoints: waypoints.map(({ name, address, lat, lng }) => ({ name, address, lat, lng })),
 
             routeTime: effectiveRouteTime,
-            timeMode: departureMode.value === 'ARRIVALTIME' ? 'ARRIVAL' : 'DEPARTURE',
+            timeMode: props.serviceTiming?.timeMode ?? (departureMode.value === 'ARRIVALTIME' ? 'ARRIVAL' : 'DEPARTURE'),
 
             mode: form.mode,
 
@@ -193,6 +211,8 @@ async function submit() {
         }
 
         const response = await calculateRoute(payload)
+        if (revision !== formRevision) return
+        if (!response.routes.length) throw new Error('Aucun itinéraire disponible.')
         emit('route-calculated',
             {
                 response,
@@ -200,13 +220,14 @@ async function submit() {
             }
         )
     } catch (e) {
-        console.error(e)
+        notification.error('Calcul impossible', e instanceof Error && !('response' in e)
+            ? e.message : getApiErrorMessage(e, 'L’itinéraire n’a pas pu être calculé.'))
     } finally {
         isSubmitting.value = false
     }
 }
 
-function toOffsetDateTime(value: string) {
+function toOffsetDateTime(value: string | null) {
     if (departureMode.value === 'NOW' || !value) return null
 
     return new Date(value).toISOString()
@@ -222,7 +243,8 @@ function toOffsetDateTime(value: string) {
             <div v-for="index in rowCount" :key="index - 1" class="flex items-center gap-2" :style="{ gridRow: index }">
                 <div class="flex-1">
                     <HereAutocompleteInput :model-value="getRowValue(index - 1)" :disabled="isEventRow(index - 1)"
-                        @update:model-value="updateRowValue(index - 1, $event)" :label="rowLabel(index - 1)" />
+                        @update:model-value="updateRowValue(index - 1, $event)" @input="markChanged"
+                        :label="rowLabel(index - 1)" />
                 </div>
 
                 <div class="flex h-9 w-9 shrink-0 items-center justify-center">
@@ -255,7 +277,7 @@ function toOffsetDateTime(value: string) {
         </div>
 
         <!-- DEPARTURE TIME -->
-        <div class="space-y-1.5">
+        <div v-if="!serviceTiming" class="space-y-1.5">
 
             <label class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
                 <Clock :size="14" />
@@ -282,6 +304,8 @@ function toOffsetDateTime(value: string) {
                 class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20" />
 
         </div>
+
+        <slot />
 
         <!-- BUTTON -->
         <button @click="submit" :disabled="isSubmitting"

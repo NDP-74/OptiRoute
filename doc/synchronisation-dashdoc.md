@@ -165,6 +165,13 @@ CA trajet i = CA du service × distance du trajet i
 
 ## 4. API OptiRoute disponible pour tester
 
+Dans le modal de création/modification, deux modes sont proposés et affichés séparément :
+
+- **Manuel** : départ, arrivée, points de passage et choix d'une heure de départ ou d'arrivée.
+- **Simulation Dashdoc** : ses propres lieux et points de passage, plus les quatre fenêtres horaires du service. Le calcul utilise l'arrivée minimale si elle est renseignée, sinon le départ minimal, sinon un départ maintenant. Les fenêtres restent facultatives.
+
+Le changement de mode conserve les saisies et résultats de chacun pendant l'ouverture du modal. L'affectation, les durées de chargement/déchargement et le revenu restent communs. Seul le mode actif est enregistré ; en mode Manuel, les fenêtres de simulation ne sont pas envoyées. Après une modification des lieux ou créneaux, recalculer avant de valider. La simulation utilise les API de création existantes : elle ne lance pas une synchronisation réelle avec Dashdoc.
+
 Les API métiers nécessitent un jeton Bearer. Authentification via `POST /api/auth/login`, avec un compte existant. Les identifiants conducteur et tracteur du payload doivent correspondre à des enregistrements existants (`GET /api/drivers` et `GET /api/tractors`).
 
 ### 4.1 Obtenir un jeton (PowerShell)

@@ -58,9 +58,29 @@ const emit = defineEmits<{
 
 const notification = useNotification()
 const mapRef = ref<InstanceType<typeof HereMap> | null>(null)
-const routeResponse = ref<RouteResponse | null>(null)
-const routeRequest = ref<RouteRequest | null>(null)
-const selectedRouteIndex = ref(0)
+const isDashdocSimulationEnabled = ref(false)
+const formSession = ref(0)
+const modeStates = reactive({
+    manual: { request: null as RouteRequest | null, response: null as RouteResponse | null, selectedIndex: 0, dirty: false },
+    dashdoc: { request: null as RouteRequest | null, response: null as RouteResponse | null, selectedIndex: 0, dirty: false },
+})
+type EntryMode = keyof typeof modeStates
+const entryModes = ['manual', 'dashdoc'] as const
+const activeMode = computed<EntryMode>(() => isDashdocSimulationEnabled.value ? 'dashdoc' : 'manual')
+const activeState = computed(() => modeStates[activeMode.value])
+const routeResponse = computed({
+    get: () => activeState.value.response,
+    set: value => { activeState.value.response = value },
+})
+const routeRequest = computed({
+    get: () => activeState.value.request,
+    set: value => { activeState.value.request = value },
+})
+const selectedRouteIndex = computed({
+    get: () => activeState.value.selectedIndex,
+    set: value => { activeState.value.selectedIndex = value },
+})
+const initialFormRequest = ref<RouteRequest | null>(null)
 const driverId = ref<number>()
 const customerId = ref<number>()
 const tractorId = ref<number | null>(null)
@@ -81,7 +101,12 @@ const windowFields = [
     { key: 'arrivalEnd', label: 'Arrivée maximale' },
 ] as const
 const serviceWindows = reactive({ departureStart: '', departureEnd: '', arrivalStart: '', arrivalEnd: '' })
-const isDashdocSimulationEnabled = ref(false)
+const simulationTiming = computed(() => ({
+    routeTime: serviceWindows.arrivalStart
+        ? new Date(serviceWindows.arrivalStart).toISOString()
+        : serviceWindows.departureStart ? new Date(serviceWindows.departureStart).toISOString() : undefined,
+    timeMode: serviceWindows.arrivalStart ? 'ARRIVAL' as const : 'DEPARTURE' as const,
+}))
 
 function localDate(value?: string | null): string {
     if (!value) return ''
@@ -121,7 +146,9 @@ const fallbackRoute = computed<RouteDto | null>(() => {
     }
 })
 
-const effectiveRoute = computed<RouteDto | null>(() => selectedRoute.value ?? fallbackRoute.value)
+const effectiveRoute = computed<RouteDto | null>(() => activeState.value.dirty ? null
+    : selectedRoute.value ?? (props.editingTransport && activeMode.value === initialEditingMode.value ? fallbackRoute.value : null))
+const initialEditingMode = ref<EntryMode>('manual')
 
 const transportTitle = computed(() => {
     const customerName = customers.value.find(customer => customer.id === customerId.value)?.name?.trim()
@@ -163,10 +190,13 @@ function close() {
     if (!isSaving.value) emit('close')
 }
 
-function handleRouteCalculated(data: { response: RouteResponse; request: RouteRequest }) {
-    routeResponse.value = data.response
-    routeRequest.value = data.request
-    selectedRouteIndex.value = 0
+function handleRouteCalculated(data: { response: RouteResponse; request: RouteRequest }, mode: EntryMode = activeMode.value) {
+    const state = modeStates[mode]
+    state.request = data.request
+    state.response = data.response
+    state.selectedIndex = 0
+    state.dirty = false
+    if (mode !== activeMode.value) return
 
     const routes = data.response.routes ?? []
     if (routes.length > 0) {
@@ -217,6 +247,9 @@ function routeRequestFromTransport(transport: TransportDetail): RouteRequest {
 }
 
 async function initializeFromProps() {
+    for (const mode of entryModes) {
+        modeStates[mode] = { request: null, response: null, selectedIndex: 0, dirty: false }
+    }
     loadingDurationMinutes.value = props.editingTransport?.serviceTiming?.loadingDurationMinutes ?? ''
     unloadingDurationMinutes.value = props.editingTransport?.serviceTiming?.unloadingDurationMinutes ?? ''
     for (const { key } of windowFields) {
@@ -225,6 +258,7 @@ async function initializeFromProps() {
     isDashdocSimulationEnabled.value = props.editingTransport
         ? windowFields.some(({ key }) => Boolean(props.editingTransport?.serviceTiming?.[key]))
         : false
+    initialEditingMode.value = activeMode.value
 
     if (props.editingTransport) {
         const transport = props.editingTransport
@@ -248,7 +282,13 @@ async function initializeFromProps() {
         emptyTrip.value = props.initialRouteRequest?.emptyTrip ?? false
     }
 
+    initialFormRequest.value = routeRequest.value
+    const otherMode = activeMode.value === 'manual' ? 'dashdoc' : 'manual'
+    modeStates[otherMode].request = routeRequest.value ? structuredCloneRoute(routeRequest.value) : null
+    formSession.value++
     await nextTick()
+    modeStates.manual.dirty = false
+    modeStates.dashdoc.dirty = false
 
     if (routeRequest.value && routeResponse.value?.routes.length) {
         const routes = routeResponse.value.routes
@@ -265,6 +305,23 @@ async function initializeFromProps() {
         }
     }
 }
+
+function structuredCloneRoute(request: RouteRequest): RouteRequest {
+    return { ...request, origin: { ...request.origin }, destination: { ...request.destination },
+        waypoints: request.waypoints?.map(point => ({ ...point })) }
+}
+
+watch(isDashdocSimulationEnabled, async () => {
+    await nextTick()
+    if (!props.show) return
+    const routes = activeState.value.dirty ? [] : routeResponse.value?.routes ?? []
+    mapRef.value?.displayRoutes(routes, routes[selectedRouteIndex.value])
+    if (routeRequest.value) {
+        mapRef.value?.setMarkers(routeRequest.value.origin, routeRequest.value.destination, routeRequest.value.waypoints)
+    }
+})
+
+watch(serviceWindows, () => { modeStates.dashdoc.dirty = true }, { flush: 'sync' })
 
 async function saveRoute() {
     if (!routeRequest.value || !effectiveRoute.value || driverId.value === undefined || tractorId.value === null || isSaving.value) {
@@ -399,8 +456,8 @@ onMounted(async () => {
             <!-- BODY -->
             <div class="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden">
 
-                <!-- TOP ROW : ASSIGNMENT, SEARCH, SIMULATION & MAP -->
-                <div class="grid min-h-0 flex-1 gap-5 lg:grid-cols-4">
+                <!-- TOP ROW : ASSIGNMENT, ROUTE & MAP -->
+                <div class="grid min-h-0 flex-1 gap-5 lg:grid-cols-3">
 
                     <!-- COLUMN 1 : ASSIGNMENT -->
                     <section class="min-h-0 pr-1">
@@ -515,18 +572,55 @@ onMounted(async () => {
                     <!-- COLUMN 2 : SEARCH -->
                     <section class="flex min-h-0 flex-col pr-1">
                         <div class="min-h-0 flex-1 rounded-2xl border border-slate-200 p-4 flex flex-col">
-                            <h3 class="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-700">
-                                <RouteIcon :size="16" class="text-slate-400" />
-                                Recherche d'itinéraire
-                            </h3>
+                            <div class="mb-4 grid shrink-0 grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1"
+                                role="group" aria-label="Mode de création">
+                                <button v-for="mode in entryModes" :key="mode" type="button"
+                                    :disabled="isSaving" :aria-pressed="activeMode === mode"
+                                    class="flex items-center justify-center gap-2 rounded-lg px-2 py-2.5 text-sm font-semibold transition disabled:opacity-50"
+                                    :class="activeMode === mode ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
+                                    @click="isDashdocSimulationEnabled = mode === 'dashdoc'">
+                                    <component :is="mode === 'manual' ? RouteIcon : CalendarClock" :size="16" />
+                                    {{ mode === 'manual' ? 'Manuel' : 'Simulation Dashdoc' }}
+                                </button>
+                            </div>
                             <div class="custom-scrollbar min-h-0 flex-1 overflow-auto pr-2">
-                                <RouteForm :initial-request="routeRequest" v-model:tractor-id="tractorId"
-                                    v-model:semi-trailer-id="semiTrailerId" v-model:driver-id="driverId"
-                                    v-model:empty-trip="emptyTrip" @route-calculated="handleRouteCalculated" />
+                                <div v-for="mode in entryModes" :key="`${formSession}-${mode}`"
+                                    v-show="activeMode === mode">
+                                    <p class="mb-4 text-xs leading-5 text-slate-500">
+                                        {{ mode === 'manual'
+                                            ? "Choisissez les lieux, les étapes et l'heure de recherche."
+                                            : 'Simulez les lieux et les créneaux de chargement et de livraison d’un service Dashdoc.' }}
+                                    </p>
+                                    <RouteForm :initial-request="initialFormRequest"
+                                        :service-timing="mode === 'dashdoc' ? simulationTiming : undefined"
+                                        v-model:tractor-id="tractorId" v-model:semi-trailer-id="semiTrailerId"
+                                        v-model:driver-id="driverId" v-model:empty-trip="emptyTrip"
+                                        @changed="modeStates[mode].dirty = true"
+                                        @route-calculated="handleRouteCalculated($event, mode)">
+                                        <fieldset v-if="mode === 'dashdoc'" class="space-y-3">
+                                            <legend class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                                Fenêtres horaires du service
+                                            </legend>
+                                            <label v-for="field in windowFields" :key="field.key"
+                                                class="block text-xs font-medium text-slate-600">
+                                                {{ field.label }}
+                                                <input v-model="serviceWindows[field.key]" type="datetime-local" step="1"
+                                                    class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                                            </label>
+                                            <p class="text-xs leading-5 text-slate-500">
+                                                Les horaires sont facultatifs. Le calcul utilise l’arrivée minimale,
+                                                sinon le départ minimal, sinon un départ maintenant.
+                                            </p>
+                                        </fieldset>
+                                    </RouteForm>
+                                </div>
+                                <p v-if="activeState.dirty" class="mt-3 text-xs text-amber-700" role="status">
+                                    Recalculez l’itinéraire pour prendre en compte vos modifications.
+                                </p>
                             </div>
                         </div>
 
-                        <div v-if="routeResponse?.routes?.length" class="mt-4 space-y-2">
+                        <div v-if="!activeState.dirty && routeResponse?.routes?.length" class="mt-4 space-y-2">
                             <button v-for="(route, index) in routeResponse.routes" :key="index" type="button"
                                 class="w-full rounded-xl border p-3 text-left transition"
                                 :class="index === selectedRouteIndex ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:bg-slate-50'"
@@ -544,69 +638,6 @@ onMounted(async () => {
                                 <div class="mt-1 text-xs text-slate-500">{{ formatDistance(route.distanceMeters) }}
                                 </div>
                             </button>
-                        </div>
-                    </section>
-
-                    <!-- COLUMN 3 : DASHDOC SIMULATION -->
-                    <section class="min-h-0">
-                        <div class="h-full space-y-4 overflow-auto rounded-2xl border border-slate-200 bg-white p-4">
-                            <div class="flex items-start gap-3">
-                                <span class="rounded-xl bg-indigo-50 p-2 text-indigo-600">
-                                    <CalendarClock :size="18" />
-                                </span>
-                                <div>
-                                    <h3 class="text-sm font-semibold text-slate-800">Simulation Dashdoc</h3>
-                                    <p class="mt-1 text-xs leading-5 text-slate-500">
-                                        Ajoutez les créneaux de chargement et livraison pour simuler la planification
-                                        d'un service Dashdoc.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <label
-                                class="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-indigo-100 bg-indigo-50/60 px-3 py-3">
-                                <span class="min-w-0">
-                                    <span class="block text-sm font-medium text-slate-800">
-                                        Activer la simulation
-                                    </span>
-                                    <span class="mt-0.5 block text-xs text-slate-500">
-                                        {{ isDashdocSimulationEnabled ? 'Les créneaux seront pris en compte.' :
-                                            'Création manuelle classique.' }}
-                                    </span>
-                                </span>
-                                <span class="relative inline-flex h-6 w-11 shrink-0 items-center">
-                                    <input v-model="isDashdocSimulationEnabled" type="checkbox" class="peer sr-only"
-                                        aria-label="Activer la simulation Dashdoc" />
-                                    <span
-                                        class="absolute inset-0 rounded-full bg-slate-300 transition peer-checked:bg-indigo-600 peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-500 peer-focus-visible:ring-offset-2"></span>
-                                    <span
-                                        class="absolute left-1 h-4 w-4 rounded-full bg-white shadow transition peer-checked:translate-x-5"></span>
-                                </span>
-                            </label>
-
-                            <fieldset v-if="isDashdocSimulationEnabled" class="space-y-3">
-                                <legend class="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                    Fenêtres horaires du service
-                                </legend>
-                                <template v-for="field in windowFields" :key="field.key">
-                                    <label v-if="field.key !== 'departureStart' && field.key !== 'departureEnd'"
-                                        class="block text-xs font-medium text-slate-600">
-                                        {{ field.label }}
-                                        <input v-model="serviceWindows[field.key]" type="datetime-local" step="1"
-                                            class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
-                                    </label>
-                                </template>
-                                <p class="text-xs leading-5 text-slate-500">
-                                    Les horaires sont facultatifs. Sans créneau d'arrivée, le découpage selon les
-                                    contraintes du service ne sera pas simulé.
-                                </p>
-                            </fieldset>
-                            <div v-else class="rounded-xl border border-dashed border-slate-200 px-3 py-4 text-center">
-                                <p class="text-sm font-medium text-slate-600">Simulation désactivée</p>
-                                <p class="mt-1 text-xs leading-5 text-slate-500">
-                                    Activez-la pour saisir les fenêtres horaires et tester le comportement Dashdoc.
-                                </p>
-                            </div>
                         </div>
                     </section>
 
