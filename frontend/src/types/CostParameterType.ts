@@ -4,7 +4,9 @@ export type CostParameterCategory =
     | "STRUCTURE"
 
 export type CostParameterAssignmentType =
-    | "AUTOMATIC"
+    | "ALWAYS"
+    | "ALL_CONDITIONS"
+    | "ANY_CONDITION"
     | "MANUAL"
 
 export type CostParameterUnit =
@@ -38,7 +40,3 @@ export type CostConditionOperator =
     | "GREATER_THAN"
     | "BEFORE"
     | "AFTER"
-
-export type CostRuleLogicalOperator =
-    | "AND"
-    | "OR"

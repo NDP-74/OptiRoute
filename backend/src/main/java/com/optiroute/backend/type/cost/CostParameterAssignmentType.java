@@ -1,5 +1,8 @@
 package com.optiroute.backend.type.cost;
 
 public enum CostParameterAssignmentType {
-    AUTOMATIC, MANUAL
+    ALWAYS,
+    ALL_CONDITIONS,
+    ANY_CONDITION,
+    MANUAL
 }

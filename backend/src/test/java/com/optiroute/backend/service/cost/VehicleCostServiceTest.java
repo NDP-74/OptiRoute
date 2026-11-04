@@ -1,7 +1,10 @@
 package com.optiroute.backend.service.cost;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Method;
@@ -16,9 +19,11 @@ import com.optiroute.backend.entity.cost.CostCondition;
 import com.optiroute.backend.entity.cost.CostParameter;
 import com.optiroute.backend.entity.vehicle.SemiTrailer;
 import com.optiroute.backend.entity.vehicle.Tractor;
+import com.optiroute.backend.repository.cost.CostConditionRepository;
 import com.optiroute.backend.repository.cost.CostParameterRepository;
 import com.optiroute.backend.type.cost.CostConditionFieldType;
 import com.optiroute.backend.type.cost.CostConditionOperatorType;
+import com.optiroute.backend.type.cost.CostParameterAssignmentType;
 import com.optiroute.backend.type.cost.CostParameterCategoryType;
 import com.optiroute.backend.type.cost.CostParameterUnitType;
 
@@ -49,8 +54,8 @@ class VehicleCostServiceTest {
     @Test
     void shouldAllocateDailyCostAcrossTripsOfTheSameDay() {
         CostParameterRepository repository = mock(CostParameterRepository.class);
-        CostRuleService costRuleService = mock(CostRuleService.class);
-        CostParameterEngine engine = new CostParameterEngine(repository, costRuleService, new WorkingDaysService());
+        CostConditionService costConditionService = mock(CostConditionService.class);
+        CostParameterEngine engine = new CostParameterEngine(repository, costConditionService, new WorkingDaysService());
 
         CostParameter parameter = new CostParameter();
         parameter.setId(1L);
@@ -61,7 +66,7 @@ class VehicleCostServiceTest {
         parameter.setActive(true);
 
         when(repository.findByCategory(CostParameterCategoryType.VEHICLE)).thenReturn(List.of(parameter));
-        when(costRuleService.isApplicable(parameter,new CostCalculationContext(LocalDate.of(2024,1,5), 100.0, 500.0, 3.0, 3, false, null, null, null, null, null, 5.0)))
+        when(costConditionService.isApplicable(parameter,new CostCalculationContext(LocalDate.of(2024,1,5), 100.0, 500.0, 3.0, 3, false, null, null, null, null, null, 5.0)))
             .thenReturn(true);
 
         CostCalculationContext context = new CostCalculationContext(LocalDate.of(2024,1,5), 100.0, 500.0, 3.0, 3, false, null, null, null, null, null, 5.0);
@@ -74,8 +79,8 @@ class VehicleCostServiceTest {
     @Test
     void shouldApplyConditionalDailyCostToEveryTripWhenOneTripMatches() {
         CostParameterRepository repository = mock(CostParameterRepository.class);
-        CostRuleService costRuleService = mock(CostRuleService.class);
-        CostParameterEngine engine = new CostParameterEngine(repository, costRuleService, new WorkingDaysService());
+        CostConditionService costConditionService = mock(CostConditionService.class);
+        CostParameterEngine engine = new CostParameterEngine(repository, costConditionService, new WorkingDaysService());
 
         CostParameter parameter = new CostParameter();
         parameter.setId(2L);
@@ -89,8 +94,8 @@ class VehicleCostServiceTest {
         CostCalculationContext nonMatchingTrip = new CostCalculationContext(LocalDate.of(2024,1,5), 100.0, 500.0, 3.0, 3, false, null, null, null, null, null, 5.0);
 
         when(repository.findByCategory(CostParameterCategoryType.VEHICLE)).thenReturn(List.of(parameter));
-        when(costRuleService.isApplicable(parameter,matchingTrip)).thenReturn(true);
-        when(costRuleService.isApplicable(parameter,nonMatchingTrip)).thenReturn(false);
+        when(costConditionService.isApplicable(parameter,matchingTrip)).thenReturn(true);
+        when(costConditionService.isApplicable(parameter,nonMatchingTrip)).thenReturn(false);
 
         double result = engine.calculateCosts(CostParameterCategoryType.VEHICLE,nonMatchingTrip,List.of(matchingTrip,nonMatchingTrip)).getFirst().amount();
 
@@ -98,21 +103,98 @@ class VehicleCostServiceTest {
     }
 
     @Test
-    void shouldHandleNullVehicleTypeWhenEvaluatingStringCondition() throws Exception {
-        CostRuleService service = new CostRuleService(null, null);
+    void shouldRequireEveryConditionWhenUsingAllConditionsLogic() {
+        CostConditionRepository repository = mock(CostConditionRepository.class);
+        CostConditionService service = new CostConditionService(repository);
 
+        CostParameter parameter = new CostParameter();
+        parameter.setId(3L);
+        parameter.setAssignmentType(CostParameterAssignmentType.ALL_CONDITIONS);
+
+        CostCondition matchingCondition = numericCondition(CostConditionOperatorType.GREATER_THAN, "50");
+        CostCondition nonMatchingCondition = numericCondition(CostConditionOperatorType.LESS_THAN, "50");
+        when(repository.findByCostParameterId(3L)).thenReturn(List.of(matchingCondition, nonMatchingCondition));
+
+        CostCalculationContext context = new CostCalculationContext(LocalDate.of(2024,1,5), 100.0, 500.0, 3.0, 3, false, null, null, null, null, null, 5.0);
+        assertFalse(service.isApplicable(parameter, context));
+    }
+
+    @Test
+    void shouldRequireAtLeastOneConditionWhenUsingAnyConditionLogic() {
+        CostConditionRepository repository = mock(CostConditionRepository.class);
+        CostConditionService service = new CostConditionService(repository);
+
+        CostParameter parameter = new CostParameter();
+        parameter.setId(4L);
+        parameter.setAssignmentType(CostParameterAssignmentType.ANY_CONDITION);
+
+        CostCondition matchingCondition = numericCondition(CostConditionOperatorType.GREATER_THAN, "50");
+        CostCondition nonMatchingCondition = numericCondition(CostConditionOperatorType.LESS_THAN, "50");
+        when(repository.findByCostParameterId(4L)).thenReturn(List.of(matchingCondition, nonMatchingCondition));
+
+        CostCalculationContext context = new CostCalculationContext(LocalDate.of(2024,1,5), 100.0, 500.0, 3.0, 3, false, null, null, null, null, null, 5.0);
+        assertTrue(service.isApplicable(parameter, context));
+    }
+
+    @Test
+    void shouldTreatNoConditionsAsAlwaysApplicable() {
+        CostConditionRepository repository = mock(CostConditionRepository.class);
+        CostConditionService service = new CostConditionService(repository);
+        CostParameter parameter = new CostParameter();
+        parameter.setId(5L);
+        parameter.setAssignmentType(CostParameterAssignmentType.ALL_CONDITIONS);
+
+        when(repository.findByCostParameterId(5L)).thenReturn(List.of());
+
+        CostCalculationContext context = new CostCalculationContext(LocalDate.of(2024,1,5), 100.0, 500.0, 3.0, 3, false, null, null, null, null, null, 5.0);
+        assertTrue(service.isApplicable(parameter, context));
+    }
+
+    @Test
+    void shouldHandleNullVehicleTypeWhenEvaluatingCondition() {
+        CostConditionRepository repository = mock(CostConditionRepository.class);
+        CostConditionService service = new CostConditionService(repository);
+
+        CostParameter parameter = new CostParameter();
+        parameter.setId(6L);
+        parameter.setAssignmentType(CostParameterAssignmentType.ALL_CONDITIONS);
         CostCondition condition = new CostCondition();
         condition.setField(CostConditionFieldType.VEHICLE_TYPE);
         condition.setOperator(CostConditionOperatorType.EQUALS);
         condition.setValue("42");
+        when(repository.findByCostParameterId(6L)).thenReturn(List.of(condition));
 
         CostCalculationContext context = new CostCalculationContext(LocalDate.of(2024,1,5), 100.0, 500.0, 3.0, 3, false, null, null, null, null, null, 5.0);
+        assertFalse(service.isApplicable(parameter, context));
+    }
 
-        Method method = CostRuleService.class.getDeclaredMethod("evaluateCondition",CostCondition.class,CostCalculationContext.class);
-        method.setAccessible(true);
+    @Test
+    void shouldDefaultToAlwaysApplicableWithoutEvaluatingConditions() {
+        CostConditionRepository repository = mock(CostConditionRepository.class);
+        CostConditionService service = new CostConditionService(repository);
+        CostParameter parameter = new CostParameter();
 
-        boolean result = (boolean) method.invoke(service,condition,context);
+        assertEquals(CostParameterAssignmentType.ALWAYS, parameter.getAssignmentType());
+        assertTrue(service.isApplicable(parameter, null));
+        verifyNoInteractions(repository);
+    }
 
-        assertEquals(false,result);
+    @Test
+    void shouldNeverApplyManualCostAutomatically() {
+        CostConditionRepository repository = mock(CostConditionRepository.class);
+        CostConditionService service = new CostConditionService(repository);
+        CostParameter parameter = new CostParameter();
+        parameter.setAssignmentType(CostParameterAssignmentType.MANUAL);
+
+        assertFalse(service.isApplicable(parameter, null));
+        verifyNoInteractions(repository);
+    }
+
+    private CostCondition numericCondition(CostConditionOperatorType operator, String value) {
+        CostCondition condition = new CostCondition();
+        condition.setField(CostConditionFieldType.DISTANCE);
+        condition.setOperator(operator);
+        condition.setValue(value);
+        return condition;
     }
 }

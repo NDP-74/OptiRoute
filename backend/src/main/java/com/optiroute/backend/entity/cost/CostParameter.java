@@ -39,5 +39,5 @@ public class CostParameter {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "assignment_type", nullable = false, length = 20)
-    private CostParameterAssignmentType assignmentType = CostParameterAssignmentType.AUTOMATIC;
+    private CostParameterAssignmentType assignmentType = CostParameterAssignmentType.ALWAYS;
 }

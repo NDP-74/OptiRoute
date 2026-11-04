@@ -3,6 +3,7 @@ package com.optiroute.backend.entity.cost;
 import com.optiroute.backend.type.cost.CostConditionFieldType;
 import com.optiroute.backend.type.cost.CostConditionOperatorType;
 import com.optiroute.backend.type.cost.CostConditionSourceType;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -18,8 +19,10 @@ public class CostCondition {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "cost_rule_id", nullable = false)
-    private Long costRuleId;
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "cost_parameter_id", nullable = false)
+    private CostParameter costParameter;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

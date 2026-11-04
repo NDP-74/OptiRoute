@@ -54,8 +54,7 @@ const populateForm = () => {
         value: props.costParameter.value,
         active: props.costParameter.active,
         assignmentType: props.costParameter.assignmentType,
-
-        rule: props.costParameter.rule ?? null,
+        conditions: props.costParameter.conditions,
     } satisfies CostParameterFormData)
 }
 
@@ -74,8 +73,7 @@ const submitCostParameter = async () => {
             value: form.value,
             active: form.active,
             assignmentType: form.assignmentType,
-
-            rule: form.rule,
+            conditions: form.conditions,
         }
 
         await updateCostParameter(
