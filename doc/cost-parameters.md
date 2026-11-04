@@ -11,8 +11,8 @@ Les `CostParameter` sont les frais définis dans les `Données référentielles`
 | `label` | Libellé affiché sur le trajet |
 | `value` + `unit` | Montant et unité de calcul (voir ci-dessous) |
 | `active` | Un paramètre inactif n'est jamais compté |
-| `assignmentType` | Mode d'assignation : `AUTOMATIC` (défaut) ou `MANUAL` |
-| `rule` | Conditions d'applicabilité (optionnelles) |
+| `assignmentType` | Logique d'application : `ALWAYS` (défaut), `ALL_CONDITIONS`, `ANY_CONDITION` ou `MANUAL` |
+| `conditions` | Conditions d'applicabilité, directement rattachées au paramètre |
 
 ## Unités
 
@@ -25,13 +25,24 @@ Les `CostParameter` sont les frais définis dans les `Données référentielles`
 | `EUR_PER_MONTH` | (valeur / jours ouvrés du mois) × (km trajet / km journaliers du véhicule) |
 | `EUR_PER_YEAR` | (valeur / jours ouvrés de l'année) / nombre de trajets du jour |
 
-## Type d'assignation (`CostParameterAssignmentType`)
+## Logique d'application (`CostParameterAssignmentType`)
 
-### `AUTOMATIC`
-- Le paramètre est compté sur **tous** les trajets de sa catégorie.
-- S'il n'a pas de condition (`rule`), il est toujours compté.
-- S'il a des conditions, elles sont vérifiées pour chaque trajet ; le coût n'est compté que si elles sont satisfaites.
+### `ALWAYS` — Toujours applicable
+- Sélectionné par défaut à la création.
+- Le coût actif est appliqué automatiquement aux trajets de sa catégorie, sans condition ni événement.
+- Le formulaire masque les conditions, comme pour le mode manuel.
+- Passer à ce mode supprime les anciennes conditions du paramètre à l'enregistrement.
+
+### `ALL_CONDITIONS`
+- Le paramètre est évalué automatiquement pour les trajets de sa catégorie.
+- S'il n'a pas de condition, il est toujours compté.
+- S'il a des conditions, elles doivent toutes être satisfaites.
 - Reste soumis à `active = true`.
+
+### `ANY_CONDITION`
+- Le paramètre est évalué automatiquement pour les trajets de sa catégorie.
+- S'il n'a pas de condition, il est toujours compté.
+- S'il a des conditions, au moins une doit être satisfaite.
 
 ### `MANUAL`
 - Le paramètre n'est **jamais** compté automatiquement.
@@ -54,13 +65,48 @@ Les `CostParameter` sont les frais définis dans les `Données référentielles`
 
 ### Résumé
 
-| | `AUTOMATIC` | `MANUAL` |
+| Logique | Application automatique | Conditions |
 |---|---|---|
-| Compté sans événement | Oui (si conditions OK) | **Non** |
-| Lien avec un trajet | Tous les trajets de la catégorie | Uniquement via un événement |
-| Conditions (`rule`) | Vérifiées | N/A |
+| `ALWAYS` | Oui | Aucune |
+| `ALL_CONDITIONS` | Oui | Toutes doivent être satisfaites |
+| `ANY_CONDITION` | Oui | Au moins une doit être satisfaite |
+| `MANUAL` | Non, événement obligatoire | Non utilisées |
 
 ## Implémentation
 
-- CostParameterEngine.calculateCosts ignore les paramètres MANUAL.
-- TransportCostService.calculate ajoute, pour chaque événement du trajet, le coût du paramètre MANUAL associé (CostParameterEngine.calculateManualCost) dans la catégorie du paramètre. Un même paramètre assigné à deux événements est compté deux fois.
+- `CostParameterEngine.calculateCosts` ignore les paramètres `MANUAL` et vérifie directement les conditions associées au paramètre.
+- `TransportCostService.calculate` ajoute, pour chaque événement du trajet, le coût du paramètre `MANUAL` associé (`CostParameterEngine.calculateManualCost`) dans la catégorie du paramètre. Un même paramètre assigné à deux événements est compté deux fois.
+
+## Mise à niveau de la base existante
+
+La mise à jour automatique d'Hibernate ne supprime pas les anciennes tables/colonnes et ne peut pas transférer les conditions. Avant de lancer la nouvelle version sur une base existante, exécuter une fois [`2026-11-04-simplify-cost-rules.sql`](../backend/src/main/resources/db/manual/2026-11-04-simplify-cost-rules.sql). La migration conserve les conditions et convertit l'opérateur des paramètres automatiques en `ALL_CONDITIONS` ou `ANY_CONDITION`. Elle s'arrête si un paramètre possède plusieurs anciennes règles, car leur combinaison ne peut pas toujours être représentée par une seule logique.
+
+Exécuter le script entier : il est transactionnel et refuse les conditions orphelines avant toute modification. Ces références doivent être réparées ou leur suppression explicitement décidée avant la migration. Si une ancienne version du script a déjà été exécutée partiellement sans transaction, ne pas relancer le script entier sans vérifier les colonnes et données déjà migrées.
+
+Sur une base déjà migrée vers les trois modes, exécuter uniquement
+[`2026-11-04-add-always-cost-assignment.sql`](../backend/src/main/resources/db/manual/2026-11-04-add-always-cost-assignment.sql)
+pour autoriser `ALWAYS` et en faire la valeur par défaut SQL. Les paramètres existants conservent leur logique.
+
+### Réparation d'une migration partielle (uniquement si ces contraintes sont absentes)
+
+```sql
+BEGIN;
+
+ALTER TABLE cost_parameter
+    DROP CONSTRAINT ck_cost_parameter_assignment_type;
+
+ALTER TABLE cost_parameter
+    ALTER COLUMN assignment_type SET DEFAULT 'ALWAYS';
+
+ALTER TABLE cost_parameter
+    ADD CONSTRAINT ck_cost_parameter_assignment_type
+    CHECK (assignment_type IN (
+        'ALWAYS', 'ALL_CONDITIONS', 'ANY_CONDITION', 'MANUAL'
+    ));
+
+ALTER TABLE cost_condition
+    ADD CONSTRAINT fk_cost_condition_parameter
+    FOREIGN KEY (cost_parameter_id) REFERENCES cost_parameter(id);
+
+COMMIT;
+```
