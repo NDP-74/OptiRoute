@@ -307,8 +307,10 @@ async function initializeFromProps() {
 }
 
 function structuredCloneRoute(request: RouteRequest): RouteRequest {
-    return { ...request, origin: { ...request.origin }, destination: { ...request.destination },
-        waypoints: request.waypoints?.map(point => ({ ...point })) }
+    return {
+        ...request, origin: { ...request.origin }, destination: { ...request.destination },
+        waypoints: request.waypoints?.map(point => ({ ...point }))
+    }
 }
 
 watch(isDashdocSimulationEnabled, async () => {
@@ -574,10 +576,10 @@ onMounted(async () => {
                     <!-- COLUMN 2 : SEARCH -->
                     <section class="flex min-h-0 flex-col pr-1">
                         <div class="min-h-0 flex-1 rounded-2xl border border-slate-200 p-4 flex flex-col">
-                            <div class="mb-4 grid shrink-0 grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1"
-                                role="group" aria-label="Mode de création">
-                                <button v-for="mode in entryModes" :key="mode" type="button"
-                                    :disabled="isSaving" :aria-pressed="activeMode === mode"
+                            <div class="mb-4 grid shrink-0 grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1" role="group"
+                                aria-label="Mode de création">
+                                <button v-for="mode in entryModes" :key="mode" type="button" :disabled="isSaving"
+                                    :aria-pressed="activeMode === mode"
                                     class="flex items-center justify-center gap-2 rounded-lg px-2 py-2.5 text-sm font-semibold transition disabled:opacity-50"
                                     :class="activeMode === mode ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'"
                                     @click="isDashdocSimulationEnabled = mode === 'dashdoc'">
@@ -588,11 +590,6 @@ onMounted(async () => {
                             <div class="custom-scrollbar min-h-0 flex-1 overflow-auto pr-2">
                                 <div v-for="mode in entryModes" :key="`${formSession}-${mode}`"
                                     v-show="activeMode === mode">
-                                    <p class="mb-4 text-xs leading-5 text-slate-500">
-                                        {{ mode === 'manual'
-                                            ? "Choisissez les lieux, les étapes et l'heure de recherche."
-                                            : 'Simulez les lieux et les créneaux de chargement et de livraison d’un service Dashdoc.' }}
-                                    </p>
                                     <RouteForm :initial-request="initialFormRequest"
                                         :service-timing="mode === 'dashdoc' ? simulationTiming : undefined"
                                         v-model:tractor-id="tractorId" v-model:semi-trailer-id="semiTrailerId"
@@ -600,19 +597,17 @@ onMounted(async () => {
                                         @changed="modeStates[mode].dirty = true"
                                         @route-calculated="handleRouteCalculated($event, mode)">
                                         <fieldset v-if="mode === 'dashdoc'" class="space-y-3">
-                                            <legend class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                            <legend
+                                                class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
                                                 Fenêtres horaires du service
                                             </legend>
                                             <label v-for="field in windowFields" :key="field.key"
                                                 class="block text-xs font-medium text-slate-600">
                                                 {{ field.label }}
-                                                <input v-model="serviceWindows[field.key]" type="datetime-local" step="1"
+                                                <input v-model="serviceWindows[field.key]" type="datetime-local"
+                                                    step="1"
                                                     class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
                                             </label>
-                                            <p class="text-xs leading-5 text-slate-500">
-                                                Les horaires sont facultatifs. Le calcul utilise le départ minimal,
-                                                sinon l’arrivée minimale, sinon un départ maintenant.
-                                            </p>
                                         </fieldset>
                                     </RouteForm>
                                 </div>
