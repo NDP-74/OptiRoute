@@ -36,7 +36,8 @@ class TransportFacadeServiceTest {
 
     @ParameterizedTest
     @CsvSource({"automatic,LONG_HAUL", "from-route,LONG_HAUL", "update,LONG_HAUL",
-        "automatic,SHORT_DISTANCE", "from-route,SHORT_DISTANCE", "update,SHORT_DISTANCE"})
+        "automatic,SHORT_DISTANCE", "from-route,SHORT_DISTANCE", "update,SHORT_DISTANCE",
+        "automatic,REGIONAL", "from-route,REGIONAL", "update,REGIONAL"})
     void shouldPersistBothSegmentsThroughEveryFacadeEntry(String entry, DriverType driverType) {
         DriverService drivers = mock(DriverService.class);
         Driver driver = new Driver();
@@ -72,7 +73,9 @@ class TransportFacadeServiceTest {
         OffsetDateTime departure = OffsetDateTime.parse("2026-10-29T18:00:00+01:00");
         TransportRequest request = new TransportRequest("Mission", 7L, null, null, null, false, null, "MANUAL",
             departure, RouteTimeMode.DEPARTURE, "Origine", null, 48, 2, "Livraison", null, 46, 4, null,
-            new ServiceTiming(null, null, departure, null, null, departure.plusDays(1).minusHours(7)), List.of());
+            new ServiceTiming(null, null, departure, null,
+                driverType == DriverType.REGIONAL ? departure.plusDays(1).withHour(10) : null,
+                departure.plusDays(1).minusHours(7)), List.of());
         TransportFromRouteRequest fromRoute = new TransportFromRouteRequest(request, route(28800));
 
         Service saved = switch (entry) {
@@ -90,8 +93,16 @@ class TransportFacadeServiceTest {
         assertSame(saved, secondSaved.getService());
         assertEquals(departure.withHour(20), firstSaved.getArrivalStart());
         assertEquals(firstSaved.getDestinationLat(), secondSaved.getOriginLat());
-        assertEquals(departure.plusDays(1).withHour(8), secondSaved.getDepartureStart());
-        if (driverType == DriverType.SHORT_DISTANCE) {
+        assertEquals(departure, firstSaved.getDepartureStart());
+        assertEquals(departure.plusDays(1).withHour(driverType == DriverType.REGIONAL ? 7 : 8),
+            secondSaved.getDepartureStart());
+        if (entry.equals("automatic")) {
+            var initialCalculation = ArgumentCaptor.forClass(RouteRequest.class);
+            verify(routing).calculateRoute(initialCalculation.capture());
+            assertEquals(departure, initialCalculation.getValue().getRouteTime());
+            assertEquals(RouteTimeMode.DEPARTURE, initialCalculation.getValue().getTimeMode());
+        }
+        if (driverType != DriverType.LONG_HAUL) {
             assertEquals("Depot", firstSaved.getDestinationName());
             assertEquals(47.5, firstSaved.getDestinationLat());
             assertEquals("Depot", secondSaved.getOriginName());

@@ -14,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
@@ -226,6 +227,86 @@ class TransportRoutePlannerTest {
     }
 
     @Test
+    void shouldRequireRegionalParkingEvenWhenDirectDeliveryWouldFitOnDepartureDay() {
+        driver.setDriverType(DriverType.REGIONAL);
+        driver.setLocationLongitude(BigDecimal.valueOf(2));
+        TransportRequest source = request("2026-11-03T10:00:00+01:00", null, 3);
+        ServiceTiming timing = new ServiceTiming(45, 45, source.routeTime(), null,
+            time("2026-11-04T12:45:00+01:00"), time("2026-11-04T16:45:00+01:00"));
+        source = copy(source, 7L, time("2026-11-04T12:45:00+01:00"), RouteTimeMode.ARRIVAL, timing, List.of());
+
+        var segments = planner.plan(source, selected(3));
+
+        assertEquals(2, segments.size());
+        assertEquals("Depot", segments.getFirst().request().destinationName());
+        assertEquals(time("2026-11-03T10:45:00+01:00"), departure(segments.getFirst()));
+        assertEquals(time("2026-11-03T12:45:00+01:00"), arrival(segments.getFirst()));
+        assertEquals("Depot", segments.getLast().request().originName());
+        assertEquals(time("2026-11-04T11:00:00+01:00"), departure(segments.getLast()));
+        assertEquals(time("2026-11-04T12:00:00+01:00"), arrival(segments.getLast()));
+        assertSame(timing, segments.getLast().request().serviceTiming());
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "07:00, 12:00, 05:00, 08:00",
+        "07:00, 07:30, 04:30, 07:30",
+        "04:00, 10:00, 05:00, 08:00",
+        "12:00, 16:00, 09:00, 12:00"
+    })
+    void shouldPreferMinimumArrivalAndUseWindowBeforeAllowingDepartureBeforeFive(
+            String minimum, String maximum, String expectedDeparture, String expectedArrival) {
+        driver.setDriverType(DriverType.REGIONAL);
+        driver.setLocationLongitude(BigDecimal.valueOf(2));
+        TransportRequest source = request("2026-11-03T10:00:00+01:00", null, 5);
+        source = copy(source, 7L, source.routeTime(), RouteTimeMode.DEPARTURE,
+            new ServiceTiming(null, null, source.routeTime(), null,
+                time("2026-11-04T" + minimum + ":00+01:00"),
+                time("2026-11-04T" + maximum + ":00+01:00")), List.of());
+
+        var segments = planner.plan(source, selected(5));
+
+        assertEquals(2, segments.size());
+        assertEquals(time("2026-11-03T10:00:00+01:00"), departure(segments.getFirst()));
+        assertEquals(time("2026-11-04T" + expectedDeparture + ":00+01:00"), departure(segments.getLast()));
+        assertEquals(time("2026-11-04T" + expectedArrival + ":00+01:00"), arrival(segments.getLast()));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = DriverType.class, names = {"LONG_HAUL", "SHORT_DISTANCE"})
+    void shouldKeepDriverStopRulesWhileTargetingMinimumArrival(DriverType type) {
+        driver.setDriverType(type);
+        TransportRequest source = request("2026-11-03T15:00:00+01:00", null, 10);
+        source = copy(source, 7L, source.routeTime(), RouteTimeMode.DEPARTURE,
+            new ServiceTiming(null, null, source.routeTime(), null,
+                time("2026-11-04T12:00:00+01:00"), time("2026-11-04T16:00:00+01:00")), List.of());
+
+        var segments = planner.plan(source, selected(10));
+
+        assertEquals(2, segments.size());
+        assertEquals(type == DriverType.SHORT_DISTANCE ? "Depot" : "Arrêt de nuit à 20 h",
+            segments.getFirst().request().destinationName());
+        assertEquals(time("2026-11-03T20:00:00+01:00"), arrival(segments.getFirst()));
+        assertEquals(time("2026-11-04T07:00:00+01:00"), departure(segments.getLast()));
+        assertEquals(time("2026-11-04T12:00:00+01:00"), arrival(segments.getLast()));
+    }
+
+    @Test
+    void shouldTargetMinimumArrivalAcrossSeveralNights() {
+        TransportRequest source = request("2026-11-03T15:00:00+01:00", null, 40);
+        source = copy(source, 7L, source.routeTime(), RouteTimeMode.DEPARTURE,
+            new ServiceTiming(null, null, source.routeTime(), null,
+                time("2026-11-06T12:00:00+01:00"), time("2026-11-06T16:00:00+01:00")), List.of());
+
+        var segments = planner.plan(source, selected(40));
+
+        assertEquals(4, segments.size());
+        assertEquals(time("2026-11-04T07:00:00+01:00"), departure(segments.get(1)));
+        assertEquals(time("2026-11-06T12:00:00+01:00"), arrival(segments.getLast()));
+        assertContinuousAndDaytime(segments);
+    }
+
+    @Test
     void shouldAllowNextMorningAfterRegionalParkingReturnJustAfterMidnight() {
         driver.setDriverType(DriverType.REGIONAL);
         driver.setLocationLongitude(BigDecimal.TEN);
@@ -293,7 +374,7 @@ class TransportRoutePlannerTest {
     }
 
     @Test
-    void shouldUseNearbyShortDistanceParkingAndArriveByTheUpperDeliveryBound() {
+    void shouldUseNearbyShortDistanceParkingAndPreferTheLowerDeliveryBound() {
         driver.setDriverType(DriverType.SHORT_DISTANCE);
         driver.setLocationLatitude(new BigDecimal("0.1"));
         driver.setLocationLongitude(BigDecimal.valueOf(6));
@@ -312,8 +393,8 @@ class TransportRoutePlannerTest {
         assertEquals(0.1, segments.getFirst().request().destinationLat());
         assertEquals(6, segments.getFirst().request().destinationLng());
         assertEquals(time("2026-11-03T21:00:00+01:00"), arrival(segments.getFirst()));
-        assertEquals(time("2026-11-04T08:00:00+01:00"), departure(segments.getLast()));
-        assertEquals(time("2026-11-04T12:00:00+01:00"), arrival(segments.getLast()));
+        assertEquals(time("2026-11-04T05:15:00+01:00"), departure(segments.getLast()));
+        assertEquals(time("2026-11-04T09:15:00+01:00"), arrival(segments.getLast()));
         assertEquals(List.of(2.0), segments.getFirst().request().waypoints().stream().map(Position::getLng).toList());
         assertEquals(List.of(8.0), segments.getLast().request().waypoints().stream().map(Position::getLng).toList());
         verify(routing, atLeastOnce()).calculateRoute(any(), eq(GpsModeType.CHEAPEST));

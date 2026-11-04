@@ -179,6 +179,18 @@ class TransportRoutePlanner {
                 || secondArrival.isAfter(evening) || (deadline != null && secondArrival.isAfter(deadline))) {
             return List.of();
         }
+        TransportRequest preferred = preferredResume(remaining, parkingArrival, nextDay, deadline, mode);
+        if (preferred != null) {
+            RouteDto preferredRoute = calculate(preferred, mode);
+            OffsetDateTime preferredDeparture = preferred.timeMode() == RouteTimeMode.ARRIVAL
+                ? preferred.routeTime().minusSeconds(preferredRoute.getDuration()) : preferred.routeTime();
+            OffsetDateTime preferredArrival = preferredDeparture.plusSeconds(preferredRoute.getDuration());
+            if (!preferredDeparture.isBefore(morning) && preferredDeparture.isAfter(parkingArrival)
+                    && !preferredArrival.isAfter(target)) {
+                remaining = preferred;
+                secondRoute = preferredRoute;
+            }
+        }
         return List.of(new TransportRouteSegment(parking, firstRoute, true),
             new TransportRouteSegment(remaining, secondRoute, true));
     }
@@ -211,6 +223,10 @@ class TransportRoutePlanner {
             }
             return timedRequest(remaining, morning, RouteTimeMode.DEPARTURE);
         }
+        TransportRequest preferred = preferredResume(remaining, lastArrival, nextDay, deadline, mode);
+        if (preferred != null) {
+            return preferred;
+        }
         OffsetDateTime target = deadline.isAfter(at(date(deadline), 20)) ? at(date(deadline), 20) : deadline;
         if (date(target).isBefore(nextDay)) {
             throw conflict("la livraison est prévue avant la reprise du lendemain.");
@@ -233,6 +249,36 @@ class TransportRoutePlanner {
         return date(departure).equals(date(target))
             ? timedRequest(remaining, target, RouteTimeMode.ARRIVAL)
             : timedRequest(remaining, departure, RouteTimeMode.DEPARTURE);
+    }
+
+    private TransportRequest preferredResume(TransportRequest remaining, OffsetDateTime lastArrival,
+            LocalDate nextDay, OffsetDateTime deadline, GpsModeType mode) {
+        ServiceTiming timing = remaining.serviceTiming();
+        if (deadline == null || timing == null || timing.arrivalStart() == null) {
+            return null;
+        }
+        OffsetDateTime target = timing.arrivalStart().minusMinutes(minutes(timing.unloadingDurationMinutes()));
+        OffsetDateTime morning = at(nextDay, 5);
+        if (date(target).isBefore(nextDay) || target.isAfter(deadline)
+                || target.isAfter(at(date(target), 20))) {
+            return null;
+        }
+        RouteDto estimate = calculate(timedRequest(remaining, target, RouteTimeMode.ARRIVAL), mode);
+        if (estimate.getDuration() <= availableDriving(morning, target)) {
+            OffsetDateTime departure = latestDeparture(target, estimate.getDuration());
+            if (!departure.isBefore(morning) && departure.isAfter(lastArrival)) {
+                return date(departure).equals(date(target))
+                    ? timedRequest(remaining, target, RouteTimeMode.ARRIVAL)
+                    : timedRequest(remaining, departure, RouteTimeMode.DEPARTURE);
+            }
+        }
+        if (!morning.isAfter(lastArrival) || !date(target).equals(nextDay)) {
+            return null;
+        }
+        TransportRequest fromMorning = timedRequest(remaining, morning, RouteTimeMode.DEPARTURE);
+        OffsetDateTime arrival = morning.plusSeconds(calculate(fromMorning, mode).getDuration());
+        return !arrival.isBefore(target) && !arrival.isAfter(deadline) && !arrival.isAfter(at(nextDay, 20))
+            ? fromMorning : null;
     }
 
     private OffsetDateTime normalizeDeparture(OffsetDateTime departure, OffsetDateTime deadline, long duration) {

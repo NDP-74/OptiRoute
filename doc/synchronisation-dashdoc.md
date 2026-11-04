@@ -118,7 +118,7 @@ Les quatre bornes calculées d'un trajet sont :
 - `arrivalStart` : arrivée minimale ;
 - `arrivalEnd` : arrivée maximale.
 
-Pour le calcul initial de l'itinéraire, prendre comme référence l'**heure minimale d'arrivée**, en mode « Arriver à ». La planification nocturne recalcule ensuite chaque portion à son horaire effectif : arrivée à 20 h pour une coupure, reprise le lendemain pour la suite. Les fenêtres sources restent sur le service ; les bornes de route ne sont pas des champs à saisir dans l'interface.
+Pour le calcul initial en simulation/import, prendre comme référence le **départ minimal**, en mode « Partir à ». Sans départ minimal, utiliser l'arrivée minimale, sinon l'heure de recherche. Le chargement renseigné s'ajoute au départ minimal pour déterminer le début de conduite. La planification nocturne recalcule ensuite chaque portion à son horaire effectif. Les fenêtres sources restent sur le service ; les bornes de route ne sont pas des champs à saisir dans l'interface.
 
 Pour une création manuelle, seule l'heure de recherche et le calcul de durée déterminent les bornes minimales ; les bornes maximales restent nulles. Pour Dashdoc, la synchronisation doit distinguer les fenêtres sources enregistrées sur le service des horaires effectivement calculés pour chacun des trajets.
 
@@ -131,20 +131,14 @@ La synchronisation doit pouvoir produire **plusieurs trajets rattachés au même
 - Si un déplacement doit continuer après 20 h, couper à la position estimée du camion à **20 h**.
 - Pour un grand routier (`LONG_HAUL`), estimer cette position à partir du temps de parcours cumulé sur le tracé ; ne pas utiliser une simple proportion des kilomètres. Il s'agit d'une position théorique, sans recherche d'aire de stationnement.
 - Pour un grand régional (`SHORT_DISTANCE`), utiliser le stationnement si sa distance minimale à vol d'oiseau aux segments du tracé est strictement inférieure à 50 km et si la livraison reste faisable le lendemain en repartant à partir de 5 h, déchargement compris. La proximité est calculée localement sur la géométrie HERE, puis deux calculs routiers vérifient le détour réel et les horaires. Sinon, appliquer la coupure sur route à 20 h ; l'exception de reprise avant 5 h reste possible uniquement dans ce mode Grand routier.
-- Pour un régional (`REGIONAL`), utiliser le stationnement comme point d'arrêt.
+- Pour un régional (`REGIONAL`), si la livraison est prévue le lendemain du départ, créer obligatoirement origine → stationnement puis stationnement → livraison, même si le trajet direct pourrait être terminé le jour du départ.
 - Pour les trajets de retour au stationnement retenus par ces règles, aucune heure obligatoire d'arrivée n'est imposée : le retour peut dépasser 20 h.
 - La coupure à 20 h ne crée pas une livraison ni un déchargement.
 - Les temps de pause ne sont pas inclus dans ce calcul ; ils sont gérés séparément.
 
-Le départ est calculé ainsi :
+Pour la reprise, viser par défaut l'arrivée minimale, en tenant compte du déchargement : cible routière = `arrivalStart - unloadingDurationMinutes`. Si cela impose un départ avant 05 h, essayer un départ à 05 h et une arrivée plus tardive dans la fenêtre. Si la borne maximale ne le permet pas, reprendre exceptionnellement avant 05 h en visant la borne maximale, au plus tôt à minuit le lendemain de la coupure. Le grand régional n'utilise son stationnement que si la reprise reste possible à partir de 05 h ; sinon, ses règles de coupure sur route restent applicables.
 
-```text
-départ = heure maximale de livraison
-         - durée de chargement restant à effectuer
-         - durée de l'itinéraire
-```
-
-Cette formule concerne une portion sans nuit. Pour plusieurs journées, le calcul tient compte des créneaux de conduite : pas de conduite de 20 h à 05 h, départ le plus tardif compatible avec la livraison, avant 05 h seulement si nécessaire. Sans échéance, reprise à 05 h. Si le véhicule est déjà chargé, ne pas déduire une nouvelle fois la durée de chargement.
+Sans arrivée minimale, conserver la borne maximale comme cible. Sans échéance, reprise à 05 h. Le chargement n'est jamais déduit une seconde fois après une nuit. Le mode Manuel, sans fenêtres sources, conserve l'heure et le mode choisis dans le formulaire.
 
 Les origines/destinations successives doivent se rejoindre exactement. Les détours vers le stationnement sont de vrais tronçons routiers et contribuent aux distances et coûts.
 
@@ -168,7 +162,7 @@ CA trajet i = CA du service × distance du trajet i
 Dans le modal de création/modification, deux modes sont proposés et affichés séparément :
 
 - **Manuel** : départ, arrivée, points de passage et choix d'une heure de départ ou d'arrivée.
-- **Simulation Dashdoc** : ses propres lieux et points de passage, plus les quatre fenêtres horaires du service. Le calcul utilise l'arrivée minimale si elle est renseignée, sinon le départ minimal, sinon un départ maintenant. Les fenêtres restent facultatives.
+- **Simulation Dashdoc** : ses propres lieux et points de passage, plus les quatre fenêtres horaires du service. Le calcul utilise le départ minimal s'il est renseigné, sinon l'arrivée minimale, sinon un départ maintenant. Les fenêtres restent facultatives.
 
 Le changement de mode conserve les saisies et résultats de chacun pendant l'ouverture du modal. L'affectation, les durées de chargement/déchargement et le revenu restent communs. Seul le mode actif est enregistré ; en mode Manuel, les fenêtres de simulation ne sont pas envoyées. Après une modification des lieux ou créneaux, recalculer avant de valider. La simulation utilise les API de création existantes : elle ne lance pas une synchronisation réelle avec Dashdoc.
 

@@ -102,10 +102,10 @@ const windowFields = [
 ] as const
 const serviceWindows = reactive({ departureStart: '', departureEnd: '', arrivalStart: '', arrivalEnd: '' })
 const simulationTiming = computed(() => ({
-    routeTime: serviceWindows.arrivalStart
-        ? new Date(serviceWindows.arrivalStart).toISOString()
-        : serviceWindows.departureStart ? new Date(serviceWindows.departureStart).toISOString() : undefined,
-    timeMode: serviceWindows.arrivalStart ? 'ARRIVAL' as const : 'DEPARTURE' as const,
+    routeTime: serviceWindows.departureStart
+        ? new Date(serviceWindows.departureStart).toISOString()
+        : serviceWindows.arrivalStart ? new Date(serviceWindows.arrivalStart).toISOString() : undefined,
+    timeMode: !serviceWindows.departureStart && serviceWindows.arrivalStart ? 'ARRIVAL' as const : 'DEPARTURE' as const,
 }))
 
 function localDate(value?: string | null): string {
@@ -341,12 +341,14 @@ async function saveRoute() {
             .some(value => value !== '' && (!Number.isInteger(value) || value < 0))) {
             throw new Error('Les durées doivent être des nombres entiers positifs ou nuls.')
         }
-        if (sourceWindows.arrivalStart && (routeRequest.value.timeMode !== 'ARRIVAL'
-            || new Date(routeRequest.value.routeTime ?? '').getTime() !== new Date(sourceWindows.arrivalStart).getTime())) {
+        const simulationTime = sourceWindows.departureStart ?? sourceWindows.arrivalStart
+        const simulationMode = sourceWindows.departureStart ? 'DEPARTURE' : 'ARRIVAL'
+        if (simulationTime && (routeRequest.value.timeMode !== simulationMode
+            || new Date(routeRequest.value.routeTime ?? '').getTime() !== new Date(simulationTime).getTime())) {
             const updatedRequest: RouteRequest = {
                 ...routeRequest.value,
-                routeTime: sourceWindows.arrivalStart,
-                timeMode: 'ARRIVAL',
+                routeTime: simulationTime,
+                timeMode: simulationMode,
                 tractorId: tractorId.value,
                 semiTrailerId: semiTrailerId.value ?? undefined,
                 driverId: driverId.value,
@@ -608,8 +610,8 @@ onMounted(async () => {
                                                     class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
                                             </label>
                                             <p class="text-xs leading-5 text-slate-500">
-                                                Les horaires sont facultatifs. Le calcul utilise l’arrivée minimale,
-                                                sinon le départ minimal, sinon un départ maintenant.
+                                                Les horaires sont facultatifs. Le calcul utilise le départ minimal,
+                                                sinon l’arrivée minimale, sinon un départ maintenant.
                                             </p>
                                         </fieldset>
                                     </RouteForm>

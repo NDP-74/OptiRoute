@@ -31,9 +31,10 @@ public class RouteRequestFactory {
 		request.setWaypoints(transport.waypoints());
 
 		// Heure de départ
+		OffsetDateTime departureStart = transport.serviceTiming() == null ? null : transport.serviceTiming().departureStart();
 		OffsetDateTime arrivalStart = transport.serviceTiming() == null ? null : transport.serviceTiming().arrivalStart();
-		request.setRouteTime(arrivalStart != null ? arrivalStart : transport.routeTime());
-		request.setTimeMode(arrivalStart != null ? RouteTimeMode.ARRIVAL
+		request.setRouteTime(departureStart != null ? departureStart : arrivalStart != null ? arrivalStart : transport.routeTime());
+		request.setTimeMode(departureStart != null ? RouteTimeMode.DEPARTURE : arrivalStart != null ? RouteTimeMode.ARRIVAL
 				: transport.timeMode() == null ? RouteTimeMode.DEPARTURE : transport.timeMode());
 
 		// Mode de calcul (à adapter selon ton enum)
