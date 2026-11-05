@@ -7,6 +7,7 @@ import { formatParisTime } from "@/utils/formatters";
 
 const props = defineProps<{
     transport: PlanningTransport;
+    selectionMode: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -37,10 +38,11 @@ const formattedResult = computed(() => {
 
 <template>
     <button type="button" :class="[
-        'w-full cursor-pointer rounded-lg border p-2 text-left shadow-sm transition hover:shadow-md',
+        'w-full rounded-lg border p-2 text-left shadow-sm',
+        selectionMode ? 'cursor-pointer' : 'cursor-pointer transition hover:shadow-md',
         transport.emptyTrip
-            ? 'border-red-200 bg-red-50 hover:border-red-300 hover:bg-red-100'
-            : 'border-emerald-200 bg-emerald-50 hover:border-emerald-300 hover:bg-emerald-100'
+            ? selectionMode ? 'border-red-200 bg-red-50' : 'border-red-200 bg-red-50 transition-colors hover:border-red-300 hover:bg-red-100'
+            : selectionMode ? 'border-emerald-200 bg-emerald-50' : 'border-emerald-200 bg-emerald-50 transition-colors hover:border-emerald-300 hover:bg-emerald-100'
     ]" @click="emit('select', { serviceId: transport.id, routeId: transport.routeId })">
         <div class="flex items-center justify-between gap-2">
             <div class="min-w-0 truncate text-sm font-semibold text-slate-800"> {{ transport.name }} </div>

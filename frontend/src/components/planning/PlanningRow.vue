@@ -7,7 +7,10 @@
             @select="emit('cost-detail-select', driver.id)" />
 
         <DayCell v-for="day in days" :key="day.key" :transports="driver.days[day.key] ?? []"
-            @transport-select="emit('transport-select', $event)" />
+            :selection-enabled="daySelectionMode" :selected="selectedDayKeys.has(`${driver.id}:${day.key}`)"
+            :selection-label="`Sélectionner la journée du ${day.label} pour ${driver.name}`"
+            @transport-select="emit('transport-select', $event)"
+            @selection-toggle="emit('day-selection-toggle', { driverId: driver.id, dayKey: day.key })" />
     </div>
 </template>
 
@@ -25,11 +28,14 @@ import type { PlanningDay, PlanningDriver } from "@/models/planning/planning";
 const emit = defineEmits<{
     "transport-select": [selection: { serviceId: number; routeId: number }];
     "cost-detail-select": [driverId: number];
+    "day-selection-toggle": [selection: { driverId: number; dayKey: string }];
 }>();
 
 const props = defineProps<{
     driver: PlanningDriver;
     days: PlanningDay[];
+    daySelectionMode: boolean;
+    selectedDayKeys: Set<string>;
 }>();
 
 const gridStyle = computed(() =>

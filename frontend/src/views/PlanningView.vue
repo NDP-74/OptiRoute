@@ -1,20 +1,25 @@
 <template>
     <div class="relative flex h-full min-h-0 flex-col overflow-hidden bg-slate-100">
-        <PlanningToolbar :start-date="selectedStartDate" :end-date="selectedEndDate" @update:range="handleRangeChange"
-            @today-range="applyTodayRange" @create-route="openRouteModal" />
+        <PlanningToolbar :start-date="selectedStartDate" :end-date="selectedEndDate"
+            :day-selection-mode="daySelectionMode" :selected-day-count="selectedDayKeys.size"
+            :is-completing-days="isCompletingDays" @update:range="handleRangeChange" @today-range="applyTodayRange"
+            @create-route="openRouteModal" @start-day-selection="startDaySelection"
+            @cancel-day-selection="cancelDaySelection" @complete-days="completeSelectedDays" />
 
         <PlanningGrid :drivers="planningDrivers" :days="days" :loading="loading" :error="error"
-            @retry="loadCurrentPeriod" @transport-select="openTransport" @cost-detail-select="openCostDetail" />
+            :day-selection-mode="daySelectionMode" :selected-day-keys="selectedDayKeys" @retry="loadCurrentPeriod"
+            @transport-select="openTransport" @cost-detail-select="openCostDetail"
+            @day-selection-toggle="toggleDaySelection" />
 
         <CostDetailDrawer :open="selectedCostDetailDriverId !== null" :driver="selectedCostDetailDriver"
             @close="selectedCostDetailDriverId = null" />
 
         <TransportDetailDrawer :open="selectedTransport !== null" :transport-id="selectedTransport?.serviceId ?? null"
-            :route-id="selectedTransport?.routeId ?? null"
-            @close="closeTransport" @deleted="handleTransportDeleted" @updated="loadCurrentPeriod" @edit="openEditModal" />
+            :route-id="selectedTransport?.routeId ?? null" @close="closeTransport" @deleted="handleTransportDeleted"
+            @updated="loadCurrentPeriod" @edit="openEditModal" />
 
-        <PlanningRouteModal :show="showRouteModal" :editing-transport="editingTransport" :events="editingEvents" @close="closeRouteModal"
-            @saved="handleRouteSaved" />
+        <PlanningRouteModal :show="showRouteModal" :editing-transport="editingTransport" :events="editingEvents"
+            @close="closeRouteModal" @saved="handleRouteSaved" />
     </div>
 </template>
 
@@ -29,10 +34,17 @@ import CostDetailDrawer from "@/components/planning/CostDetailDrawer.vue";
 import TransportDetailDrawer from "@/components/transports/TransportDetailDrawer.vue";
 
 import { usePlanning } from "@/utils/planningUtils";
+import { getTransportById } from "@/api/planningApi";
+import { createTransportFromRoute } from "@/api/transportApi";
+import { calculateRoute } from "@/api/here/mapsApi";
+import { getApiErrorMessage } from "@/api/utils";
+import { useNotification } from "@/composables/useNotification";
 
 import type { PlanningDay, PlanningDriver, PlanningTransport, } from "@/models/planning/planning";
 import type { TransportDetail } from "@/models/transport/TransportDetail";
 import type { EventResponse } from "@/models/Event";
+import type { RouteRequest, RouteResponse } from "@/models/route/Route";
+import type { CreateTransportFromRouteRequest } from "@/models/transport/TransportRequest";
 import { formatParisDateKey } from "@/utils/formatters";
 
 
@@ -41,6 +53,239 @@ const selectedCostDetailDriverId = ref<number | null>(null);
 const showRouteModal = ref(false);
 const editingTransport = ref<TransportDetail | null>(null);
 const editingEvents = ref<EventResponse[]>([]);
+const daySelectionMode = ref(false);
+const selectedDayKeys = ref<Set<string>>(new Set());
+const isCompletingDays = ref(false);
+const notification = useNotification();
+
+function daySelectionKey(driverId: number, dayKey: string): string {
+    return `${driverId}:${dayKey}`;
+}
+
+function startDaySelection(): void {
+    daySelectionMode.value = true;
+}
+
+function cancelDaySelection(): void {
+    selectedDayKeys.value = new Set();
+    daySelectionMode.value = false;
+}
+
+function toggleDaySelection(selection: { driverId: number; dayKey: string }): void {
+    const key = daySelectionKey(selection.driverId, selection.dayKey);
+    const nextSelection = new Set(selectedDayKeys.value);
+
+    if (nextSelection.has(key)) {
+        nextSelection.delete(key);
+    } else {
+        nextSelection.add(key);
+    }
+
+    selectedDayKeys.value = nextSelection;
+}
+
+function getTimestamp(value?: string | null): number | null {
+    if (!value) {
+        return null;
+    }
+
+    const timestamp = new Date(value).getTime();
+    return Number.isFinite(timestamp) ? timestamp : null;
+}
+
+function transportDetailKey(transport: PlanningTransport): string {
+    return `${transport.id}:${transport.routeId}`;
+}
+
+function getErrorMessage(error: unknown): string {
+    return error instanceof Error && !("response" in error)
+        ? error.message
+        : getApiErrorMessage(error, "Une erreur est survenue.");
+}
+
+async function completeSelectedDays(): Promise<void> {
+    if (isCompletingDays.value || selectedDayKeys.value.size === 0) {
+        return;
+    }
+
+    const selectedCells = planningDrivers.value.flatMap((driver) =>
+        days.value
+            .filter((day) => selectedDayKeys.value.has(daySelectionKey(driver.id, day.key)))
+            .map((day) => ({ driver, dayKey: day.key }))
+    );
+    const detailCache = new Map<string, Promise<TransportDetail>>();
+    let createdCount = 0;
+    let noGapCount = 0;
+    let insufficientTimeCount = 0;
+    let unavailableRouteCount = 0;
+    const failures: string[] = [];
+
+    function loadTransportDetail(transport: PlanningTransport): Promise<TransportDetail> {
+        const key = transportDetailKey(transport);
+        let detail = detailCache.get(key);
+
+        if (!detail) {
+            detail = getTransportById(transport.id, transport.routeId);
+            detailCache.set(key, detail);
+        }
+
+        return detail;
+    }
+
+    isCompletingDays.value = true;
+    daySelectionMode.value = false;
+
+    try {
+        for (const { driver, dayKey } of selectedCells) {
+            const transportsForDay = [...(driver.days[dayKey] ?? [])].sort((first, second) => {
+                return (getTimestamp(first.departureStart ?? first.arrivalStart) ?? Number.MAX_SAFE_INTEGER)
+                    - (getTimestamp(second.departureStart ?? second.arrivalStart) ?? Number.MAX_SAFE_INTEGER);
+            });
+            let dayGapCount = 0;
+
+            for (let index = 0; index < transportsForDay.length - 1; index++) {
+                const previousTransport = transportsForDay[index];
+                const nextTransport = transportsForDay[index + 1];
+                if (!previousTransport || !nextTransport) {
+                    continue;
+                }
+
+                const previousArrival = getTimestamp(previousTransport.arrivalStart);
+                const nextDeparture = getTimestamp(nextTransport.departureStart);
+
+                if (previousArrival === null || nextDeparture === null || nextDeparture <= previousArrival) {
+                    continue;
+                }
+
+                try {
+                    const [previousDetail, nextDetail] = await Promise.all([
+                        loadTransportDetail(previousTransport),
+                        loadTransportDetail(nextTransport),
+                    ]);
+
+                    if (previousDetail.driverId === null || previousDetail.tractorId === null) {
+                        throw new Error("Le trajet précédent n’a pas de chauffeur ni de tracteur assigné.");
+                    }
+
+                    const actualPreviousArrival = getTimestamp(previousDetail.arrivalStart) ?? previousArrival;
+                    const unloadingDurationMinutes = previousDetail.serviceTiming.unloadingDurationMinutes ?? 0;
+                    if (!Number.isFinite(unloadingDurationMinutes) || unloadingDurationMinutes < 0) {
+                        throw new Error("La durée de déchargement du trajet précédent est invalide.");
+                    }
+
+                    const emptyTripDeparture = actualPreviousArrival + unloadingDurationMinutes * 60_000;
+                    if (nextDeparture <= actualPreviousArrival) {
+                        continue;
+                    }
+
+                    dayGapCount++;
+                    if (nextDeparture <= emptyTripDeparture) {
+                        insufficientTimeCount++;
+                        continue;
+                    }
+
+                    const routeRequest: RouteRequest = {
+                        origin: {
+                            name: previousDetail.destinationName,
+                            address: previousDetail.destinationAddress ?? "",
+                            lat: previousDetail.destinationLat,
+                            lng: previousDetail.destinationLng,
+                        },
+                        destination: {
+                            name: nextDetail.originName,
+                            address: nextDetail.originAddress ?? "",
+                            lat: nextDetail.originLat,
+                            lng: nextDetail.originLng,
+                        },
+                        tractorId: previousDetail.tractorId,
+                        semiTrailerId: previousDetail.semiTrailerId ?? undefined,
+                        driverId: previousDetail.driverId,
+                        mode: "FASTEST",
+                        emptyTrip: true,
+                        routeTime: new Date(emptyTripDeparture).toISOString(),
+                        timeMode: "DEPARTURE",
+                    };
+                    const routeResponse: RouteResponse = await calculateRoute(routeRequest);
+                    if (routeResponse.routes.length === 0) {
+                        unavailableRouteCount++;
+                        continue;
+                    }
+
+                    const availableDuration = (nextDeparture - emptyTripDeparture) / 1000;
+                    const selectedRoute = routeResponse.routes
+                        .filter((candidate) => Number.isFinite(candidate.duration) && candidate.duration <= availableDuration)
+                        .sort((first, second) => first.duration - second.duration)[0];
+
+                    if (!selectedRoute) {
+                        insufficientTimeCount++;
+                        continue;
+                    }
+
+                    const request: CreateTransportFromRouteRequest = {
+                        transport: {
+                            name: "Trajet à vide",
+                            driverId: previousDetail.driverId,
+                            tractorId: previousDetail.tractorId,
+                            semiTrailerId: previousDetail.semiTrailerId ?? undefined,
+                            emptyTrip: true,
+                            routeTime: new Date(emptyTripDeparture).toISOString(),
+                            timeMode: "DEPARTURE",
+                            originName: routeRequest.origin.name,
+                            originAddress: routeRequest.origin.address,
+                            originLat: routeRequest.origin.lat,
+                            originLng: routeRequest.origin.lng,
+                            destinationName: routeRequest.destination.name,
+                            destinationAddress: routeRequest.destination.address,
+                            destinationLat: routeRequest.destination.lat,
+                            destinationLng: routeRequest.destination.lng,
+                            revenue: null,
+                            waypoints: [],
+                        },
+                        selectedRoute,
+                    };
+
+                    await createTransportFromRoute(request);
+                    createdCount++;
+                } catch (error) {
+                    failures.push(`${driver.name} (${dayKey}) : ${getErrorMessage(error)}`);
+                }
+            }
+
+            if (dayGapCount === 0) {
+                noGapCount++;
+            }
+        }
+
+        if (createdCount > 0) {
+            await loadCurrentPeriod();
+        }
+
+        if (failures.length > 0) {
+            const examples = failures.slice(0, 2).join(" ");
+            const remaining = failures.length > 2 ? ` (+${failures.length - 2} autre(s) erreur(s))` : "";
+            notification.error(
+                "Complément partiel",
+                `${createdCount} trajet(s) créé(s), ${failures.length} échec(s). ${examples}${remaining}`
+            );
+        } else if (createdCount > 0) {
+            notification.success(
+                "Journées complétées",
+                `${createdCount} trajet(s) à vide créé(s).`
+            );
+        } else {
+            notification.warning(
+                "Aucun trajet créé",
+                noGapCount === selectedCells.length && insufficientTimeCount === 0
+                    ? "Aucune journée sélectionnée ne contient un créneau entre deux trajets."
+                    : `Aucun itinéraire créé : ${insufficientTimeCount} créneau(x) trop court(s), ${unavailableRouteCount} itinéraire(s) indisponible(s).`
+            );
+        }
+    } finally {
+        selectedDayKeys.value = new Set();
+        daySelectionMode.value = false;
+        isCompletingDays.value = false;
+    }
+}
 
 function closePlanningDrawers(): void {
     selectedTransport.value = null;
@@ -348,7 +593,11 @@ function applyTodayRange(startOffset: number, additionalDays: number): void {
 
 watch(
     [() => formatDateKey(selectedStartDate.value), () => formatDateKey(selectedEndDate.value),],
-    () => { void loadCurrentPeriod(); },
+    () => {
+        selectedDayKeys.value = new Set();
+        daySelectionMode.value = false;
+        void loadCurrentPeriod();
+    },
     {
         immediate: true,
     }

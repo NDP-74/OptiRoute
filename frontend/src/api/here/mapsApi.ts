@@ -1,5 +1,6 @@
 import axios from 'axios'
 import api from '../axios'
+import type { RouteRequest, RouteResponse } from '@/models/route/Route'
 
 // Variables
 
@@ -7,7 +8,7 @@ const API_KEY = import.meta.env.VITE_HERE_API_KEY
 
 // Functions
 
-export async function calculateRoute(payload: any) {
+export async function calculateRoute(payload: RouteRequest): Promise<RouteResponse> {
     const response = await api.post('routes/calculate', payload)
     return response.data
 }

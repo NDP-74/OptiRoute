@@ -10,12 +10,18 @@ type DateRange = [Date, Date] | null;
 const props = defineProps<{
     startDate: Date;
     endDate: Date;
+    daySelectionMode: boolean;
+    selectedDayCount: number;
+    isCompletingDays: boolean;
 }>();
 
 const emit = defineEmits<{
     "update:range": [value: [Date, Date]];
     "today-range": [startOffset: number, additionalDays: number];
     "create-route": [];
+    "start-day-selection": [];
+    "cancel-day-selection": [];
+    "complete-days": [];
 }>();
 
 const selectedRange = ref<DateRange>([
@@ -121,7 +127,31 @@ watch(
                 </div>
             </div>
 
-            <div class="flex flex-wrap gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+                <span v-if="props.selectedDayCount > 0" class="text-sm text-slate-600" aria-live="polite">
+                    {{ props.selectedDayCount }} journée{{ props.selectedDayCount > 1 ? "s" : "" }} sélectionnée{{ props.selectedDayCount > 1 ? "s" : "" }}
+                </span>
+
+                <button v-if="props.daySelectionMode" type="button" :disabled="props.isCompletingDays"
+                    class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    @click="emit('cancel-day-selection')">
+                    Annuler la sélection
+                </button>
+
+                <button v-else type="button" :disabled="props.isCompletingDays"
+                    :class="[
+                        'rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100'
+                    ]"
+                    @click="emit('start-day-selection')">
+                    Compléter des journées
+                </button>
+
+                <button v-if="props.selectedDayCount > 0" type="button" :disabled="props.isCompletingDays"
+                    class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    @click="emit('complete-days')">
+                    {{ props.isCompletingDays ? "Création des trajets à vide..." : "Générer les trajets à vide" }}
+                </button>
+
                 <button type="button"
                     class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
                     @click="emit('create-route')">
