@@ -49,6 +49,9 @@ defineProps<{
                         <MapPin v-if="event.pointOfInterestLabel" class="h-3.5 w-3.5 shrink-0" />
                         {{ event.pointOfInterestLabel ?? "Sans lieu" }}
                     </p>
+                    <p class="mt-1 text-xs text-slate-500">
+                        Durée : {{ event.durationMinutes }} min
+                    </p>
                 </div>
 
                 <div class="shrink-0 text-right">

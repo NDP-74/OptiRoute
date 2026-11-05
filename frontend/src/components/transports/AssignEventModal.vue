@@ -30,6 +30,7 @@ const pointsOfInterest = ref<PointOfInterest[]>([])
 
 const costParameterId = ref<number | null>(null)
 const pointOfInterestId = ref<number | null>(null)
+const durationMinutes = ref<number | ''>(0)
 const target = ref<'tractor' | 'semiTrailer'>('tractor')
 
 const loading = ref(false)
@@ -48,6 +49,7 @@ watch(() => props.show, async (visible) => {
 
     costParameterId.value = null
     pointOfInterestId.value = null
+    durationMinutes.value = 0
     target.value = hasTractor.value || !hasSemiTrailer.value ? 'tractor' : 'semiTrailer'
 
     loading.value = true
@@ -76,7 +78,8 @@ const submit = async () => {
             costParameterId: costParameterId.value,
             pointOfInterestId: pointOfInterestId.value,
             tractorId: target.value === 'tractor' ? props.transport.tractorId : null,
-            semiTrailerId: target.value === 'semiTrailer' ? props.transport.semiTrailerId : null
+            semiTrailerId: target.value === 'semiTrailer' ? props.transport.semiTrailerId : null,
+            durationMinutes: durationMinutes.value === '' ? 0 : durationMinutes.value
         })
 
         notification.success('Événement créé', 'L’événement a bien été assigné.')
@@ -121,6 +124,12 @@ const selectClass = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-
                 </select>
             </div>
 
+            <div>
+                <label class="mb-1 block text-sm font-medium text-slate-700">Durée de l’événement (min)</label>
+                <input v-model.number="durationMinutes" type="number" min="0" step="1" required
+                    :disabled="loading || saving" :class="selectClass" />
+            </div>
+
             <fieldset>
                 <legend class="mb-1 text-sm font-medium text-slate-700">Véhicule concerné</legend>
 
@@ -138,7 +147,8 @@ const selectClass = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-
 
                     <label class="flex items-center gap-3 rounded-xl border border-slate-200 p-3 text-sm"
                         :class="hasSemiTrailer ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'">
-                        <input v-model="target" type="radio" value="semiTrailer" :disabled="!hasSemiTrailer || saving" />
+                        <input v-model="target" type="radio" value="semiTrailer"
+                            :disabled="!hasSemiTrailer || saving" />
                         <span>
                             <span class="font-medium">Semi-remorque</span>
                             <span class="block text-xs text-slate-500">

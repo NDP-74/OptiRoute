@@ -5,6 +5,7 @@ export interface EventCreateRequest {
     pointOfInterestId: number | null
     tractorId: number | null
     semiTrailerId: number | null
+    durationMinutes: number
 }
 
 export interface EventResponse {
@@ -19,4 +20,5 @@ export interface EventResponse {
     pointOfInterestLatitude: number | null
     pointOfInterestLongitude: number | null
     eventDate: string
+    durationMinutes: number
 }

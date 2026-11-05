@@ -6,7 +6,9 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
@@ -55,8 +57,13 @@ public class TransportCostService {
         LocalDate date = route.getDepartureStart().atZoneSameInstant(ZONE).toLocalDate();
 
         List<Route> dayRoutes = findDayRoutes(route,date);
-        List<CostCalculationContext> dailyContexts = dayRoutes.stream().map(r -> buildContext(r,dayRoutes)).toList();
-        CostCalculationContext context = buildContext(route,dayRoutes);
+        Map<Long, Double> driverWorkDurations = new HashMap<>();
+        for (Route dayRoute : dayRoutes) {
+            driverWorkDurations.put(dayRoute.getId(),calculateDriverWorkDurationHours(dayRoute));
+        }
+        double dailyDriverWorkDurationHours = driverWorkDurations.values().stream().mapToDouble(Double::doubleValue).sum();
+        List<CostCalculationContext> dailyContexts = dayRoutes.stream().map(r -> buildContext(r,dayRoutes,driverWorkDurations,dailyDriverWorkDurationHours)).toList();
+        CostCalculationContext context = buildContext(route,dayRoutes,driverWorkDurations,dailyDriverWorkDurationHours);
 
         Driver driver = route.getDriverId() == null ? null : driverRepository.findById(route.getDriverId()).orElse(null);
         Tractor tractor = route.getTractorId() == null ? null : tractorRepository.findById(route.getTractorId()).orElse(null);
@@ -66,7 +73,7 @@ public class TransportCostService {
         double tollCost = route.getTollCost() == null ? 0 : route.getTollCost().doubleValue();
 
         CostCategoryResponse vehicle = vehicleCostService.calculateCosts(tractor,semiTrailer,context,fuelCost,tollCost,dailyContexts);
-        CostCategoryResponse driverCosts = driver == null ? new CostCategoryResponse(List.of(),0) : driverCostService.calculateCosts(driver,context,dailyContexts);
+        CostCategoryResponse driverCosts = driver == null ? new CostCategoryResponse(List.of(), 0) : driverCostService.calculateCosts(driver,context,dailyContexts);
         CostCategoryResponse structure = structureCostService.calculateCosts(context,dailyContexts);
 
         List<Event> events = route.getId() == null ? List.of() : eventRepository.findByRouteIdOrderByIdAsc(route.getId());
@@ -91,7 +98,7 @@ public class TransportCostService {
     private CostCategoryResponse withCost(CostCategoryResponse category, AppliedCostResponse cost) {
         List<AppliedCostResponse> costs = new ArrayList<>(category.costs());
         costs.add(cost);
-        return new CostCategoryResponse(costs,category.totalCost() + cost.amount());
+        return new CostCategoryResponse(costs, category.totalCost() + cost.amount());
     }
 
     // Trajets du même jour pour le même conducteur (le véhicule suit le conducteur)
@@ -109,7 +116,7 @@ public class TransportCostService {
         return routes;
     }
 
-    private CostCalculationContext buildContext(Route route, List<Route> dayRoutes) {
+    private CostCalculationContext buildContext(Route route, List<Route> dayRoutes, Map<Long, Double> driverWorkDurations, double dailyDriverWorkDurationHours) {
         double dailyKm = dayRoutes.stream().mapToDouble(r -> r.getDistanceMeters() / 1000.0).sum();
         double dailyHours = dayRoutes.stream().mapToDouble(r -> r.getDurationSeconds() / 3600.0).sum();
 
@@ -123,6 +130,24 @@ public class TransportCostService {
 
         return new CostCalculationContext(route.getDepartureStart().atZoneSameInstant(ZONE).toLocalDate(), route.getDistanceMeters() / 1000.0, dailyKm,
             route.getDurationSeconds() / 3600.0, dayRoutes.size(), route.isEmptyTrip(), route.getDepartureStart().atZoneSameInstant(ZONE).toLocalTime(),
-            route.getArrivalStart().atZoneSameInstant(ZONE).toLocalTime(), dayStart, dayEnd, trailerTypeId, dailyHours);
+            route.getArrivalStart().atZoneSameInstant(ZONE).toLocalTime(), dayStart, dayEnd, trailerTypeId, dailyDriverWorkDurationHours,
+            driverWorkDurations.getOrDefault(route.getId(),route.getDurationSeconds() / 3600.0));
+    }
+
+    private double calculateDriverWorkDurationHours(Route route) {
+        double durationHours = route.getDurationSeconds() / 3600.0;
+        var service = route.getService();
+        if (service != null) {
+            durationHours += toHours(service.getLoadingDurationMinutes()) + toHours(service.getUnloadingDurationMinutes());
+        }
+        if (route.getId() != null) {
+            durationHours += eventRepository.findByRouteIdOrderByIdAsc(route.getId()).stream().map(Event::getDurationMinutes).filter(minutes -> minutes != null)
+                .mapToInt(Integer::intValue).sum() / 60.0;
+        }
+        return durationHours;
+    }
+
+    private double toHours(Integer minutes) {
+        return minutes == null ? 0 : minutes / 60.0;
     }
 }

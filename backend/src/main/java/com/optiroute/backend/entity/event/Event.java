@@ -48,4 +48,7 @@ public class Event extends EntityUtils {
 
     @Column(name = "event_date", nullable = false)
     private LocalDateTime eventDate;
+
+    @Column(name = "duration_minutes")
+    private Integer durationMinutes = 0;
 }

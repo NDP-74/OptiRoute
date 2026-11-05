@@ -38,7 +38,7 @@ public class DriverCostService {
         int workingDays = workingDaysService.getWorkingDaysInYear(context.date().getYear());
         if (driver.getAnnualSalary() != null && workingDays > 0 && context.dailyDriverDurationHours() > 0) {
             double dailySalary = driver.getAnnualSalary().doubleValue() / workingDays;
-            salaryCost = dailySalary * (context.durationHours() / context.dailyDriverDurationHours());
+            salaryCost = dailySalary * (context.driverWorkDurationHours() / context.dailyDriverDurationHours());
         }
 
         costs.add(new AppliedCostResponse(SALARY_LABEL, salaryCost));

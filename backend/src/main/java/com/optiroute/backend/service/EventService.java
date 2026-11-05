@@ -44,8 +44,8 @@ public class EventService {
     private final RouteOptimizationService routeOptimizationService;
 
     public EventService(EventRepository eventRepository, RouteRepository routeRepository, CostParameterRepository costParameterRepository,
-            PointOfInterestRepository pointOfInterestRepository, TractorRepository tractorRepository, SemiTrailerRepository semiTrailerRepository,
-            RouteOptimizationService routeOptimizationService) {
+        PointOfInterestRepository pointOfInterestRepository, TractorRepository tractorRepository, SemiTrailerRepository semiTrailerRepository,
+        RouteOptimizationService routeOptimizationService) {
         this.eventRepository = eventRepository;
         this.routeRepository = routeRepository;
         this.costParameterRepository = costParameterRepository;
@@ -67,14 +67,15 @@ public class EventService {
                 .orElseThrow(() -> new EntityNotFoundException("Route " + request.routeId() + " not found for service " + request.serviceId()));
 
         CostParameter costParameter = costParameterRepository.findById(request.costParameterId())
-                .orElseThrow(() -> new EntityNotFoundException("Cost parameter not found with id " + request.costParameterId()));
+            .orElseThrow(() -> new EntityNotFoundException("Cost parameter not found with id " + request.costParameterId()));
 
         if (costParameter.getAssignmentType() != CostParameterAssignmentType.MANUAL) {
             throw new IllegalArgumentException("Cost parameter is not manually assignable");
         }
 
         PointOfInterest pointOfInterest = request.pointOfInterestId() == null ? null
-                : pointOfInterestRepository.findById(request.pointOfInterestId()).orElseThrow(() -> new EntityNotFoundException("Point of interest not found with id " + request.pointOfInterestId()));
+            : pointOfInterestRepository.findById(request.pointOfInterestId())
+                .orElseThrow(() -> new EntityNotFoundException("Point of interest not found with id " + request.pointOfInterestId()));
 
         Tractor tractor = null;
         SemiTrailer semiTrailer = null;
@@ -88,12 +89,14 @@ public class EventService {
             if (!request.semiTrailerId().equals(route.getSemiTrailerId())) {
                 throw new IllegalArgumentException("Semi-trailer does not belong to this route");
             }
-            semiTrailer = semiTrailerRepository.findById(request.semiTrailerId()).orElseThrow(() -> new EntityNotFoundException("Semi-trailer not found with id " + request.semiTrailerId()));
+            semiTrailer = semiTrailerRepository.findById(request.semiTrailerId())
+                .orElseThrow(() -> new EntityNotFoundException("Semi-trailer not found with id " + request.semiTrailerId()));
         }
 
         LocalDateTime eventDate = route.getDepartureStart() == null ? LocalDateTime.now() : route.getDepartureStart().toLocalDateTime();
 
-        Event event = Event.builder().route(route).costParameter(costParameter).pointOfInterest(pointOfInterest).tractor(tractor).semiTrailer(semiTrailer).eventDate(eventDate).build();
+        Event event = Event.builder().route(route).costParameter(costParameter).pointOfInterest(pointOfInterest).tractor(tractor).semiTrailer(semiTrailer).eventDate(eventDate)
+            .durationMinutes(request.durationMinutes() == null ? 0 : request.durationMinutes()).build();
 
         Event saved = eventRepository.save(event);
 
@@ -106,8 +109,7 @@ public class EventService {
 
     @Transactional
     public void delete(Long id) {
-        Event event = eventRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Event not found with id " + id));
+        Event event = eventRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Event not found with id " + id));
         Route route = event.getRoute();
 
         eventRepository.delete(event);
@@ -117,44 +119,44 @@ public class EventService {
 
     @Transactional(readOnly = true)
     public List<EventResponse> getByService(Long serviceId) {
-        return getByService(serviceId, null);
+        return getByService(serviceId,null);
     }
 
     @Transactional(readOnly = true)
     public List<EventResponse> getByService(Long serviceId, Long routeId) {
-        Route route = routeId == null
-            ? routeRepository.findFirstByServiceId(serviceId).orElse(null)
+        Route route = routeId == null ? routeRepository.findFirstByServiceId(serviceId).orElse(null)
             : routeRepository.findById(routeId).filter(candidate -> candidate.getService().getId().equals(serviceId))
                 .orElseThrow(() -> new EntityNotFoundException("Route " + routeId + " not found for service " + serviceId));
-        return route == null ? List.of()
-            : eventRepository.findByRouteIdOrderByIdAsc(route.getId()).stream().map(this::toResponse).toList();
+        return route == null ? List.of() : eventRepository.findByRouteIdOrderByIdAsc(route.getId()).stream().map(this::toResponse).toList();
     }
 
-            @Transactional(readOnly = true)
-            public List<EventResponse> getByTractor(Long tractorId) {
-                return eventRepository.findByTractorIdOrderByEventDateDescIdDesc(tractorId).stream().map(this::toResponse).toList();
-            }
+    @Transactional(readOnly = true)
+    public List<EventResponse> getByTractor(Long tractorId) {
+        return eventRepository.findByTractorIdOrderByEventDateDescIdDesc(tractorId).stream().map(this::toResponse).toList();
+    }
 
-            @Transactional(readOnly = true)
-            public List<EventResponse> getBySemiTrailer(Long semiTrailerId) {
-                return eventRepository.findBySemiTrailerIdOrderByEventDateDescIdDesc(semiTrailerId).stream().map(this::toResponse).toList();
-            }
+    @Transactional(readOnly = true)
+    public List<EventResponse> getBySemiTrailer(Long semiTrailerId) {
+        return eventRepository.findBySemiTrailerIdOrderByEventDateDescIdDesc(semiTrailerId).stream().map(this::toResponse).toList();
+    }
+
     private EventResponse toResponse(Event event) {
         PointOfInterest poi = event.getPointOfInterest();
         Tractor tractor = event.getTractor();
         SemiTrailer semiTrailer = event.getSemiTrailer();
 
         return new EventResponse(event.getId(), event.getRoute().getId(), event.getCostParameter().getId(), event.getCostParameter().getLabel(), poi == null ? null : poi.getId(),
-                poi == null ? null : poi.getLabel(), tractor == null ? null : tractor.getId(), semiTrailer == null ? null : semiTrailer.getId(),
-                poi == null ? null : poi.getLatitude(), poi == null ? null : poi.getLongitude(), event.getEventDate());
+            poi == null ? null : poi.getLabel(), tractor == null ? null : tractor.getId(), semiTrailer == null ? null : semiTrailer.getId(), poi == null ? null : poi.getLatitude(),
+            poi == null ? null : poi.getLongitude(), event.getEventDate(), event.getDurationMinutes() == null ? 0 : event.getDurationMinutes());
     }
 
-    // Recalcule l'itinéraire avec les points d'intérêt de tous les événements de la route comme étapes
+    // Recalcule l'itinéraire avec les points d'intérêt de tous les événements de la
+    // route comme étapes
     private void recalculateRoute(Route route) {
         List<Position> waypoints = new ArrayList<>(route.getWaypoints() == null ? List.of() : route.getWaypoints());
         waypoints.addAll(eventRepository.findByRouteIdOrderByIdAsc(route.getId()).stream().map(Event::getPointOfInterest)
-                .filter(poi -> poi != null && poi.getLatitude() != null && poi.getLongitude() != null)
-                .map(poi -> new Position(poi.getLatitude().doubleValue(), poi.getLongitude().doubleValue())).toList());
+            .filter(poi -> poi != null && poi.getLatitude() != null && poi.getLongitude() != null)
+            .map(poi -> new Position(poi.getLatitude().doubleValue(), poi.getLongitude().doubleValue())).toList());
 
         GpsModeType mode = route.getRouteType() == null ? GpsModeType.FASTEST : route.getRouteType();
 
@@ -188,4 +190,5 @@ public class EventService {
         }
 
         routeRepository.save(route);
-    }}
+    }
+}

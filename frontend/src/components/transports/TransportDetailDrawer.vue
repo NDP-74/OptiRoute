@@ -294,8 +294,7 @@ watch(
                     </p>
                 </div>
 
-                <div v-if="transport && transport.routes.length > 1"
-                    class="flex shrink-0 items-center gap-1">
+                <div v-if="transport && transport.routes.length > 1" class="flex shrink-0 items-center gap-1">
                     <button type="button"
                         class="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-2 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
                         aria-label="Itinéraire précédent" :disabled="activeRouteIndex === 0 || loadingEvents"
@@ -364,9 +363,11 @@ watch(
                 </div>
 
                 <div class="mt-4 grid grid-cols-2 gap-4">
-                    <TransportDetailItem v-if="activeTransport.departureStart || activeTransport.departureEnd" label="Départ"
+                    <TransportDetailItem v-if="activeTransport.departureStart || activeTransport.departureEnd"
+                        label="Départ"
                         :value="formatTimeWindow(activeTransport.departureStart, activeTransport.departureEnd)" />
-                    <TransportDetailItem v-if="activeTransport.arrivalStart || activeTransport.arrivalEnd" label="Arrivée"
+                    <TransportDetailItem v-if="activeTransport.arrivalStart || activeTransport.arrivalEnd"
+                        label="Arrivée"
                         :value="formatTimeWindow(activeTransport.arrivalStart, activeTransport.arrivalEnd)" />
                     <TransportDetailItem v-if="activeTransport.serviceTiming?.loadingDurationMinutes != null"
                         label="Chargement" :value="`${activeTransport.serviceTiming.loadingDurationMinutes} min`" />
@@ -404,7 +405,8 @@ watch(
 
                 <div v-if="activeRoute" class="mt-4">
                     <div class="grid gap-3 sm:grid-cols-2">
-                        <TransportDetailItem v-if="activeRoute.departureStart || activeRoute.departureEnd" label="Départ"
+                        <TransportDetailItem v-if="activeRoute.departureStart || activeRoute.departureEnd"
+                            label="Départ"
                             :value="formatTimeWindow(activeRoute.departureStart, activeRoute.departureEnd)" />
                         <TransportDetailItem v-if="activeRoute.arrivalStart || activeRoute.arrivalEnd" label="Arrivée"
                             :value="formatTimeWindow(activeRoute.arrivalStart, activeRoute.arrivalEnd)" />
@@ -414,7 +416,8 @@ watch(
                         <div class="min-w-0">
                             <p class="text-xs font-medium text-slate-400">Départ</p>
                             <p class="mt-0.5 text-sm font-semibold text-slate-800">{{ activeRoute.originName }}</p>
-                            <p class="text-xs text-slate-500">{{ activeRoute.originAddress || "Adresse non renseignée" }}
+                            <p class="text-xs text-slate-500">{{ activeRoute.originAddress || "Adresse non renseignée"
+                            }}
                             </p>
                         </div>
                     </div>
@@ -424,7 +427,9 @@ watch(
                         <div class="min-w-0">
                             <p class="text-xs font-medium text-slate-400">Destination</p>
                             <p class="mt-0.5 text-sm font-semibold text-slate-800">{{ activeRoute.destinationName }}</p>
-                            <p class="text-xs text-slate-500">{{ activeRoute.destinationAddress || "Adresse non renseignée" }}</p>
+                            <p class="text-xs text-slate-500">
+                                {{ activeRoute.destinationAddress || "Adresse non renseignée" }}
+                            </p>
                         </div>
                     </div>
                     <div class="mt-4 grid grid-cols-2 gap-3">
@@ -437,8 +442,7 @@ watch(
             </section>
 
             <!-- Carte -->
-            <section v-if="activeRoute"
-                class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <section v-if="activeRoute" class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-200 px-4 py-3">
                     <h3 class="text-sm font-semibold text-slate-900">
                         Carte du trajet
@@ -481,6 +485,9 @@ watch(
                             <p class="mt-0.5 flex items-center gap-1 truncate text-xs text-slate-500">
                                 <MapPin v-if="event.pointOfInterestLabel" class="h-3.5 w-3.5 shrink-0" />
                                 {{ event.pointOfInterestLabel ?? "Sans lieu" }}
+                            </p>
+                            <p class="mt-1 text-xs text-slate-500">
+                                Durée : {{ event.durationMinutes }} min
                             </p>
                         </div>
 

@@ -23,5 +23,13 @@ public record CostCalculationContext(LocalDate date,
 
     Long trailerTypeId,
 
-    double dailyDriverDurationHours) {
+    double dailyDriverDurationHours,
+
+    double driverWorkDurationHours) {
+
+    public CostCalculationContext(LocalDate date, double distanceKm, double dailyVehicleDistanceKm, double durationHours, int dailyTransportCount, boolean emptyTrip,
+        LocalTime departureTime, LocalTime arrivalTime, LocalTime driverDayStartTime, LocalTime driverDayEndTime, Long trailerTypeId, double dailyDriverDurationHours) {
+        this(date, distanceKm, dailyVehicleDistanceKm, durationHours, dailyTransportCount, emptyTrip, departureTime, arrivalTime, driverDayStartTime, driverDayEndTime,
+            trailerTypeId, dailyDriverDurationHours, durationHours);
+    }
 }

@@ -19,8 +19,11 @@ Formulaire dynamique avec verification des données
 
 Filtre / Vue sur planning + refacto à la dashdoc
 
-Séparation grand routier / grand régionaux -> Un conducteur ne pas rouler a plus de 9h (légalement max 10h)
+Séparation grand routier / grand régionaux:
+    Un conducteur ne pas rouler a plus de 9h (légalement max 10h)
+    Ajouter un cout "découché" pour nuits
 
 Ajouter un bouton "générer un trajet à vide" pour une sélection -> sera utilisé plus tard pour dashdoc
 
+//Normalement ok
 prendre en compte les temps d'évenements + chargement / déchargements pour le cout horraire des conducteurs
