@@ -51,11 +51,11 @@ watch(isVehiclesSection, (isActive) => {
 </script>
 
 <template>
-    <aside class="flex h-full w-64 flex-col bg-[#101f36] text-white">
+    <aside class="flex h-full w-64 flex-col border-r border-[#263f5e] bg-[#101f36] text-white">
 
         <!-- LOGO -->
-        <div class="flex h-14 items-center justify-center border-b border-r border-blue-950/10 bg-white px-4">
-            <img src="@/assets/images/logo.png" alt="OptiRoute logo" class="h-8 w-auto object-contain" />
+        <div class="flex h-14 items-center justify-center border-b border-slate-200 bg-white px-4">
+            <img src="@/assets/images/logo2.png" alt="OptiRoute logo" class="h-12 w-auto object-contain" />
         </div>
 
         <!-- NAVIGATION -->

@@ -66,13 +66,12 @@ function goToAccount(close: () => void) {
 
 <template>
     <header
-        class="relative z-10 flex h-14 shrink-0 items-center justify-between gap-2 border-b border-blue-100 bg-gradient-to-r from-[#f8fbff] via-[#f2f7ff] to-[#eaf2ff] px-3 shadow-sm shadow-blue-950/5 sm:px-5">
+        class="relative z-10 flex h-14 shrink-0 items-center justify-between gap-2 border-b border-slate-200 bg-white px-3 shadow-sm shadow-slate-900/5 sm:px-5">
 
-        <nav aria-label="Navigation principale"
-            class="flex min-w-0 items-center gap-0.5 rounded-xl border border-white/80 bg-white/65 p-1 shadow-sm shadow-blue-950/5 sm:gap-1">
+        <nav aria-label="Navigation principale" class="flex min-w-0 items-center gap-0.5 sm:gap-1">
             <button type="button" aria-label="Planification" :aria-current="isHomepageSection ? 'page' : undefined"
                 class="flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors sm:px-3"
-                :class="isHomepageSection ? 'bg-blue-700 text-white shadow-sm shadow-blue-900/15' : 'text-slate-600 hover:bg-blue-50 hover:text-blue-800'"
+                :class="isHomepageSection ? 'bg-[#1673c9] text-white shadow-sm shadow-blue-900/15' : 'text-slate-600 hover:bg-blue-50 hover:text-[#145ca3]'"
                 @click="goToHomepage">
                 <CalendarDays :size="17" />
                 <span class="hidden sm:inline">Planification</span>
@@ -80,7 +79,7 @@ function goToAccount(close: () => void) {
 
             <button type="button" aria-label="Gestion" :aria-current="isGestionSection ? 'page' : undefined"
                 class="flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors sm:px-3"
-                :class="isGestionSection ? 'bg-blue-700 text-white shadow-sm shadow-blue-900/15' : 'text-slate-600 hover:bg-blue-50 hover:text-blue-800'"
+                :class="isGestionSection ? 'bg-[#1673c9] text-white shadow-sm shadow-blue-900/15' : 'text-slate-600 hover:bg-blue-50 hover:text-[#145ca3]'"
                 @click="goToGestion">
                 <Settings2 :size="17" />
                 <span class="hidden sm:inline">Gestion</span>
@@ -88,7 +87,7 @@ function goToAccount(close: () => void) {
 
             <button type="button" aria-label="Itinéraires" :aria-current="isRoutesSection ? 'page' : undefined"
                 class="flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors sm:px-3"
-                :class="isRoutesSection ? 'bg-blue-700 text-white shadow-sm shadow-blue-900/15' : 'text-slate-600 hover:bg-blue-50 hover:text-blue-800'"
+                :class="isRoutesSection ? 'bg-[#1673c9] text-white shadow-sm shadow-blue-900/15' : 'text-slate-600 hover:bg-blue-50 hover:text-[#145ca3]'"
                 @click="goToRoutes">
                 <Route :size="17" />
                 <span class="hidden sm:inline">Itinéraires</span>
@@ -96,7 +95,7 @@ function goToAccount(close: () => void) {
 
             <button type="button" aria-label="Administration" :aria-current="isAdminSection ? 'page' : undefined"
                 class="flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors sm:px-3"
-                :class="isAdminSection ? 'bg-blue-700 text-white shadow-sm shadow-blue-900/15' : 'text-slate-600 hover:bg-blue-50 hover:text-blue-800'"
+                :class="isAdminSection ? 'bg-[#1673c9] text-white shadow-sm shadow-blue-900/15' : 'text-slate-600 hover:bg-blue-50 hover:text-[#145ca3]'"
                 @click="goToAdmin">
                 <ShieldCheck :size="17" />
                 <span class="hidden sm:inline">Admin</span>
@@ -122,9 +121,9 @@ function goToAccount(close: () => void) {
 
                 <template #trigger="{ toggle }">
                     <button type="button"
-                        class="inline-flex items-center gap-2 rounded-xl border border-blue-100/80 bg-white/70 px-2 py-1.5 text-slate-700 transition-colors hover:border-blue-200 hover:bg-white sm:px-3"
+                        class="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-[#f8fbff] px-2 py-1.5 text-slate-700 transition-colors hover:border-blue-300 hover:bg-blue-50/70 sm:px-3"
                         aria-label="Menu utilisateur" @click.stop="toggle">
-                        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-blue-800">
+                        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-[#145ca3]">
                             <UserRound class="h-4 w-4" />
                         </span>
                         <span class="hidden max-w-36 truncate text-sm font-medium md:inline">{{ currentUserName
