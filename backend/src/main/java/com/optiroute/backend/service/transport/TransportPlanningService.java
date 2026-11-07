@@ -102,7 +102,7 @@ public class TransportPlanningService {
             .map(driver -> new PlanningDriverResponse(driver.getId(), driver.getFirstName() + " " + driver.getLastName(),
                 driver.getTractor() != null ? driver.getTractor().getRegistration() : null, driver.getSemiTrailer() != null ? driver.getSemiTrailer().getRegistration() : null,
                 driverCostService.calculateSalaryForPeriodExcludingDates(driver,startDate,endDate,transportDatesByDriver.getOrDefault(driver.getId(),Set.of())),
-                driver.getCostType()))
+                driver.getCostType(), driver.getDriverType()))
             .toList();
 
         PlanningUnassignedVehiclesResponse unassignedVehicles = buildUnassignedVehicles(allDrivers,startDate,endDate);

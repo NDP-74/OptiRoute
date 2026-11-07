@@ -5,11 +5,15 @@ import { fr } from "date-fns/locale";
 import { VueDatePicker } from "@vuepic/vue-datepicker";
 import "@vuepic/vue-datepicker/dist/main.css";
 
+import type { DriverType } from "@/models/driver/Driver";
+
 type DateRange = [Date, Date] | null;
 
 const props = defineProps<{
     startDate: Date;
     endDate: Date;
+    selectedDriverType: DriverType | "ALL";
+    driverTypeLabels: Record<DriverType, string>;
     daySelectionMode: boolean;
     selectedDayCount: number;
     isCompletingDays: boolean;
@@ -17,6 +21,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     "update:range": [value: [Date, Date]];
+    "driver-type-change": [value: DriverType | "ALL"];
     "today-range": [startOffset: number, additionalDays: number];
     "create-route": [];
     "start-day-selection": [];
@@ -76,6 +81,21 @@ watch(
 
             <div class="flex flex-wrap items-end gap-3">
                 <div>
+                    <label for="planning-driver-type-filter" class="mb-1 block text-xs font-medium text-slate-600">
+                        Type de chauffeur
+                    </label>
+                    <select id="planning-driver-type-filter" :value="props.selectedDriverType"
+                        class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                        @change="emit('driver-type-change', ($event.target as HTMLSelectElement).value as DriverType | 'ALL')">
+                        <option value="ALL">Tous les chauffeurs</option>
+                        <option v-for="(label, driverType) in props.driverTypeLabels" :key="driverType"
+                            :value="driverType">
+                            {{ label }}
+                        </option>
+                    </select>
+                </div>
+
+                <div>
                     <label class="mb-1 block text-xs font-medium text-slate-600">
                         Période affichée
                     </label>
@@ -117,19 +137,14 @@ watch(
                             @click="emit('today-range', 0, 2)">
                             Aujourd’hui + 2 jours
                         </button>
-
-                        <button type="button"
-                            class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
-                            @click="emit('today-range', 0, 3)">
-                            Aujourd’hui + 3 jours
-                        </button>
                     </div>
                 </div>
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
                 <span v-if="props.selectedDayCount > 0" class="text-sm text-slate-600" aria-live="polite">
-                    {{ props.selectedDayCount }} journée{{ props.selectedDayCount > 1 ? "s" : "" }} sélectionnée{{ props.selectedDayCount > 1 ? "s" : "" }}
+                    {{ props.selectedDayCount }} journée{{ props.selectedDayCount > 1 ? "s" : "" }} sélectionnée{{
+                        props.selectedDayCount > 1 ? "s" : "" }}
                 </span>
 
                 <button v-if="props.daySelectionMode" type="button" :disabled="props.isCompletingDays"
@@ -138,11 +153,9 @@ watch(
                     Annuler la sélection
                 </button>
 
-                <button v-else type="button" :disabled="props.isCompletingDays"
-                    :class="[
-                        'rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100'
-                    ]"
-                    @click="emit('start-day-selection')">
+                <button v-else type="button" :disabled="props.isCompletingDays" :class="[
+                    'rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100'
+                ]" @click="emit('start-day-selection')">
                     Compléter des journées
                 </button>
 

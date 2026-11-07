@@ -1,3 +1,5 @@
+import type { DriverType } from "@/models/driver/Driver";
+
 export interface PlanningTransport {
     id: number;
     routeId: number;
@@ -40,6 +42,7 @@ export interface PlanningDriverSummary {
     semiTrailerRegistration: string | null;
     salaryForNonTransportDays: number;
     costType: "FIXED" | "HOURLY" | null;
+    driverType: DriverType;
 }
 
 export interface PlanningUnassignedVehicles {

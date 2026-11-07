@@ -2,7 +2,9 @@
     <div class="relative flex h-full min-h-0 flex-col overflow-hidden bg-slate-100">
         <PlanningToolbar :start-date="selectedStartDate" :end-date="selectedEndDate"
             :day-selection-mode="daySelectionMode" :selected-day-count="selectedDayKeys.size"
+            :selected-driver-type="selectedDriverType" :driver-type-labels="driverTypeLabels"
             :is-completing-days="isCompletingDays" @update:range="handleRangeChange" @today-range="applyTodayRange"
+            @driver-type-change="selectedDriverType = $event"
             @create-route="openRouteModal" @start-day-selection="startDaySelection"
             @cancel-day-selection="cancelDaySelection" @complete-days="completeSelectedDays" />
 
@@ -41,6 +43,7 @@ import { getApiErrorMessage } from "@/api/utils";
 import { useNotification } from "@/composables/useNotification";
 
 import type { PlanningDay, PlanningDriver, PlanningTransport, } from "@/models/planning/planning";
+import type { DriverType } from "@/models/driver/Driver";
 import type { TransportDetail } from "@/models/transport/TransportDetail";
 import type { EventResponse } from "@/models/Event";
 import type { RouteRequest, RouteResponse } from "@/models/route/Route";
@@ -365,6 +368,31 @@ const router = useRouter();
 
 const today = startOfDay(new Date());
 const PLANNING_RANGE_STORAGE_KEY = "optiroute:lastPlanningRange";
+const PLANNING_DRIVER_TYPE_STORAGE_KEY = "optiroute:lastPlanningDriverType";
+const driverTypeLabels: Record<DriverType, string> = {
+    LONG_HAUL: "Grand routier",
+    SHORT_DISTANCE: "Grand régional",
+    REGIONAL: "Régional",
+};
+
+function restoreDriverTypeFilter(): DriverType | "ALL" {
+    try {
+        const storedDriverType = window.localStorage.getItem(PLANNING_DRIVER_TYPE_STORAGE_KEY);
+        if (
+            storedDriverType === "LONG_HAUL"
+            || storedDriverType === "SHORT_DISTANCE"
+            || storedDriverType === "REGIONAL"
+        ) {
+            return storedDriverType;
+        }
+    } catch {
+        return "ALL";
+    }
+
+    return "ALL";
+}
+
+const selectedDriverType = ref<DriverType | "ALL">(restoreDriverTypeFilter());
 
 function parseQueryDate(value: unknown): Date | null {
     const rawValue = Array.isArray(value) ? value[0] : value;
@@ -462,6 +490,10 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
     const driversMap = new Map<number, PlanningDriver>();
 
     drivers.value.forEach((driverSummary) => {
+        if (selectedDriverType.value !== "ALL" && driverSummary.driverType !== selectedDriverType.value) {
+            return;
+        }
+
         driversMap.set(driverSummary.id, {
             id: driverSummary.id,
             name: driverSummary.name,
@@ -529,6 +561,18 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
     }
 
     return sortedDrivers;
+});
+
+watch(selectedDriverType, (driverType) => {
+    selectedDayKeys.value = new Set();
+    daySelectionMode.value = false;
+    selectedCostDetailDriverId.value = null;
+
+    try {
+        window.localStorage.setItem(PLANNING_DRIVER_TYPE_STORAGE_KEY, driverType);
+    } catch {
+        // Ignore storage errors silently.
+    }
 });
 
 const selectedCostDetailDriver = computed<PlanningDriver | null>(() => {
