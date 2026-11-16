@@ -10,6 +10,8 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     List<Event> findByRouteIdOrderByIdAsc(Long routeId);
 
+    boolean existsByRouteIdIn(List<Long> routeIds);
+
     List<Event> findByTractorIdOrderByEventDateDescIdDesc(Long tractorId);
 
     List<Event> findBySemiTrailerIdOrderByEventDateDescIdDesc(Long semiTrailerId);

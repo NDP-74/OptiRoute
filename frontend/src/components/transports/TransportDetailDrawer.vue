@@ -108,12 +108,25 @@ async function selectRoute(index: number): Promise<void> {
     await loadEvents(props.transportId, route.routeId);
 }
 
-const handleEdit = () => {
-    if (!activeTransport.value) {
+const handleEdit = async () => {
+    if (!transport.value || props.transportId === null) {
         return
     }
 
-    emit('edit', activeTransport.value, events.value)
+    const serviceTransport = transport.value
+    let serviceEvents = events.value
+    if (serviceTransport.routes.length > 1) {
+        try {
+            const eventsByRoute = await Promise.all(serviceTransport.routes.map((route) =>
+                route.routeId === selectedRouteId.value ? Promise.resolve(events.value) : getEventsByService(serviceTransport.id, route.routeId)))
+            serviceEvents = eventsByRoute.flat()
+        } catch (exception) {
+            notification.error('Modification impossible', getApiErrorMessage(exception, 'Les événements du service n’ont pas pu être chargés.'))
+            return
+        }
+    }
+
+    emit('edit', serviceTransport, serviceEvents)
 }
 
 const props = defineProps<{

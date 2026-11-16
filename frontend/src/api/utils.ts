@@ -26,6 +26,11 @@ export function getApiErrorMessage(
         case 409:
             return 'Cette opération entre en conflit avec des données existantes.'
 
+        case 422: {
+            const message = (error.response?.data as { message?: unknown } | undefined)?.message
+            return typeof message === 'string' && message ? message : fallback
+        }
+
         case 500:
             return 'Le serveur a rencontré une erreur.'
 

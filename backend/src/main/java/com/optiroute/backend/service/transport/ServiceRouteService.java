@@ -11,6 +11,8 @@ import com.optiroute.backend.dto.response.route.RouteDto;
 import com.optiroute.backend.dto.response.route.RoutesResponse;
 import com.optiroute.backend.entity.transport.Route;
 import com.optiroute.backend.entity.transport.Service;
+import com.optiroute.backend.exception.TransportPlanningException;
+import com.optiroute.backend.repository.EventRepository;
 import com.optiroute.backend.repository.transport.RouteRepository;
 import com.optiroute.backend.repository.transport.ServiceRepository;
 
@@ -23,6 +25,7 @@ public class ServiceRouteService {
 
     private final ServiceRepository serviceRepository;
     private final RouteRepository routeRepository;
+    private final EventRepository eventRepository;
 
     @Transactional
     public Service create(TransportRequest req, RoutesResponse response) {
@@ -61,10 +64,18 @@ public class ServiceRouteService {
     @Transactional
     public Service update(Long id, TransportRequest req, List<TransportRouteSegment> segments) {
         Service service = serviceRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Service not found with id " + id));
+        List<Route> existingRoutes = routeRepository.findByServiceIdOrderByIdAsc(id);
+        if (existingRoutes.size() > segments.size()) {
+            List<Long> removedRouteIds = existingRoutes.subList(segments.size(), existingRoutes.size()).stream().map(Route::getId).toList();
+            if (eventRepository.existsByRouteIdIn(removedRouteIds)) {
+                throw new TransportPlanningException("La nouvelle planification supprime un trajet portant des événements. "
+                    + "Supprimez ou déplacez ces événements avant de modifier le service.");
+            }
+        }
+
         applyService(service,req);
         service = serviceRepository.save(service);
 
-        List<Route> existingRoutes = routeRepository.findByServiceIdOrderByIdAsc(id);
         for (int index = 0; index < segments.size(); index++) {
             Route route = index < existingRoutes.size() ? existingRoutes.get(index) : new Route();
             route.setService(service);

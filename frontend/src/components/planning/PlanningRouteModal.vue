@@ -18,7 +18,7 @@ import type { CustomerSummary } from '@/models/Customer'
 import type { DriverSummary } from '@/models/driver/Driver'
 import type { TractorSummary } from '@/models/vehicle/Tractor'
 import type { SemiTrailerSummary } from '@/models/vehicle/SemiTrailer'
-import type { RouteDto, RouteRequest, RouteResponse } from '@/models/route/Route'
+import type { RouteDto, RouteRequest, RouteResponse, RouteWaypoint } from '@/models/route/Route'
 import type { CreateTransportFromRouteRequest, TimeWindows } from '@/models/transport/TransportRequest'
 import type { TransportDetail } from '@/models/transport/TransportDetail'
 import type { EventResponse } from '@/models/Event'
@@ -121,28 +121,47 @@ function serializeWindows(values: typeof serviceWindows): TimeWindows {
 
 const selectedRoute = computed(() => routeResponse.value?.routes[selectedRouteIndex.value])
 
+// Segments du service en cours de modification : la modification porte sur le service entier
+const editingRoutes = computed(() => props.editingTransport?.routes ?? [])
+
+function sumOf(values: (number | null | undefined)[]): number | null {
+    if (values.some(value => value == null)) return null
+    return values.reduce<number>((total, value) => total + (value ?? 0), 0)
+}
+
+function findRouteCost(costs: TransportDetail['costs'], label: string): number {
+    return costs.vehicle.costs.find(cost => cost.label === label)?.amount ?? 0
+}
+
+function servicePolyline(transport: TransportDetail): string | null {
+    const polylines = editingRoutes.value.map(route => route.polyline).filter((polyline): polyline is string => Boolean(polyline))
+    if (polylines.length <= 1) return polylines[0] ?? transport.polyline
+    return JSON.stringify(polylines)
+}
+
 // Route de l'estimation existante, utilisée tant qu'aucun nouveau calcul n'a été fait en modification
 const fallbackRoute = computed<RouteDto | null>(() => {
     const transport = props.editingTransport
+    if (!transport) return null
 
-    if (!transport || transport.distanceMeters == null || transport.durationSeconds == null) {
+    const routes = editingRoutes.value
+    const distanceMeters = routes.length ? sumOf(routes.map(route => route.distanceMeters)) : transport.distanceMeters
+    const duration = routes.length ? sumOf(routes.map(route => route.durationSeconds)) : transport.durationSeconds
+    if (distanceMeters == null || duration == null) {
         return null
     }
 
-    const findCost = (label: string) =>
-        transport.costs.vehicle.costs.find(cost => cost.label === label)?.amount ?? 0
+    const routeCosts = routes.length ? routes.map(route => route.costs) : [transport.costs]
+    const fuelCost = routeCosts.reduce((total, costs) => total + findRouteCost(costs, 'Carburant'), 0)
+    const tollCost = routeCosts.reduce((total, costs) => total + findRouteCost(costs, 'Péages'), 0)
 
     return {
         type: transport.routeType ?? undefined,
-        duration: transport.durationSeconds,
-        baseDuration: transport.durationSeconds,
-        distanceMeters: transport.distanceMeters,
-        polyline: transport.polyline ?? undefined,
-        costs: {
-            fuelCost: findCost('Carburant'),
-            tollCost: findCost('Péages'),
-            totalCost: findCost('Carburant') + findCost('Péages'),
-        },
+        duration,
+        baseDuration: duration,
+        distanceMeters,
+        polyline: servicePolyline(transport) ?? undefined,
+        costs: { fuelCost, tollCost, totalCost: fuelCost + tollCost },
     }
 })
 
@@ -166,7 +185,19 @@ const transportTitle = computed(() => {
     return `${originName} - ${destinationName}`
 })
 
+// Tant que l'estimation existante est utilisée, on affiche les horaires réellement planifiés (coupures de nuit comprises)
+const storedSchedule = computed(() => {
+    if (!props.editingTransport || !effectiveRoute.value || effectiveRoute.value !== fallbackRoute.value) return null
+
+    const routes = editingRoutes.value
+    return {
+        start: routes[0]?.departureStart ?? props.editingTransport.departureStart ?? null,
+        end: routes[routes.length - 1]?.arrivalStart ?? props.editingTransport.arrivalStart ?? null,
+    }
+})
+
 const plannedStart = computed(() => {
+    if (storedSchedule.value?.start) return storedSchedule.value.start
     if (!routeRequest.value?.routeTime) return ''
 
     const value = new Date(routeRequest.value.routeTime)
@@ -178,6 +209,7 @@ const plannedStart = computed(() => {
 })
 
 const plannedEnd = computed(() => {
+    if (storedSchedule.value?.end) return storedSchedule.value.end
     if (!routeRequest.value?.routeTime) return ''
     if (routeRequest.value.timeMode === 'ARRIVAL') return routeRequest.value.routeTime
 
@@ -213,37 +245,65 @@ function selectRoute(index: number) {
     mapRef.value?.displayRoutes(routes, routes[index])
 }
 
+function eventWaypoints(events: EventResponse[]): RouteWaypoint[] {
+    return events.flatMap(event =>
+        event.pointOfInterestLatitude != null && event.pointOfInterestLongitude != null
+            ? [{
+                name: event.pointOfInterestLabel ?? event.costParameterLabel,
+                address: event.pointOfInterestLabel ?? `${event.pointOfInterestLatitude}, ${event.pointOfInterestLongitude}`,
+                lat: event.pointOfInterestLatitude,
+                lng: event.pointOfInterestLongitude,
+                eventId: event.id,
+            }]
+            : []
+    )
+}
+
+// Reconstruit la demande du service complet (origine du 1er segment, destination du dernier) à partir de ses segments
 function routeRequestFromTransport(transport: TransportDetail): RouteRequest {
+    const events = props.events ?? []
+    const routes = transport.routes.length ? transport.routes : null
+    const first = routes?.[0] ?? transport
+    const last = routes?.[routes.length - 1] ?? transport
+    const waypoints = routes
+        ? [
+            ...routes.flatMap(route => [
+                ...(route.waypoints ?? []),
+                ...eventWaypoints(events.filter(event => event.routeId === route.routeId)),
+            ]),
+            ...eventWaypoints(events.filter(event => !routes.some(route => route.routeId === event.routeId))),
+        ]
+        : [...(transport.waypoints ?? []), ...eventWaypoints(events)]
+    const departure = first.departureStart ?? undefined
+    const arrival = last.arrivalStart ?? undefined
+
     return {
         origin: {
-            name: transport.originName,
-            address: transport.originAddress ?? '',
-            lat: transport.originLat,
-            lng: transport.originLng,
+            name: first.originName,
+            address: first.originAddress ?? '',
+            lat: first.originLat,
+            lng: first.originLng,
         },
         destination: {
-            name: transport.destinationName,
-            address: transport.destinationAddress ?? '',
-            lat: transport.destinationLat,
-            lng: transport.destinationLng,
+            name: last.destinationName,
+            address: last.destinationAddress ?? '',
+            lat: last.destinationLat,
+            lng: last.destinationLng,
         },
-        waypoints: [...(transport.waypoints ?? []), ...(props.events ?? []).flatMap(event =>
-            event.pointOfInterestLatitude != null && event.pointOfInterestLongitude != null
-                ? [{
-                    name: event.pointOfInterestLabel ?? event.costParameterLabel,
-                    address: event.pointOfInterestLabel ?? `${event.pointOfInterestLatitude}, ${event.pointOfInterestLongitude}`,
-                    lat: event.pointOfInterestLatitude,
-                    lng: event.pointOfInterestLongitude,
-                    eventId: event.id,
-                }]
-                : []
-        )],
-        mode: transport.routeType ?? 'FASTEST',
+        waypoints,
+        mode: first.routeType ?? transport.routeType ?? 'FASTEST',
         emptyTrip: transport.emptyTrip,
-        routeTime: transport.arrivalStart ?? transport.departureStart ?? undefined,
-        timeMode: transport.arrivalStart ? 'ARRIVAL' : 'DEPARTURE',
+        routeTime: departure ?? arrival,
+        timeMode: departure || !arrival ? 'DEPARTURE' : 'ARRIVAL',
         driverId: transport.driverId ?? undefined,
     }
+}
+
+function serviceRevenue(transport: TransportDetail): number | null {
+    if (!transport.routes.length) return transport.revenue
+    const revenues = transport.routes.map(route => route.revenue).filter((value): value is number => value != null)
+    if (!revenues.length) return null
+    return Math.round(revenues.reduce((total, value) => total + value, 0) * 100) / 100
 }
 
 async function initializeFromProps() {
@@ -272,7 +332,7 @@ async function initializeFromProps() {
         tractorId.value = transport.tractorId
         semiTrailerId.value = transport.semiTrailerId
         emptyTrip.value = transport.emptyTrip
-        revenue.value = transport.revenue
+        revenue.value = serviceRevenue(transport)
     } else {
         routeRequest.value = props.initialRouteRequest ?? null
         routeResponse.value = props.initialRouteResponse ?? null
@@ -299,8 +359,9 @@ async function initializeFromProps() {
     } else if (routeRequest.value) {
         mapRef.value?.setMarkers(routeRequest.value.origin, routeRequest.value.destination, routeRequest.value.waypoints)
 
-        if (props.editingTransport?.polyline) {
-            const existingRoute = { polyline: props.editingTransport.polyline }
+        const existingPolyline = props.editingTransport ? servicePolyline(props.editingTransport) : null
+        if (existingPolyline) {
+            const existingRoute = { polyline: existingPolyline }
             mapRef.value?.displayRoutes([existingRoute], existingRoute)
         }
     }
