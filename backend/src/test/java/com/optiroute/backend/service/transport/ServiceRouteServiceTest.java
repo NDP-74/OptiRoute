@@ -19,8 +19,10 @@ import com.optiroute.backend.dto.response.route.RouteCostDetailsDto;
 import com.optiroute.backend.dto.response.route.RouteDto;
 import com.optiroute.backend.entity.transport.Route;
 import com.optiroute.backend.entity.transport.Service;
+import com.optiroute.backend.exception.TransportPlanningException;
 import com.optiroute.backend.mapper.RouteRequestFactory;
 import com.optiroute.backend.model.Position;
+import com.optiroute.backend.repository.EventRepository;
 import com.optiroute.backend.repository.transport.RouteRepository;
 import com.optiroute.backend.repository.transport.ServiceRepository;
 import com.optiroute.backend.type.RouteTimeMode;
@@ -30,7 +32,8 @@ import jakarta.validation.Validation;
 class ServiceRouteServiceTest {
     private final ServiceRepository services = mock(ServiceRepository.class);
     private final RouteRepository routes = mock(RouteRepository.class);
-    private final ServiceRouteService subject = new ServiceRouteService(services, routes);
+    private final EventRepository events = mock(EventRepository.class);
+    private final ServiceRouteService subject = new ServiceRouteService(services, routes, events);
     private final JsonMapper mapper = JsonMapper.builder().addModule(new JavaTimeModule()).build();
 
     @Test
@@ -262,6 +265,42 @@ class ServiceRouteServiceTest {
             assertEquals(4, factory.getValidator().validate(invalid).size());
             assertTrue(factory.getValidator().validate(mapper.readValue("{}", TransportRequest.class)).isEmpty());
         }
+    }
+
+    @Test
+    void shouldRefuseUpdateThatRemovesRouteCarryingEvents() throws Exception {
+        TransportRequest request = mapper.readValue("{}", TransportRequest.class);
+        Service existing = new Service();
+        Route kept = new Route();
+        kept.setId(11L);
+        Route removed = new Route();
+        removed.setId(12L);
+        when(services.findById(1L)).thenReturn(Optional.of(existing));
+        when(routes.findByServiceIdOrderByIdAsc(1L)).thenReturn(List.of(kept, removed));
+        when(events.existsByRouteIdIn(List.of(12L))).thenReturn(true);
+
+        assertThrows(TransportPlanningException.class, () -> subject.update(1L, request, estimate()));
+
+        verify(services, never()).save(any());
+        verify(routes, never()).save(any());
+        verify(routes, never()).deleteAll(any());
+    }
+
+    @Test
+    void shouldDeleteSurplusRoutesWithoutEventsOnUpdate() throws Exception {
+        TransportRequest request = mapper.readValue("{}", TransportRequest.class);
+        Service existing = new Service();
+        Route kept = new Route();
+        kept.setId(11L);
+        Route removed = new Route();
+        removed.setId(12L);
+        when(services.findById(1L)).thenReturn(Optional.of(existing));
+        when(services.save(existing)).thenReturn(existing);
+        when(routes.findByServiceIdOrderByIdAsc(1L)).thenReturn(List.of(kept, removed));
+
+        subject.update(1L, request, estimate());
+
+        verify(routes).deleteAll(List.of(removed));
     }
 
     private RouteDto estimate() {

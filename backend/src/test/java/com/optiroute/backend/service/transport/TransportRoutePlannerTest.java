@@ -177,7 +177,7 @@ class TransportRoutePlannerTest {
         var services = mock(com.optiroute.backend.repository.transport.ServiceRepository.class);
         var routes = mock(com.optiroute.backend.repository.transport.RouteRepository.class);
         when(services.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        var service = new ServiceRouteService(services, routes).create(source, segments);
+        var service = new ServiceRouteService(services, routes, mock(com.optiroute.backend.repository.EventRepository.class)).create(source, segments);
         var capture = ArgumentCaptor.forClass(com.optiroute.backend.entity.transport.Route.class);
         verify(routes, times(4)).save(capture.capture());
 

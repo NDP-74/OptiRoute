@@ -68,7 +68,7 @@ class TransportFacadeServiceTest {
         when(services.findById(1L)).thenReturn(Optional.of(new Service()));
         when(routes.findByServiceIdOrderByIdAsc(1L)).thenReturn(List.of());
         RouteRequestFactory factory = new RouteRequestFactory();
-        TransportFacadeService facade = new TransportFacadeService(new ServiceRouteService(services, routes),
+        TransportFacadeService facade = new TransportFacadeService(new ServiceRouteService(services, routes, mock(com.optiroute.backend.repository.EventRepository.class)),
             factory, routing, new TransportRoutePlanner(drivers, factory, routing));
         OffsetDateTime departure = OffsetDateTime.parse("2026-10-29T18:00:00+01:00");
         TransportRequest request = new TransportRequest("Mission", 7L, null, null, null, false, null, "MANUAL",
