@@ -144,15 +144,24 @@ async function completeSelectedDays(): Promise<void> {
                 return (getTimestamp(first.departureStart ?? first.arrivalStart) ?? Number.MAX_SAFE_INTEGER)
                     - (getTimestamp(second.departureStart ?? second.arrivalStart) ?? Number.MAX_SAFE_INTEGER);
             });
+            const loadedTransportsForDay = transportsForDay
+                .map((transport, index) => ({ transport, index }))
+                .filter(({ transport }) => !transport.emptyTrip);
             let dayGapCount = 0;
 
-            for (let index = 0; index < transportsForDay.length - 1; index++) {
-                const previousTransport = transportsForDay[index];
-                const nextTransport = transportsForDay[index + 1];
-                if (!previousTransport || !nextTransport) {
+            for (let index = 0; index < loadedTransportsForDay.length - 1; index++) {
+                const previousEntry = loadedTransportsForDay[index];
+                const nextEntry = loadedTransportsForDay[index + 1];
+                if (!previousEntry || !nextEntry) {
                     continue;
                 }
 
+                if (transportsForDay.slice(previousEntry.index + 1, nextEntry.index).some((transport) => transport.emptyTrip)) {
+                    continue;
+                }
+
+                const previousTransport = previousEntry.transport;
+                const nextTransport = nextEntry.transport;
                 const previousArrival = getTimestamp(previousTransport.arrivalStart);
                 const nextDeparture = getTimestamp(nextTransport.departureStart);
 
