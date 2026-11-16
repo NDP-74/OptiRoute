@@ -13,6 +13,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import com.optiroute.backend.dto.request.cost.CostCalculationContext;
 import com.optiroute.backend.entity.cost.CostCondition;
@@ -188,6 +190,108 @@ class VehicleCostServiceTest {
 
         assertFalse(service.isApplicable(parameter, null));
         verifyNoInteractions(repository);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "true, EQUALS, true, true",
+        "true, EQUALS, false, false",
+        "false, EQUALS, false, true",
+        "false, EQUALS, true, false",
+        "true, NOT_EQUALS, false, true",
+        "false, NOT_EQUALS, false, false",
+        ", EQUALS, true, false",
+        ", EQUALS, false, false",
+        ", NOT_EQUALS, true, false",
+        ", NOT_EQUALS, false, false"
+    })
+    void shouldEvaluateDriverParkingConditionWithoutTreatingUnknownAsFalse(Boolean actual, CostConditionOperatorType operator, String expected, boolean applicable) {
+        CostConditionRepository repository = mock(CostConditionRepository.class);
+        CostConditionService service = new CostConditionService(repository);
+        CostParameter parameter = new CostParameter();
+        parameter.setId(7L);
+        parameter.setAssignmentType(CostParameterAssignmentType.ALL_CONDITIONS);
+        CostCondition condition = new CostCondition();
+        condition.setField(CostConditionFieldType.DRIVER_ENDS_DAY_AT_PARKING);
+        condition.setOperator(operator);
+        condition.setValue(expected);
+        when(repository.findByCostParameterId(7L)).thenReturn(List.of(condition));
+
+        CostCalculationContext context = new CostCalculationContext(LocalDate.of(2026,11,16), 100, 100, 1, 1, false,
+            null, null, null, null, null, 1, 1, actual);
+
+        assertEquals(applicable, service.isApplicable(parameter, context));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false, 20, 0, 60", "true, 50, 30, 120"})
+    void shouldAllocateNightAcrossTwoDaysAndAccumulateConsecutiveNights(boolean tuesdayTriggers, double tuesdayAmount, double wednesdayAmount, double total) {
+        CostParameterRepository repository = mock(CostParameterRepository.class);
+        CostConditionService conditions = mock(CostConditionService.class);
+        CostParameterEngine engine = new CostParameterEngine(repository, conditions, new WorkingDaysService());
+        CostParameter parameter = new CostParameter();
+        parameter.setLabel("Nuit");
+        parameter.setValue(new BigDecimal("60"));
+        parameter.setUnit(CostParameterUnitType.EUR_PER_NIGHT);
+        parameter.setAssignmentType(CostParameterAssignmentType.ALL_CONDITIONS);
+        when(repository.findByCategory(CostParameterCategoryType.DRIVER)).thenReturn(List.of(parameter));
+        when(conditions.isApplicable(org.mockito.ArgumentMatchers.eq(parameter),org.mockito.ArgumentMatchers.any()))
+            .thenAnswer(invocation -> invocation.getArgument(1,CostCalculationContext.class).emptyTrip());
+        LocalDate monday = LocalDate.of(2026,11,16);
+        CostCalculationContext mondayFirst = nightContext(monday,2,3,true);
+        CostCalculationContext mondaySecond = nightContext(monday,2,3,true);
+        CostCalculationContext tuesday = nightContext(monday.plusDays(1),1,2,tuesdayTriggers);
+        CostCalculationContext wednesday = nightContext(monday.plusDays(2),1,1,false);
+        List<CostCalculationContext> contexts = List.of(mondayFirst,mondaySecond,tuesday,wednesday);
+
+        double mondayCost = engine.calculateCosts(CostParameterCategoryType.DRIVER,mondayFirst,contexts).getFirst().amount();
+        double tuesdayCost = engine.calculateCosts(CostParameterCategoryType.DRIVER,tuesday,contexts).getFirst().amount();
+        var wednesdayCosts = engine.calculateCosts(CostParameterCategoryType.DRIVER,wednesday,contexts);
+        double wednesdayCost = wednesdayCosts.stream().mapToDouble(c -> c.amount()).sum();
+
+        assertEquals(20,mondayCost,0.0001);
+        assertEquals(tuesdayAmount,tuesdayCost,0.0001);
+        assertEquals(wednesdayAmount,wednesdayCost,0.0001);
+        assertEquals(total,2 * mondayCost + tuesdayCost + wednesdayCost,0.0001);
+    }
+
+    @Test
+    void shouldAllocateNightWithoutFollowingTripsAndKeepManualCostOnEventTrip() {
+        CostParameterRepository repository = mock(CostParameterRepository.class);
+        CostConditionService conditions = mock(CostConditionService.class);
+        CostParameterEngine engine = new CostParameterEngine(repository,conditions,new WorkingDaysService());
+        CostParameter parameter = new CostParameter();
+        parameter.setValue(new BigDecimal("60"));
+        parameter.setUnit(CostParameterUnitType.EUR_PER_NIGHT);
+        when(repository.findByCategory(CostParameterCategoryType.VEHICLE)).thenReturn(List.of(parameter));
+        CostCalculationContext context = nightContext(LocalDate.of(2026,11,16),2,2,true);
+        when(conditions.isApplicable(parameter,context)).thenReturn(true);
+
+        assertEquals(30,engine.calculateCosts(CostParameterCategoryType.VEHICLE,context,List.of(context,context)).getFirst().amount(),0.0001);
+        parameter.setAssignmentType(CostParameterAssignmentType.MANUAL);
+        assertTrue(engine.calculateCosts(CostParameterCategoryType.VEHICLE,context,List.of(context)).isEmpty());
+        assertEquals(20,engine.calculateManualCost(parameter,nightContext(context.date(),2,3,true)).amount(),0.0001);
+    }
+
+    @Test
+    void shouldNotTriggerDailyCostFromPreviousDay() {
+        CostParameterRepository repository = mock(CostParameterRepository.class);
+        CostConditionService conditions = mock(CostConditionService.class);
+        CostParameterEngine engine = new CostParameterEngine(repository,conditions,new WorkingDaysService());
+        CostParameter parameter = new CostParameter();
+        parameter.setValue(new BigDecimal("60"));
+        parameter.setUnit(CostParameterUnitType.EUR_PER_DAY);
+        when(repository.findByCategory(CostParameterCategoryType.VEHICLE)).thenReturn(List.of(parameter));
+        CostCalculationContext previous = nightContext(LocalDate.of(2026,11,16),1,2,true);
+        CostCalculationContext current = nightContext(previous.date().plusDays(1),1,1,false);
+        when(conditions.isApplicable(parameter,previous)).thenReturn(true);
+        when(conditions.isApplicable(parameter,current)).thenReturn(false);
+
+        assertTrue(engine.calculateCosts(CostParameterCategoryType.VEHICLE,current,List.of(previous,current)).isEmpty());
+    }
+
+    private CostCalculationContext nightContext(LocalDate date, int dailyCount, int nightCount, boolean triggers) {
+        return new CostCalculationContext(date,100,100,1,dailyCount,triggers,null,null,null,null,null,1,1,null,nightCount);
     }
 
     private CostCondition numericCondition(CostConditionOperatorType operator, String value) {

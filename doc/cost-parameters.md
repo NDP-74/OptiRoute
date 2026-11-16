@@ -22,10 +22,26 @@ Les `CostParameter` sont les frais définis dans les `Données référentielles`
 | `EUR_PER_TRIP` | valeur (forfait par trajet) |
 | `EUR_PER_HOUR` | durée du trajet (h) × valeur |
 | `EUR_PER_DAY` | valeur / nombre de trajets du jour |
+| `EUR_PER_NIGHT` | valeur / (nombre de trajets du jour déclencheur + nombre de trajets du lendemain) |
 | `EUR_PER_MONTH` | (valeur / jours ouvrés du mois) × (km trajet / km journaliers du véhicule) |
 | `EUR_PER_YEAR` | (valeur / jours ouvrés de l'année) / nombre de trajets du jour |
 
 ## Logique d'application (`CostParameterAssignmentType`)
+
+### Répartition des coûts par nuit
+
+`EUR_PER_NIGHT` (€/nuit) évalue les conditions sur les trajets du jour J, comme `EUR_PER_DAY`.
+Une nuit déclenchée est répartie sur tous les trajets du même conducteur de J et J+1 (dates de départ
+en Europe/Paris). Exemple : 60 € pour 2 trajets lundi et 1 mardi donne 20 € par trajet.
+Sur un trajet de J, les parts des nuits déclenchées en J-1 et en J se cumulent.
+Sans trajet le lendemain, le montant est entièrement réparti sur J ; les jours sans trajet ne déclenchent
+pas de nuit. Sans conducteur, seuls les trajets connus du contexte courant participent.
+En mode manuel, le diviseur reste le nombre de trajets de J et J+1, mais le coût n'est ajouté
+qu'au trajet de l'événement ; aucune part n'est propagée aux autres trajets.
+
+Avant déploiement, exécuter
+[`2026-11-16-add-night-cost-unit.sql`](../backend/src/main/resources/db/manual/2026-11-16-add-night-cost-unit.sql)
+pour autoriser cette unité en base. Aucune donnée existante n'est modifiée.
 
 ### `ALWAYS` — Toujours applicable
 - Sélectionné par défaut à la création.
@@ -73,6 +89,21 @@ Les `CostParameter` sont les frais définis dans les `Données référentielles`
 | `MANUAL` | Non, événement obligatoire | Non utilisées |
 
 ## Implémentation
+
+### Fin de journée au stationnement
+
+La condition conducteur `DRIVER_ENDS_DAY_AT_PARKING` (« Termine la journée à son lieu de stationnement »)
+propose Oui / Non avec les opérateurs d'égalité habituels. Elle compare exactement la latitude **et**
+la longitude de destination du trajet dont l'arrivée est la plus tardive aux coordonnées de stationnement
+du conducteur. Les trajets de la journée sont ceux dont le départ appartient au même jour en Europe/Paris,
+comme pour les autres calculs journaliers ; une arrivée après minuit est comparée par son instant complet.
+Le résultat est partagé par tous les trajets de cette journée, pas seulement par le dernier trajet.
+Si le conducteur ou ses coordonnées de stationnement manquent, la condition est non satisfaite,
+pour Oui comme pour Non (y compris avec l'opérateur « différent de »).
+
+Avant déploiement sur une base existante, exécuter
+[`2026-11-16-add-driver-parking-condition.sql`](../backend/src/main/resources/db/manual/2026-11-16-add-driver-parking-condition.sql)
+pour autoriser le nouveau champ dans la contrainte SQL. Ce script ne modifie aucune donnée.
 
 - `CostParameterEngine.calculateCosts` ignore les paramètres `MANUAL` et vérifie directement les conditions associées au paramètre.
 - `TransportCostService.calculate` ajoute, pour chaque événement du trajet, le coût du paramètre `MANUAL` associé (`CostParameterEngine.calculateManualCost`) dans la catégorie du paramètre. Un même paramètre assigné à deux événements est compté deux fois.

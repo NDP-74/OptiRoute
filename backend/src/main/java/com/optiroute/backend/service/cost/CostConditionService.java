@@ -54,6 +54,8 @@ public class CostConditionService {
             case LOADED_TRIP -> evaluateBoolean(!context.emptyTrip(), condition);
             case DRIVER_DAY_START_TIME -> evaluateTime(context.driverDayStartTime(), condition);
             case DRIVER_DAY_END_TIME -> evaluateTime(context.driverDayEndTime(), condition);
+            case DRIVER_ENDS_DAY_AT_PARKING -> context.driverEndsDayAtParking() != null
+                && evaluateBoolean(context.driverEndsDayAtParking(), condition);
             case VEHICLE_TYPE -> evaluateVehicleTypeId(context.trailerTypeId(), condition);
         };
     }

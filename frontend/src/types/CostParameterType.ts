@@ -14,6 +14,7 @@ export type CostParameterUnit =
     | "EUR_PER_TRIP"
     | "EUR_PER_HOUR"
     | "EUR_PER_DAY"
+    | "EUR_PER_NIGHT"
     | "EUR_PER_MONTH"
     | "EUR_PER_YEAR"
 
@@ -32,6 +33,7 @@ export type CostConditionField =
     | "VEHICLE_TYPE"
     | "DRIVER_DAY_START_TIME"
     | "DRIVER_DAY_END_TIME"
+    | "DRIVER_ENDS_DAY_AT_PARKING"
 
 export type CostConditionOperator =
     | "EQUALS"

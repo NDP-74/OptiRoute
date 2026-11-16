@@ -9,6 +9,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.springframework.stereotype.Service;
 
@@ -56,16 +57,26 @@ public class TransportCostService {
         }
         LocalDate date = route.getDepartureStart().atZoneSameInstant(ZONE).toLocalDate();
 
-        List<Route> dayRoutes = findDayRoutes(route,date);
-        Map<Long, Double> driverWorkDurations = new HashMap<>();
-        for (Route dayRoute : dayRoutes) {
-            driverWorkDurations.put(dayRoute.getId(),calculateDriverWorkDurationHours(dayRoute));
-        }
-        double dailyDriverWorkDurationHours = driverWorkDurations.values().stream().mapToDouble(Double::doubleValue).sum();
-        List<CostCalculationContext> dailyContexts = dayRoutes.stream().map(r -> buildContext(r,dayRoutes,driverWorkDurations,dailyDriverWorkDurationHours)).toList();
-        CostCalculationContext context = buildContext(route,dayRoutes,driverWorkDurations,dailyDriverWorkDurationHours);
-
         Driver driver = route.getDriverId() == null ? null : driverRepository.findById(route.getDriverId()).orElse(null);
+        Map<LocalDate, List<Route>> routesByDate = new HashMap<>();
+        for (int offset = -1; offset <= 1; offset++) {
+            LocalDate day = date.plusDays(offset);
+            routesByDate.put(day,findDayRoutes(route,day));
+        }
+        List<Route> dayRoutes = routesByDate.get(date);
+        List<CostCalculationContext> dailyContexts = new ArrayList<>();
+        for (int offset = -1; offset <= 0; offset++) {
+            LocalDate day = date.plusDays(offset);
+            List<Route> routes = routesByDate.get(day);
+            if (routes.isEmpty()) {
+                continue;
+            }
+            int nextDayCount = routesByDate.get(day.plusDays(1)).size();
+            dailyContexts.addAll(buildDailyContexts(routes,driver,routes.size() + nextDayCount));
+        }
+        CostCalculationContext context = dailyContexts.stream().filter(c -> c.date().equals(date)).toList()
+            .get(dayRoutes.indexOf(route));
+
         Tractor tractor = route.getTractorId() == null ? null : tractorRepository.findById(route.getTractorId()).orElse(null);
         SemiTrailer semiTrailer = route.getSemiTrailerId() == null ? null : semiTrailerRepository.findById(route.getSemiTrailerId()).orElse(null);
 
@@ -95,6 +106,17 @@ public class TransportCostService {
         return new TransportCostDetailsResponse(vehicle, driverCosts, structure, vehicle.totalCost() + driverCosts.totalCost() + structure.totalCost());
     }
 
+    private List<CostCalculationContext> buildDailyContexts(List<Route> dayRoutes, Driver driver, int nightTransportCount) {
+        Boolean driverEndsDayAtParking = endsDayAtParking(driver,dayRoutes);
+        Map<Long, Double> driverWorkDurations = new HashMap<>();
+        for (Route dayRoute : dayRoutes) {
+            driverWorkDurations.put(dayRoute.getId(),calculateDriverWorkDurationHours(dayRoute));
+        }
+        double dailyDriverWorkDurationHours = driverWorkDurations.values().stream().mapToDouble(Double::doubleValue).sum();
+        return dayRoutes.stream()
+            .map(r -> buildContext(r,dayRoutes,driverWorkDurations,dailyDriverWorkDurationHours,driverEndsDayAtParking,nightTransportCount)).toList();
+    }
+
     private CostCategoryResponse withCost(CostCategoryResponse category, AppliedCostResponse cost) {
         List<AppliedCostResponse> costs = new ArrayList<>(category.costs());
         costs.add(cost);
@@ -104,19 +126,30 @@ public class TransportCostService {
     // Trajets du même jour pour le même conducteur (le véhicule suit le conducteur)
     private List<Route> findDayRoutes(Route route, LocalDate date) {
         if (route.getDriverId() == null) {
-            return List.of(route);
+            return date.equals(route.getDepartureStart().atZoneSameInstant(ZONE).toLocalDate()) ? List.of(route) : List.of();
         }
 
         OffsetDateTime start = date.atStartOfDay(ZONE).toOffsetDateTime();
         OffsetDateTime end = date.plusDays(1).atStartOfDay(ZONE).toOffsetDateTime();
         List<Route> routes = new ArrayList<>(routeRepository.findByDriverIdAndDepartureStartGreaterThanEqualAndDepartureStartLessThan(route.getDriverId(),start,end));
-        if (routes.stream().noneMatch(r -> r.getId().equals(route.getId()))) {
+        if (date.equals(route.getDepartureStart().atZoneSameInstant(ZONE).toLocalDate())) {
+            routes.removeIf(r -> Objects.equals(r.getId(),route.getId()));
             routes.add(route);
         }
         return routes;
     }
 
-    private CostCalculationContext buildContext(Route route, List<Route> dayRoutes, Map<Long, Double> driverWorkDurations, double dailyDriverWorkDurationHours) {
+    private Boolean endsDayAtParking(Driver driver, List<Route> dayRoutes) {
+        if (driver == null || driver.getLocationLatitude() == null || driver.getLocationLongitude() == null) {
+            return null;
+        }
+        Route lastRoute = dayRoutes.stream().max(Comparator.comparing(r -> r.getArrivalStart().toInstant())).orElseThrow();
+        return lastRoute.getDestinationLat() == driver.getLocationLatitude().doubleValue()
+            && lastRoute.getDestinationLng() == driver.getLocationLongitude().doubleValue();
+    }
+
+    private CostCalculationContext buildContext(Route route, List<Route> dayRoutes, Map<Long, Double> driverWorkDurations, double dailyDriverWorkDurationHours,
+        Boolean driverEndsDayAtParking, int nightTransportCount) {
         double dailyKm = dayRoutes.stream().mapToDouble(r -> r.getDistanceMeters() / 1000.0).sum();
         double dailyHours = dayRoutes.stream().mapToDouble(r -> r.getDurationSeconds() / 3600.0).sum();
 
@@ -131,7 +164,7 @@ public class TransportCostService {
         return new CostCalculationContext(route.getDepartureStart().atZoneSameInstant(ZONE).toLocalDate(), route.getDistanceMeters() / 1000.0, dailyKm,
             route.getDurationSeconds() / 3600.0, dayRoutes.size(), route.isEmptyTrip(), route.getDepartureStart().atZoneSameInstant(ZONE).toLocalTime(),
             route.getArrivalStart().atZoneSameInstant(ZONE).toLocalTime(), dayStart, dayEnd, trailerTypeId, dailyDriverWorkDurationHours,
-            driverWorkDurations.getOrDefault(route.getId(),route.getDurationSeconds() / 3600.0));
+            driverWorkDurations.getOrDefault(route.getId(),route.getDurationSeconds() / 3600.0), driverEndsDayAtParking, nightTransportCount);
     }
 
     private double calculateDriverWorkDurationHours(Route route) {

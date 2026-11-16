@@ -6,6 +6,7 @@ import com.optiroute.backend.entity.cost.CostParameter;
 import com.optiroute.backend.repository.cost.CostParameterRepository;
 import com.optiroute.backend.type.cost.CostParameterAssignmentType;
 import com.optiroute.backend.type.cost.CostParameterCategoryType;
+import com.optiroute.backend.type.cost.CostParameterUnitType;
 
 import com.optiroute.backend.dto.response.cost.AppliedCostResponse;
 import com.optiroute.backend.dto.request.cost.CostCalculationContext;
@@ -13,6 +14,7 @@ import com.optiroute.backend.dto.request.cost.CostCalculationContext;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class CostParameterEngine {
@@ -36,6 +38,24 @@ public class CostParameterEngine {
         List<AppliedCostResponse> costs = new ArrayList<>();
 
         for (CostParameter parameter : costParameterRepository.findByCategory(category)) {
+            if (parameter.isActive() && parameter.getAssignmentType() != CostParameterAssignmentType.MANUAL
+                && parameter.getUnit() == CostParameterUnitType.EUR_PER_NIGHT) {
+                var triggeringDays = dailyContexts.stream()
+                    .filter(c -> c.date().equals(context.date()) || c.date().equals(context.date().minusDays(1)))
+                    .collect(Collectors.groupingBy(CostCalculationContext::date));
+                double amount = 0;
+                boolean applicable = false;
+                for (List<CostCalculationContext> day : triggeringDays.values()) {
+                    if (day.stream().anyMatch(c -> costConditionService.isApplicable(parameter,c))) {
+                        amount += calculateAmount(parameter,day.getFirst());
+                        applicable = true;
+                    }
+                }
+                if (applicable) {
+                    costs.add(new AppliedCostResponse(parameter.getLabel(),amount));
+                }
+                continue;
+            }
             if (!parameter.isActive() || parameter.getAssignmentType() == CostParameterAssignmentType.MANUAL || !isApplicable(parameter,context,dailyContexts)) {
                 continue;
             }
@@ -56,11 +76,12 @@ public class CostParameterEngine {
     }
 
     private boolean isApplicable(CostParameter parameter, CostCalculationContext context, List<CostCalculationContext> dailyContexts) {
-        if (parameter.getUnit() != com.optiroute.backend.type.cost.CostParameterUnitType.EUR_PER_DAY) {
+        if (parameter.getUnit() != CostParameterUnitType.EUR_PER_DAY) {
             return costConditionService.isApplicable(parameter,context);
         }
 
-        return dailyContexts.stream().anyMatch(dailyContext -> costConditionService.isApplicable(parameter,dailyContext));
+        return dailyContexts.stream().filter(c -> c.date().equals(context.date()))
+            .anyMatch(dailyContext -> costConditionService.isApplicable(parameter,dailyContext));
     }
 
     private double calculateAmount(CostParameter parameter, CostCalculationContext context) {
@@ -73,6 +94,13 @@ public class CostParameterEngine {
             case EUR_PER_HOUR -> context.durationHours() * parameter.getValue().doubleValue();
 
             case EUR_PER_DAY -> calculateDailyCost(parameter,context);
+
+            case EUR_PER_NIGHT -> {
+                if (context.nightTransportCount() <= 0) {
+                    throw new IllegalStateException("Night costs require a positive two-day transport count");
+                }
+                yield parameter.getValue().doubleValue() / context.nightTransportCount();
+            }
 
             case EUR_PER_MONTH -> calculateMonthlyCost(parameter,context);
 

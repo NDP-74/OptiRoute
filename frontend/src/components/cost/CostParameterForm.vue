@@ -320,7 +320,7 @@ const normalizeExistingConditions = () => {
 
                         <!-- Booléen -->
 
-                        <select v-else-if="['EMPTY_TRIP', 'LOADED_TRIP'].includes(condition.field)"
+                        <select v-else-if="['EMPTY_TRIP', 'LOADED_TRIP', 'DRIVER_ENDS_DAY_AT_PARKING'].includes(condition.field)"
                             v-model="condition.value" required :disabled="disabled"
                             class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 outline-none focus:border-blue-500">
                             <option value="" disabled>

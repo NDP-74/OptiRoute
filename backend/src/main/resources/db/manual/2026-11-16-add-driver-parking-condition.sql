@@ -1,0 +1,10 @@
+BEGIN;
+
+ALTER TABLE cost_condition DROP CONSTRAINT IF EXISTS cost_condition_field_check;
+ALTER TABLE cost_condition DROP CONSTRAINT IF EXISTS ck_cost_condition_field;
+ALTER TABLE cost_condition ADD CONSTRAINT ck_cost_condition_field CHECK (field IN (
+    'DISTANCE', 'DURATION', 'DEPARTURE_TIME', 'ARRIVAL_TIME', 'EMPTY_TRIP', 'LOADED_TRIP',
+    'VEHICLE_TYPE', 'DRIVER_DAY_START_TIME', 'DRIVER_DAY_END_TIME', 'DRIVER_ENDS_DAY_AT_PARKING'
+));
+
+COMMIT;

@@ -34,6 +34,7 @@ export const unitOptions: CostOption<CostParameterUnit>[] = [
     { value: "EUR_PER_TRIP", label: "€/trajet" },
     { value: "EUR_PER_HOUR", label: "€/heure" },
     { value: "EUR_PER_DAY", label: "€/jour" },
+    { value: "EUR_PER_NIGHT", label: "€/nuit" },
     { value: "EUR_PER_MONTH", label: "€/mois" },
     { value: "EUR_PER_YEAR", label: "€/an" },
 ]
@@ -60,6 +61,7 @@ export const vehicleFieldOptions: CostOption<CostConditionField>[] = [
 export const driverFieldOptions: CostOption<CostConditionField>[] = [
     { value: "DRIVER_DAY_START_TIME", label: "Heure de début de journée" },
     { value: "DRIVER_DAY_END_TIME", label: "Heure de fin de journée" },
+    { value: "DRIVER_ENDS_DAY_AT_PARKING", label: "Termine la journée à son lieu de stationnement" },
 ]
 
 export const equalityOperatorOptions: CostOption<CostConditionOperator>[] = [
@@ -132,7 +134,7 @@ export const getOperatorOptions = (field: CostConditionField) => {
 }
 
 export const formatConditionValue = (field: CostConditionField, value: string, trailerTypeLabels: Record<string, string> = {}) => {
-    if (["EMPTY_TRIP", "LOADED_TRIP"].includes(field)) {
+    if (["EMPTY_TRIP", "LOADED_TRIP", "DRIVER_ENDS_DAY_AT_PARKING"].includes(field)) {
         return value === "true" ? "Oui" : value === "false" ? "Non" : value
     }
 
