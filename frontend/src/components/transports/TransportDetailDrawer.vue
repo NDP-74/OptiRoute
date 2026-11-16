@@ -32,6 +32,7 @@ function formatTimeWindow(start?: string | null, end?: string | null): string {
 
 const showDeleteModal = ref(false)
 const showEventModal = ref(false)
+const eventToEdit = ref<EventResponse | null>(null)
 const eventToDelete = ref<EventResponse | null>(null)
 const deletingEvent = ref(false)
 const loadingEvents = ref(false)
@@ -60,6 +61,16 @@ const handleTransportDeleted = () => {
 const handleEventsChanged = async () => {
     await loadTransport();
     emit('updated');
+}
+
+const openEditEventModal = (event: EventResponse) => {
+    eventToEdit.value = event
+    showEventModal.value = true
+}
+
+const closeEventModal = () => {
+    showEventModal.value = false
+    eventToEdit.value = null
 }
 
 const closeDeleteEventModal = () => {
@@ -504,9 +515,18 @@ watch(
                             </div>
 
                             <button type="button"
+                                class="rounded-lg p-1.5 text-blue-600 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                :aria-label="`Modifier l’événement ${event.costParameterLabel}`"
+                                title="Modifier l’événement"
+                                :disabled="deletingEvent || loadingEvents"
+                                @click="openEditEventModal(event)">
+                                <Edit3 class="h-4 w-4" />
+                            </button>
+
+                            <button type="button"
                                 class="rounded-lg p-1.5 text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                                 :aria-label="`Supprimer l’événement ${event.costParameterLabel}`"
-                                title="Supprimer l’événement" :disabled="deletingEvent" @click="eventToDelete = event">
+                                title="Supprimer l’événement" :disabled="deletingEvent || loadingEvents" @click="eventToDelete = event">
                                 <Trash2 class="h-4 w-4" />
                             </button>
                         </div>
@@ -689,7 +709,7 @@ watch(
 
                 <button type="button"
                     class="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                    @click="showEventModal = true">
+                    @click="closeEventModal(); showEventModal = true">
                     <CalendarPlus class="h-4 w-4" />
                     Assigner un événement
                 </button>
@@ -705,8 +725,8 @@ watch(
         </template>
     </AppDetailDrawer>
 
-    <AssignEventModal :show="showEventModal" :transport="activeTransport" @close="showEventModal = false"
-        @created="handleEventsChanged" />
+    <AssignEventModal :show="showEventModal" :transport="activeTransport" :event="eventToEdit"
+        @close="closeEventModal" @saved="handleEventsChanged" />
 
     <ConfirmDeleteModal :show="eventToDelete !== null" :loading="deletingEvent" title="Supprimer l’événement"
         :message="`Voulez-vous vraiment supprimer l’événement « ${eventToDelete?.costParameterLabel ?? ''} » ? Cette action est irréversible et l’itinéraire sera recalculé.`"

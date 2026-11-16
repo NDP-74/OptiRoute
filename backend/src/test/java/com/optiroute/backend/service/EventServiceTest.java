@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import com.optiroute.backend.dto.request.route.RouteRequest;
+import com.optiroute.backend.dto.request.EventRequest;
 import com.optiroute.backend.dto.response.EventResponse;
 import com.optiroute.backend.dto.response.route.RouteCostDetailsDto;
 import com.optiroute.backend.dto.response.route.RouteDto;
@@ -32,11 +33,16 @@ import com.optiroute.backend.entity.transport.Service;
 import com.optiroute.backend.entity.vehicle.SemiTrailer;
 import com.optiroute.backend.entity.vehicle.Tractor;
 import com.optiroute.backend.repository.EventRepository;
+import com.optiroute.backend.repository.PointOfInterestRepository;
+import com.optiroute.backend.repository.cost.CostParameterRepository;
 import com.optiroute.backend.repository.transport.RouteRepository;
+import com.optiroute.backend.repository.vehicle.SemiTrailerRepository;
+import com.optiroute.backend.repository.vehicle.TractorRepository;
 import com.optiroute.backend.service.route.RouteOptimizationService;
 import com.optiroute.backend.type.GpsModeType;
 import com.optiroute.backend.model.Position;
 import com.optiroute.backend.type.RouteTimeMode;
+import com.optiroute.backend.type.cost.CostParameterAssignmentType;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -44,8 +50,59 @@ class EventServiceTest {
 
     private final EventRepository eventRepository = mock(EventRepository.class);
     private final RouteRepository routeRepository = mock(RouteRepository.class);
+    private final CostParameterRepository costParameterRepository = mock(CostParameterRepository.class);
+    private final PointOfInterestRepository pointOfInterestRepository = mock(PointOfInterestRepository.class);
+    private final TractorRepository tractorRepository = mock(TractorRepository.class);
+    private final SemiTrailerRepository semiTrailerRepository = mock(SemiTrailerRepository.class);
     private final RouteOptimizationService optimizationService = mock(RouteOptimizationService.class);
-    private final EventService service = new EventService(eventRepository, routeRepository, null, null, null, null, optimizationService);
+    private final EventService service = new EventService(eventRepository, routeRepository, costParameterRepository, pointOfInterestRepository,
+            tractorRepository, semiTrailerRepository, optimizationService);
+
+    @Test
+    void shouldUpdateEventAndRecalculateRouteWithItsNewPointOfInterest() {
+        Route route = prepareRoute(List.of());
+        Service transport = route.getService();
+        transport.setId(7L);
+        when(routeRepository.findById(10L)).thenReturn(Optional.of(route));
+
+        CostParameter costParameter = new CostParameter();
+        costParameter.setId(3L);
+        costParameter.setLabel("Péage modifié");
+        costParameter.setAssignmentType(CostParameterAssignmentType.MANUAL);
+        when(costParameterRepository.findById(3L)).thenReturn(Optional.of(costParameter));
+
+        PointOfInterest pointOfInterest = new PointOfInterest();
+        pointOfInterest.setId(8L);
+        pointOfInterest.setLabel("Nouvelle étape");
+        pointOfInterest.setLatitude(BigDecimal.valueOf(47.5));
+        pointOfInterest.setLongitude(BigDecimal.valueOf(1.5));
+        when(pointOfInterestRepository.findById(8L)).thenReturn(Optional.of(pointOfInterest));
+
+        Tractor tractor = new Tractor();
+        tractor.setId(20L);
+        when(tractorRepository.findById(20L)).thenReturn(Optional.of(tractor));
+
+        Event event = Event.builder().id(1L).route(route).build();
+        when(eventRepository.findById(1L)).thenReturn(Optional.of(event));
+        when(eventRepository.findByRouteIdOrderByIdAsc(10L)).thenReturn(List.of(event));
+        when(eventRepository.save(any(Event.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        EventResponse response = service.update(1L, new EventRequest(7L, 10L, 3L, 8L, 20L, null, 15));
+        RouteRequest request = capturedRequest();
+
+        assertEquals("Péage modifié", response.costParameterLabel());
+        assertEquals(8L, response.pointOfInterestId());
+        assertEquals(15, response.durationMinutes());
+        assertEquals(List.of(47.5), request.getWaypoints().stream().map(Position::getLat).toList());
+        assertEquals(List.of(1.5), request.getWaypoints().stream().map(Position::getLng).toList());
+
+        var order = inOrder(eventRepository, optimizationService, routeRepository);
+        order.verify(eventRepository).save(event);
+        order.verify(eventRepository).flush();
+        order.verify(eventRepository).findByRouteIdOrderByIdAsc(10L);
+        order.verify(optimizationService).calculateRoute(any(RouteRequest.class), eq(GpsModeType.CHEAPEST));
+        order.verify(routeRepository).save(route);
+    }
 
     @Test
     void shouldPreserveUserWaypointsAndArrivalAnchorWhenRecalculating() {

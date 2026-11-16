@@ -5,22 +5,24 @@ import AppModal from '@/components/ui/AppModal.vue'
 
 import { getCostParameters } from '@/api/cost/costParameterApi'
 import { getPointsOfInterest } from '@/api/pointOfInterestApi'
-import { createEvent } from '@/api/eventApi'
+import { createEvent, updateEvent } from '@/api/eventApi'
 import { getApiErrorMessage } from '@/api/utils'
 import { useNotification } from '@/composables/useNotification'
 
 import type { CostParameterLight } from '@/models/cost/CostParameter'
+import type { EventResponse } from '@/models/Event'
 import type { PointOfInterest } from '@/models/PointOfInterest'
 import type { TransportDetail } from '@/models/transport/TransportDetail'
 
 const props = defineProps<{
     show: boolean
     transport: TransportDetail | null
+    event?: EventResponse | null
 }>()
 
 const emit = defineEmits<{
     close: []
-    created: []
+    saved: []
 }>()
 
 const notification = useNotification()
@@ -44,20 +46,26 @@ const canSubmit = computed(() =>
     && ((target.value === 'tractor' && hasTractor.value) || (target.value === 'semiTrailer' && hasSemiTrailer.value))
 )
 
-watch(() => props.show, async (visible) => {
+watch(() => [props.show, props.event] as const, async ([visible, event]) => {
     if (!visible) return
 
-    costParameterId.value = null
-    pointOfInterestId.value = null
-    durationMinutes.value = 0
-    target.value = hasTractor.value || !hasSemiTrailer.value ? 'tractor' : 'semiTrailer'
+    costParameterId.value = event?.costParameterId ?? null
+    pointOfInterestId.value = event?.pointOfInterestId ?? null
+    durationMinutes.value = event?.durationMinutes ?? 0
+    target.value = event?.tractorId != null
+        ? 'tractor'
+        : event?.semiTrailerId != null || (!hasTractor.value && hasSemiTrailer.value)
+            ? 'semiTrailer'
+            : 'tractor'
 
     loading.value = true
 
     try {
         const [parameters, points] = await Promise.all([getCostParameters(), getPointsOfInterest()])
 
-        costParameters.value = parameters.filter(parameter => parameter.assignmentType === 'MANUAL' && parameter.active)
+        costParameters.value = parameters.filter(parameter =>
+            parameter.assignmentType === 'MANUAL' && (parameter.active || parameter.id === event?.costParameterId)
+        )
         pointsOfInterest.value = points
     } catch (error) {
         notification.error('Chargement impossible', getApiErrorMessage(error, 'Les données nécessaires n’ont pas pu être chargées.'))
@@ -72,7 +80,7 @@ const submit = async () => {
     try {
         saving.value = true
 
-        await createEvent({
+        const request = {
             serviceId: props.transport.id,
             routeId: props.transport.routeId,
             costParameterId: costParameterId.value,
@@ -80,14 +88,23 @@ const submit = async () => {
             tractorId: target.value === 'tractor' ? props.transport.tractorId : null,
             semiTrailerId: target.value === 'semiTrailer' ? props.transport.semiTrailerId : null,
             durationMinutes: durationMinutes.value === '' ? 0 : durationMinutes.value
-        })
+        }
 
-        notification.success('Événement créé', 'L’événement a bien été assigné.')
+        if (props.event) {
+            await updateEvent(props.event.id, request)
+            notification.success('Événement modifié', 'L’événement a bien été modifié et l’itinéraire recalculé.')
+        } else {
+            await createEvent(request)
+            notification.success('Événement créé', 'L’événement a bien été assigné.')
+        }
 
-        emit('created')
+        emit('saved')
         emit('close')
     } catch (error) {
-        notification.error('Création impossible', getApiErrorMessage(error, 'L’événement n’a pas pu être créé.'))
+        notification.error(
+            props.event ? 'Modification impossible' : 'Création impossible',
+            getApiErrorMessage(error, props.event ? 'L’événement n’a pas pu être modifié.' : 'L’événement n’a pas pu être créé.')
+        )
     } finally {
         saving.value = false
     }
@@ -98,7 +115,9 @@ const selectClass = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-
 
 <template>
     <AppModal :show="show" panel-class="max-w-lg" @close="!saving && emit('close')">
-        <h2 class="mb-4 text-xl font-semibold text-slate-900">Assigner un événement</h2>
+        <h2 class="mb-4 text-xl font-semibold text-slate-900">
+            {{ event ? 'Modifier l’événement' : 'Assigner un événement' }}
+        </h2>
 
         <form class="space-y-4" @submit.prevent="submit">
             <div>
@@ -168,7 +187,7 @@ const selectClass = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-
 
                 <button type="submit" :disabled="!canSubmit || saving"
                     class="rounded-xl bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50">
-                    {{ saving ? 'Création...' : 'Créer' }}
+                    {{ saving ? 'Enregistrement...' : event ? 'Enregistrer' : 'Créer' }}
                 </button>
             </div>
         </form>

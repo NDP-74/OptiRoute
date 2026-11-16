@@ -57,6 +57,42 @@ public class EventService {
 
     @Transactional
     public EventResponse create(EventRequest request) {
+        Event event = new Event();
+        Route route = applyRequest(event, request);
+        event.setEventDate(route.getDepartureStart() == null ? LocalDateTime.now() : route.getDepartureStart().toLocalDateTime());
+        event.setDurationMinutes(request.durationMinutes() == null ? 0 : request.durationMinutes());
+
+        Event saved = eventRepository.save(event);
+
+        if (event.getPointOfInterest() != null) {
+            recalculateRoute(route);
+        }
+
+        return toResponse(saved);
+    }
+
+    @Transactional
+    public EventResponse update(Long id, EventRequest request) {
+        Event event = eventRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Event not found with id " + id));
+        Route previousRoute = event.getRoute();
+        Route route = applyRequest(event, request);
+
+        if (!previousRoute.getId().equals(route.getId())) {
+            event.setEventDate(route.getDepartureStart() == null ? LocalDateTime.now() : route.getDepartureStart().toLocalDateTime());
+        }
+
+        event.setDurationMinutes(request.durationMinutes() == null ? 0 : request.durationMinutes());
+        Event saved = eventRepository.save(event);
+        eventRepository.flush();
+        recalculateRoute(previousRoute);
+        if (!previousRoute.getId().equals(route.getId())) {
+            recalculateRoute(route);
+        }
+
+        return toResponse(saved);
+    }
+
+    private Route applyRequest(Event event, EventRequest request) {
         if ((request.tractorId() == null) == (request.semiTrailerId() == null)) {
             throw new IllegalArgumentException("Exactly one of tractor or semi-trailer must be provided");
         }
@@ -93,18 +129,12 @@ public class EventService {
                 .orElseThrow(() -> new EntityNotFoundException("Semi-trailer not found with id " + request.semiTrailerId()));
         }
 
-        LocalDateTime eventDate = route.getDepartureStart() == null ? LocalDateTime.now() : route.getDepartureStart().toLocalDateTime();
-
-        Event event = Event.builder().route(route).costParameter(costParameter).pointOfInterest(pointOfInterest).tractor(tractor).semiTrailer(semiTrailer).eventDate(eventDate)
-            .durationMinutes(request.durationMinutes() == null ? 0 : request.durationMinutes()).build();
-
-        Event saved = eventRepository.save(event);
-
-        if (pointOfInterest != null) {
-            recalculateRoute(route);
-        }
-
-        return toResponse(saved);
+        event.setRoute(route);
+        event.setCostParameter(costParameter);
+        event.setPointOfInterest(pointOfInterest);
+        event.setTractor(tractor);
+        event.setSemiTrailer(semiTrailer);
+        return route;
     }
 
     @Transactional
