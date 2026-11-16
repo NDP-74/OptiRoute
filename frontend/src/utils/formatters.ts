@@ -74,6 +74,12 @@ export const formatParisDateTime = (value: string | null | undefined): string =>
     }).format(date)
 }
 
+const parisTimeFormatter = new Intl.DateTimeFormat("fr-FR", {
+    timeZone: "Europe/Paris",
+    hour: "2-digit",
+    minute: "2-digit",
+})
+
 export const formatParisTime = (value: string): string => {
     const date = new Date(value)
 
@@ -81,11 +87,19 @@ export const formatParisTime = (value: string): string => {
         return "--:--"
     }
 
-    return new Intl.DateTimeFormat("fr-FR", {
-        timeZone: "Europe/Paris",
-        hour: "2-digit",
-        minute: "2-digit",
-    }).format(date)
+    return parisTimeFormatter.format(date)
+}
+
+const parisShortDayFormatter = new Intl.DateTimeFormat("fr-FR", {
+    timeZone: "Europe/Paris",
+    weekday: "short",
+    day: "2-digit",
+    month: "2-digit",
+})
+
+export const formatParisShortDay = (value: string): string => {
+    const date = new Date(value)
+    return Number.isNaN(date.getTime()) ? "" : parisShortDayFormatter.format(date).replace(".", "")
 }
 
 export const formatParisDateTimeLocal = (value: string): string => {
@@ -129,13 +143,15 @@ export const parisDateTimeLocalToIso = (value: string): string => {
     return new Date(instant).toISOString()
 }
 
+const parisDateKeyFormatter = new Intl.DateTimeFormat("en", {
+    timeZone: "Europe/Paris",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+})
+
 export const formatParisDateKey = (value: string): string => {
-    const parts = new Intl.DateTimeFormat("en", {
-        timeZone: "Europe/Paris",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-    }).formatToParts(new Date(value))
+    const parts = parisDateKeyFormatter.formatToParts(new Date(value))
     const part = (type: string) => parts.find(item => item.type === type)?.value ?? ""
 
     return `${part("year")}-${part("month")}-${part("day")}`

@@ -2,12 +2,20 @@
 import { computed } from "vue";
 
 import type { PlanningTransport } from "@/models/planning/planning";
-import { Truck, Container } from 'lucide-vue-next'
-import { formatParisTime } from "@/utils/formatters";
+import { ChevronLeft, ChevronRight, Container, Truck } from 'lucide-vue-next'
+import { formatParisShortDay, formatParisTime } from "@/utils/formatters";
+
+const currencyFormatter = new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+});
 
 const props = defineProps<{
     transport: PlanningTransport;
     selectionMode: boolean;
+    multiDay?: boolean;
+    continuesBefore?: boolean;
+    continuesAfter?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -18,22 +26,18 @@ const tripLabel = computed(() => {
     return props.transport.emptyTrip ? "Trajet à vide" : "Trajet en charge";
 });
 
-const startTime = computed(() => {
-    return formatParisTime(props.transport.departureStart ?? '');
-});
+function formatMoment(value: string | null): string {
+    const time = formatParisTime(value ?? '');
+    return props.multiDay && value ? `${formatParisShortDay(value)} ${time}` : time;
+}
 
-const endTime = computed(() => {
-    return formatParisTime(props.transport.arrivalStart ?? '');
-});
+const startTime = computed(() => formatMoment(props.transport.departureStart));
+
+const endTime = computed(() => formatMoment(props.transport.arrivalStart));
 
 const result = computed(() => props.transport.revenue - props.transport.totalCost);
 
-const formattedResult = computed(() => {
-    return new Intl.NumberFormat("fr-FR", {
-        style: "currency",
-        currency: "EUR",
-    }).format(result.value);
-});
+const formattedResult = computed(() => currencyFormatter.format(result.value));
 </script>
 
 <template>
@@ -64,12 +68,16 @@ const formattedResult = computed(() => {
         </div>
 
         <div class="mt-3 space-y-1 text-xs text-slate-600">
-            <p class="truncate">
-                ↑ {{ startTime }} — {{ transport.originName }}
+            <p class="flex items-center gap-1 truncate">
+                <ChevronLeft v-if="continuesBefore" :size="12" class="shrink-0 text-slate-400"
+                    aria-label="Commence avant la période affichée" />
+                <span class="truncate">↑ {{ startTime }} — {{ transport.originName }}</span>
             </p>
 
-            <p class="truncate">
-                ↓ {{ endTime }} — {{ transport.destinationName }}
+            <p class="flex items-center gap-1 truncate">
+                <span class="truncate">↓ {{ endTime }} — {{ transport.destinationName }}</span>
+                <ChevronRight v-if="continuesAfter" :size="12" class="shrink-0 text-slate-400"
+                    aria-label="Se termine après la période affichée" />
             </p>
         </div>
 
