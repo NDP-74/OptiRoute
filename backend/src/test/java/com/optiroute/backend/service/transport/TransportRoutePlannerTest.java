@@ -242,8 +242,8 @@ class TransportRoutePlannerTest {
         assertEquals(time("2026-11-03T10:45:00+01:00"), departure(segments.getFirst()));
         assertEquals(time("2026-11-03T12:45:00+01:00"), arrival(segments.getFirst()));
         assertEquals("Depot", segments.getLast().request().originName());
-        assertEquals(time("2026-11-04T11:00:00+01:00"), departure(segments.getLast()));
-        assertEquals(time("2026-11-04T12:00:00+01:00"), arrival(segments.getLast()));
+        assertEquals(time("2026-11-04T11:45:00+01:00"), departure(segments.getLast()));
+        assertEquals(time("2026-11-04T12:45:00+01:00"), arrival(segments.getLast()));
         assertSame(timing, segments.getLast().request().serviceTiming());
     }
 
@@ -260,7 +260,7 @@ class TransportRoutePlannerTest {
         driver.setLocationLongitude(BigDecimal.valueOf(2));
         TransportRequest source = request("2026-11-03T10:00:00+01:00", null, 5);
         source = copy(source, 7L, source.routeTime(), RouteTimeMode.DEPARTURE,
-            new ServiceTiming(null, null, source.routeTime(), null,
+            new ServiceTiming(null, 90, source.routeTime(), null,
                 time("2026-11-04T" + minimum + ":00+01:00"),
                 time("2026-11-04T" + maximum + ":00+01:00")), List.of());
 
@@ -336,8 +336,8 @@ class TransportRoutePlannerTest {
         var segments = planner.plan(source, selected(10));
 
         assertEquals(time("2026-11-03T15:00:00+01:00"), departure(segments.getFirst()));
-        assertEquals(time("2026-11-04T07:00:00+01:00"), departure(segments.getLast()));
-        assertEquals(time("2026-11-04T12:00:00+01:00"), arrival(segments.getLast()));
+        assertEquals(time("2026-11-04T07:45:00+01:00"), departure(segments.getLast()));
+        assertEquals(time("2026-11-04T12:45:00+01:00"), arrival(segments.getLast()));
         assertEquals(List.of(2.0), segments.getFirst().request().waypoints().stream().map(Position::getLng).toList());
         assertEquals(List.of(8.0), segments.getLast().request().waypoints().stream().map(Position::getLng).toList());
         assertSame(timing, segments.getFirst().request().serviceTiming());
@@ -393,8 +393,8 @@ class TransportRoutePlannerTest {
         assertEquals(0.1, segments.getFirst().request().destinationLat());
         assertEquals(6, segments.getFirst().request().destinationLng());
         assertEquals(time("2026-11-03T21:00:00+01:00"), arrival(segments.getFirst()));
-        assertEquals(time("2026-11-04T05:15:00+01:00"), departure(segments.getLast()));
-        assertEquals(time("2026-11-04T09:15:00+01:00"), arrival(segments.getLast()));
+        assertEquals(time("2026-11-04T06:00:00+01:00"), departure(segments.getLast()));
+        assertEquals(time("2026-11-04T10:00:00+01:00"), arrival(segments.getLast()));
         assertEquals(List.of(2.0), segments.getFirst().request().waypoints().stream().map(Position::getLng).toList());
         assertEquals(List.of(8.0), segments.getLast().request().waypoints().stream().map(Position::getLng).toList());
         verify(routing, atLeastOnce()).calculateRoute(any(), eq(GpsModeType.CHEAPEST));

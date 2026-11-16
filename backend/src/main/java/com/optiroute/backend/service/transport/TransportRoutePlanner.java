@@ -257,7 +257,7 @@ class TransportRoutePlanner {
         if (deadline == null || timing == null || timing.arrivalStart() == null) {
             return null;
         }
-        OffsetDateTime target = timing.arrivalStart().minusMinutes(minutes(timing.unloadingDurationMinutes()));
+        OffsetDateTime target = timing.arrivalStart();
         OffsetDateTime morning = at(nextDay, 5);
         if (date(target).isBefore(nextDay) || target.isAfter(deadline)
                 || target.isAfter(at(date(target), 20))) {
@@ -325,9 +325,7 @@ class TransportRoutePlanner {
         ServiceTiming timing = transport.serviceTiming();
         OffsetDateTime arrival = timing == null ? null
             : timing.arrivalEnd() != null ? timing.arrivalEnd() : timing.arrivalStart();
-        if (arrival != null) {
-            return arrival.minusMinutes(minutes(timing.unloadingDurationMinutes()));
-        }
+        if (arrival != null) return arrival;
         return transport.timeMode() == RouteTimeMode.ARRIVAL ? transport.routeTime() : null;
     }
 

@@ -28,7 +28,7 @@ La propagation de toutes les bornes maximales et l'import Dashdoc réel restent 
 - Les flexible polylines sont décodées par section. Chaque span relie son `offset` au suivant, ou à la fin de la section ; sa longueur n'est pas un nombre de points. Les durées des spans sont ramenées à la durée totale de leur section pour absorber les arrondis.
 - La position à 20 h est trouvée par cumul des durées puis interpolation en distance sur la géométrie du span concerné. Aucun ratio global distance/durée ni temps de pause n'est utilisé.
 - Une arrivée routière à 20 h exactement ne crée pas de portion vide. Un départ demandé à partir de 20 h est reporté au lendemain à 5 h. Un départ avant 5 h est reporté à 5 h sauf si ce report rend la livraison impossible.
-- Le trajet du jour est recalculé en mode arrivée à 20 h. Avec des fenêtres sources, la suite vise `arrivalStart - unloadingDurationMinutes`. Si cela impose un départ avant 5 h, essayer 5 h et une arrivée dans la fenêtre ; sinon, viser `arrivalEnd - unloadingDurationMinutes` avec une reprise anticipée. Sans borne basse, conserver la borne haute comme cible ; sans fenêtre, conserver `routeTime` en mode arrivée. Sans échéance, la reprise est à 5 h. Aucun chargement n'est retranché une nouvelle fois.
+- Le trajet du jour est recalculé en mode arrivée à 20 h. Avec des fenêtres sources, la suite vise `arrivalStart` et doit arriver au plus tard à `arrivalEnd`. Le déchargement commence après l'arrivée ; il n'est pas retranché aux bornes d'arrivée. Si viser la borne basse impose un départ avant 5 h, essayer 5 h et une arrivée plus tardive dans la fenêtre ; sinon, viser la borne haute avec une reprise anticipée. Sans borne basse, conserver la borne haute comme cible ; sans fenêtre, conserver `routeTime` en mode arrivée. Sans échéance, la reprise est à 5 h. Aucun chargement n'est retranché une nouvelle fois.
 - Si la conduite restante ne tient pas entre 5 h et l'échéance, le calcul avance exceptionnellement la reprise avant 5 h, au plus tôt à minuit le lendemain de la coupure. S'il faut repartir avant cette date, le planning est refusé. Toutes les coupures suivantes restent à 20 h.
 - Les deux trajets utilisent les mêmes coordonnées d'arrêt. Les waypoints sont répartis selon les sections traversées ; un waypoint situé exactement au point de coupure devient une extrémité, sans être ajouté une seconde fois. Le mode rapide/économique sélectionné est conservé.
 - Le recalcul peut modifier les durées. S'il impose de partir avant l'heure disponible, de chevaucher la coupure précédente ou de dépasser la livraison maximale, le planning est refusé sans sauvegarde partielle. Les tronçons restants sont recalculés à leur propre horaire.
@@ -179,12 +179,11 @@ La plage **20 h–5 h est une indisponibilité métier**, distincte des pauses r
 Après une nuit, viser d'abord la borne minimale de livraison :
 
 ```text
-Départ = date/heure minimale de livraison
-         − durée de déchargement
+Départ = date/heure minimale d'arrivée
          − durée de l'itinéraire
 ```
 
-Cette formule s'applique directement à une portion sans coupure. Pour plusieurs journées, retirer uniquement les temps de conduite dans les créneaux disponibles, en conservant les nuits à l'arrêt ; une simple soustraction de la durée totale ne suffit pas.
+Cette formule s'applique directement à une portion sans coupure. Pour plusieurs journées, retirer uniquement les temps de conduite dans les créneaux disponibles, en conservant les nuits à l'arrêt ; une simple soustraction de la durée totale ne suffit pas. Le déchargement commence après l'arrivée ; la disponibilité pour une mission suivante est donc `heure d'arrivée effective + durée de déchargement`.
 
 Par défaut, pas de conduite de 20 h à 5 h. Si viser l'arrivée minimale impose un départ avant 5 h, essayer un départ à 5 h et une arrivée plus tardive dans la fenêtre. Si cela dépasse la borne maximale, avancer exceptionnellement le départ pour respecter cette borne, sans supprimer ni retarder la coupure à 20 h. Sans arrivée minimale, viser la borne maximale ; sans échéance de livraison, reprendre à 5 h. Le mode Manuel sans fenêtres sources conserve son horaire de recherche.
 
@@ -239,7 +238,7 @@ Il faudra déterminer cette position sur le tracé à partir de la progression t
 Utiliser le lieu de stationnement du conducteur **uniquement si les deux conditions suivantes sont remplies** :
 
 1. Le trajet passe à **moins de 50 km** du stationnement.
-2. La livraison reste réalisable **le lendemain en repartant à partir de 5 h**, en respectant la borne haute de livraison, le déchargement et la chronologie de la mission. Une reprise à 5 h exactement est admise ; un départ avant 5 h n'est pas autorisé pour retenir le stationnement.
+2. L'arrivée reste dans la fenêtre **le lendemain en repartant à partir de 5 h**. Le déchargement a lieu après cette arrivée et ne change pas l'heure limite d'arrivée. Une reprise à 5 h exactement est admise ; un départ avant 5 h n'est pas autorisé pour retenir le stationnement.
 
 Cette vérification doit intégrer les déplacements et opérations restant à effectuer.
 
@@ -251,7 +250,7 @@ Lorsque le stationnement est proche :
 
 1. Repérer sa projection la plus proche sur le trajet restant. Répartir les waypoints selon la section correspondante, en conservant chaque waypoint sur l'une des deux portions, y compris si la projection tombe exactement dessus. En cas de passages multiples à la même distance, retenir le premier dans l'ordre du tracé.
 2. Calculer réellement le trajet origine du jour → stationnement avec les waypoints précédents.
-3. Calculer réellement stationnement → destination avec les waypoints restants. La cible est la borne haute de livraison moins le déchargement (borne basse à défaut), limitée à 20 h le lendemain. Sans échéance source, calculer un départ à 5 h.
+3. Calculer réellement stationnement → destination avec les waypoints restants. La cible d'arrivée est la borne basse de livraison, et sa limite la borne haute, limitée à 20 h le lendemain. Sans échéance source, calculer un départ à 5 h.
 4. Accepter uniquement si le départ calculé est à partir de 5 h le lendemain, après l'arrivée au stationnement, et si la livraison routière se termine au plus tard à 20 h et avant l'échéance.
 
 Les durées et coûts retenus sont ceux de ces itinéraires routiers réels, pas ceux de la projection géographique. Une rivière, un accès éloigné ou un détour peuvent donc invalider un stationnement pourtant proche à vol d'oiseau.
@@ -451,7 +450,7 @@ Ces points ne doivent pas être transformés en hypothèses implicites dans le c
 - Un import Dashdoc initialise ces durées à 45 minutes chacune ; une synchronisation préserve les ajustements manuels.
 - Les durées de manutention s'appliquent aux opérations réelles et ne sont pas dupliquées lors d'un découpage nocturne.
 - La destination du premier trajet correspond à l'origine du second.
-- Pour un `REGIONAL` livré le lendemain, deux trajets passent obligatoirement par le stationnement, même si le direct tient le premier jour. Le second vise `arrivalStart - déchargement`, ou une arrivée plus tardive dans la fenêtre afin de repartir à partir de 05 h.
+- Pour un `REGIONAL` livré le lendemain, deux trajets passent obligatoirement par le stationnement, même si le direct tient le premier jour. Le second vise `arrivalStart`, ou une arrivée plus tardive dans la fenêtre afin de repartir à partir de 05 h. Le déchargement se déroule après l'arrivée et avant la prochaine mission.
 - Les revenus présentés dans le planning sont répartis entre les trajets et leur somme égale exactement le CA du service.
 - Un grand régional utilise son stationnement uniquement si les deux conditions sont remplies.
 - Une distance exactement égale à 50 km ne satisfait pas la règle « moins de 50 km ».
