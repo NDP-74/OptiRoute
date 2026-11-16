@@ -157,7 +157,7 @@ const transportTitle = computed(() => {
         return customerName
     }
 
-    if (routeRequest.value?.emptyTrip) {
+    if (emptyTrip.value) {
         return 'Trajet à vide'
     }
 

@@ -1,5 +1,13 @@
 # frontend
 
+## Titre des services
+
+À chaque création ou modification depuis le planning, le titre du service est
+recalculé : nom du donneur d'ordre s'il est renseigné, sinon « Trajet à vide »
+si la case correspondante est cochée, sinon « Départ - Arrivée » avec les noms
+des lieux. Changer la case « Trajet à vide » actualise le titre enregistré même
+sans relancer le calcul d'itinéraire.
+
 ## Points d'intérêt
 
 Sur la carte des points d'intérêt, cliquer sur un marqueur ouvre le panneau existant
