@@ -66,9 +66,23 @@ public class TransportPlanningService {
                 .forEach(route -> routesByServiceId.computeIfAbsent(route.getService().getId(), ignored -> new ArrayList<>()).add(route));
         }
 
+        List<TransportCostDetailsResponse> routeCosts = transportCostService.calculateAll(routes);
+        Map<Long, TransportCostDetailsResponse> costsByRouteId = new HashMap<>();
+        for (int index = 0; index < routes.size(); index++) {
+            costsByRouteId.put(routes.get(index).getId(), routeCosts.get(index));
+        }
+
+        List<Driver> allDrivers = driverRepository.findAll();
+        Map<Long, Driver> driversById = allDrivers.stream().collect(Collectors.toMap(Driver::getId, driver -> driver));
+        List<Tractor> allTractors = tractorRepository.findAll();
+        Map<Long, Tractor> tractorsById = allTractors.stream().collect(Collectors.toMap(Tractor::getId, tractor -> tractor));
+        List<SemiTrailer> allSemiTrailers = semiTrailerRepository.findAll();
+        Map<Long, SemiTrailer> semiTrailersById = allSemiTrailers.stream()
+            .collect(Collectors.toMap(SemiTrailer::getId, semiTrailer -> semiTrailer));
+
         List<TransportPlanningResponse> transports = routes.stream().map(route -> {
             var service = route.getService();
-            TransportCostDetailsResponse costs = transportCostService.calculate(route);
+            TransportCostDetailsResponse costs = costsByRouteId.get(route.getId());
             List<Route> serviceRoutes = routesByServiceId.getOrDefault(service.getId(), List.of());
             int routeNumber = 1;
             for (int index = 0; index < serviceRoutes.size(); index++) {
@@ -80,10 +94,11 @@ public class TransportPlanningService {
             BigDecimal routeRevenue = ServiceRouteRevenueAllocator.allocate(service.getRevenue(), serviceRoutes, route);
             double revenue = routeRevenue == null ? 0 : routeRevenue.doubleValue();
 
-            Driver driver = route.getDriverId() == null ? null : driverRepository.findById(route.getDriverId()).orElse(null);
-            String tractorRegistration = route.getTractorId() == null ? null : tractorRepository.findById(route.getTractorId()).map(Tractor::getRegistration).orElse(null);
-            String semiTrailerRegistration = route.getSemiTrailerId() == null ? null
-                : semiTrailerRepository.findById(route.getSemiTrailerId()).map(SemiTrailer::getRegistration).orElse(null);
+            Driver driver = route.getDriverId() == null ? null : driversById.get(route.getDriverId());
+            Tractor tractor = route.getTractorId() == null ? null : tractorsById.get(route.getTractorId());
+            SemiTrailer semiTrailer = route.getSemiTrailerId() == null ? null : semiTrailersById.get(route.getSemiTrailerId());
+            String tractorRegistration = tractor == null ? null : tractor.getRegistration();
+            String semiTrailerRegistration = semiTrailer == null ? null : semiTrailer.getRegistration();
 
             return new TransportPlanningResponse(service.getId(), route.getId(), routeNumber, serviceRoutes.size(),
                 service.getName(), driver != null ? driver.getId() : null,
@@ -96,8 +111,6 @@ public class TransportPlanningService {
         Map<Long, Set<LocalDate>> transportDatesByDriver = routes.stream().filter(route -> route.getDriverId() != null && route.getDepartureStart() != null)
             .collect(Collectors.groupingBy(Route::getDriverId,Collectors.mapping(route -> route.getDepartureStart().atZoneSameInstant(PLANNING_ZONE).toLocalDate(),Collectors.toSet())));
 
-        List<Driver> allDrivers = driverRepository.findAll();
-
         List<PlanningDriverResponse> drivers = allDrivers.stream()
             .map(driver -> new PlanningDriverResponse(driver.getId(), driver.getFirstName() + " " + driver.getLastName(),
                 driver.getTractor() != null ? driver.getTractor().getRegistration() : null, driver.getSemiTrailer() != null ? driver.getSemiTrailer().getRegistration() : null,
@@ -105,19 +118,27 @@ public class TransportPlanningService {
                 driver.getCostType(), driver.getDriverType()))
             .toList();
 
-        PlanningUnassignedVehiclesResponse unassignedVehicles = buildUnassignedVehicles(allDrivers,startDate,endDate);
+        PlanningUnassignedVehiclesResponse unassignedVehicles = buildUnassignedVehicles(
+            allDrivers, allTractors, allSemiTrailers, startDate, endDate
+        );
 
         return new PlanningResponse(transports, drivers, unassignedVehicles);
     }
 
     // Véhicules non affectés à un conducteur, avec leur coût d'amortissement cumulé
     // pour la période sélectionnée
-    private PlanningUnassignedVehiclesResponse buildUnassignedVehicles(List<Driver> allDrivers, LocalDate startDate, LocalDate endDate) {
+    private PlanningUnassignedVehiclesResponse buildUnassignedVehicles(
+        List<Driver> allDrivers,
+        List<Tractor> allTractors,
+        List<SemiTrailer> allSemiTrailers,
+        LocalDate startDate,
+        LocalDate endDate
+    ) {
         Set<Long> assignedTractorIds = allDrivers.stream().map(Driver::getTractor).filter(java.util.Objects::nonNull).map(Tractor::getId).collect(Collectors.toSet());
         Set<Long> assignedSemiTrailerIds = allDrivers.stream().map(Driver::getSemiTrailer).filter(java.util.Objects::nonNull).map(SemiTrailer::getId).collect(Collectors.toSet());
 
-        List<Tractor> unassignedTractors = tractorRepository.findAll().stream().filter(tractor -> !assignedTractorIds.contains(tractor.getId())).toList();
-        List<SemiTrailer> unassignedSemiTrailers = semiTrailerRepository.findAll().stream().filter(semiTrailer -> !assignedSemiTrailerIds.contains(semiTrailer.getId())).toList();
+        List<Tractor> unassignedTractors = allTractors.stream().filter(tractor -> !assignedTractorIds.contains(tractor.getId())).toList();
+        List<SemiTrailer> unassignedSemiTrailers = allSemiTrailers.stream().filter(semiTrailer -> !assignedSemiTrailerIds.contains(semiTrailer.getId())).toList();
 
         List<PlanningUnassignedVehicleResponse> vehicles = new java.util.ArrayList<>();
         unassignedTractors.forEach(tractor -> vehicles.add(new PlanningUnassignedVehicleResponse(tractor.getRegistration(),

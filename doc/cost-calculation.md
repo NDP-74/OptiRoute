@@ -18,3 +18,16 @@ Trois axes : **driver**, **véhicule**, **structure**. Chacun combine des valeur
 
 ## StructureCostService
 - Coût de structure par trajet = frais de structure optionnels
+
+## Vue planning
+
+La consultation du planning calcule les coûts par lot (`TransportCostService.calculateAll`) :
+les trajets voisins nécessaires aux contextes journaliers, événements, véhicules et paramètres
+de coûts sont chargés en groupe plutôt que relus pour chaque trajet. Le calcul individuel reste
+utilisé pour le détail d'un transport.
+
+Les index complémentaires sont dans
+[`2026-11-17-add-planning-query-indexes.sql`](../backend/src/main/resources/db/manual/2026-11-17-add-planning-query-indexes.sql).
+Ils doivent être exécutés une fois sur chaque base existante : `spring.jpa.hibernate.ddl-auto`
+ne lance pas les scripts du dossier `db/manual`. L'affichage SQL Hibernate est désactivé par défaut ;
+`SPRING_JPA_SHOW_SQL=true` peut toujours le réactiver localement.

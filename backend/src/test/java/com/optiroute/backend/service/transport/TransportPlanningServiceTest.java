@@ -41,10 +41,10 @@ class TransportPlanningServiceTest {
         when(tractors.findAll()).thenReturn(List.of());
         when(semiTrailers.findAll()).thenReturn(List.of());
         var emptyCategory = new CostCategoryResponse(List.of(), 0);
-        when(transportCosts.calculate(first)).thenReturn(
-            new TransportCostDetailsResponse(emptyCategory, emptyCategory, emptyCategory, 100));
-        when(transportCosts.calculate(second)).thenReturn(
-            new TransportCostDetailsResponse(emptyCategory, emptyCategory, emptyCategory, 200));
+        when(transportCosts.calculateAll(List.of(first, second))).thenReturn(List.of(
+            new TransportCostDetailsResponse(emptyCategory, emptyCategory, emptyCategory, 100),
+            new TransportCostDetailsResponse(emptyCategory, emptyCategory, emptyCategory, 200)
+        ));
 
         TransportPlanningService subject = new TransportPlanningService(routes, drivers, transportCosts,
             mock(DriverCostService.class), tractors, semiTrailers, mock(VehicleCostService.class));

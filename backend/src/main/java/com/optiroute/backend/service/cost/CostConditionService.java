@@ -10,7 +10,9 @@ import com.optiroute.backend.dto.request.cost.CostCalculationContext;
 
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 public class CostConditionService {
@@ -28,7 +30,21 @@ public class CostConditionService {
         if (parameter.getAssignmentType() == CostParameterAssignmentType.MANUAL) {
             return false;
         }
-        List<CostCondition> conditions = costConditionRepository.findByCostParameterId(parameter.getId());
+        return isApplicable(parameter, context, costConditionRepository.findByCostParameterId(parameter.getId()));
+    }
+
+    public Map<Long, List<CostCondition>> findByCostParameterIds(List<Long> parameterIds) {
+        return costConditionRepository.findByCostParameterIdIn(parameterIds).stream()
+            .collect(Collectors.groupingBy(condition -> condition.getCostParameter().getId()));
+    }
+
+    public boolean isApplicable(CostParameter parameter, CostCalculationContext context, List<CostCondition> conditions) {
+        if (parameter.getAssignmentType() == CostParameterAssignmentType.ALWAYS) {
+            return true;
+        }
+        if (parameter.getAssignmentType() == CostParameterAssignmentType.MANUAL) {
+            return false;
+        }
         if (conditions.isEmpty()) {
             return true;
         }

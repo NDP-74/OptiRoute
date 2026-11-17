@@ -2,18 +2,23 @@ package com.optiroute.backend.service.transport;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -22,16 +27,20 @@ import org.mockito.ArgumentCaptor;
 
 import com.optiroute.backend.dto.request.cost.CostCalculationContext;
 import com.optiroute.backend.dto.response.cost.CostCategoryResponse;
+import com.optiroute.backend.dto.response.cost.TransportCostDetailsResponse;
 import com.optiroute.backend.entity.driver.Driver;
 import com.optiroute.backend.entity.event.Event;
 import com.optiroute.backend.entity.transport.Route;
 import com.optiroute.backend.entity.transport.Service;
+import com.optiroute.backend.entity.vehicle.SemiTrailer;
+import com.optiroute.backend.entity.vehicle.Tractor;
 import com.optiroute.backend.repository.EventRepository;
 import com.optiroute.backend.repository.driver.DriverRepository;
 import com.optiroute.backend.repository.transport.RouteRepository;
 import com.optiroute.backend.repository.vehicle.SemiTrailerRepository;
 import com.optiroute.backend.repository.vehicle.TractorRepository;
 import com.optiroute.backend.service.cost.CostParameterEngine;
+import com.optiroute.backend.service.cost.CostParameterSnapshot;
 import com.optiroute.backend.service.cost.DriverCostService;
 import com.optiroute.backend.service.cost.StructureCostService;
 import com.optiroute.backend.service.cost.VehicleCostService;
@@ -39,6 +48,60 @@ import com.optiroute.backend.service.cost.WorkingDaysService;
 import com.optiroute.backend.type.driver.DriverCostType;
 
 class TransportCostServiceTest {
+
+    @Test
+    void shouldLoadPlanningCostInputsInBatchesAndKeepPerRouteWorkDurations() {
+        RouteRepository routeRepository = mock(RouteRepository.class);
+        DriverRepository driverRepository = mock(DriverRepository.class);
+        TractorRepository tractorRepository = mock(TractorRepository.class);
+        SemiTrailerRepository semiTrailerRepository = mock(SemiTrailerRepository.class);
+        EventRepository eventRepository = mock(EventRepository.class);
+        DriverCostService driverCostService = mock(DriverCostService.class);
+        VehicleCostService vehicleCostService = mock(VehicleCostService.class);
+        StructureCostService structureCostService = mock(StructureCostService.class);
+        CostParameterEngine costParameterEngine = mock(CostParameterEngine.class);
+        TransportCostService service = new TransportCostService(routeRepository, driverRepository, tractorRepository,
+            semiTrailerRepository, driverCostService, vehicleCostService, structureCostService, eventRepository, costParameterEngine);
+
+        OffsetDateTime departure = OffsetDateTime.parse("2026-10-12T08:00:00+02:00");
+        Route targetRoute = route(10L, departure, 3600L, 10L);
+        targetRoute.getService().setLoadingDurationMinutes(30);
+        targetRoute.getService().setUnloadingDurationMinutes(30);
+        Route otherRoute = route(11L, departure.plusHours(4), 10800L, 11L);
+        Route nextDayRoute = route(12L, departure.plusDays(1), 3600L, 12L);
+        Event event = Event.builder().durationMinutes(60).route(targetRoute).build();
+        Driver driver = new Driver();
+        driver.setId(1L);
+        driver.setAnnualSalary(BigDecimal.valueOf(26000));
+        CostCategoryResponse emptyCosts = new CostCategoryResponse(List.of(), 0);
+
+        when(routeRepository.findByDriverIdInAndDepartureStartGreaterThanEqualAndDepartureStartLessThan(
+            eq(List.of(1L)), any(), any())).thenReturn(List.of(targetRoute, otherRoute, nextDayRoute));
+        when(eventRepository.findByRouteIdInOrderByRouteIdAscIdAsc(List.of(10L, 11L, 12L))).thenReturn(List.of(event));
+        when(driverRepository.findAllById(List.of(1L))).thenReturn(List.of(driver));
+        when(costParameterEngine.loadSnapshot()).thenReturn(new CostParameterSnapshot(Map.of(), Map.of()));
+        when(vehicleCostService.calculateCosts(nullable(Tractor.class), nullable(SemiTrailer.class), any(CostCalculationContext.class),
+            anyDouble(), anyDouble(), anyList(), any(CostParameterSnapshot.class)))
+            .thenReturn(emptyCosts);
+        when(driverCostService.calculateCosts(any(), any(), anyList(), any())).thenReturn(emptyCosts);
+        when(structureCostService.calculateCosts(any(), anyList(), any())).thenReturn(emptyCosts);
+
+        List<TransportCostDetailsResponse> costs = service.calculateAll(List.of(targetRoute, otherRoute));
+
+        assertEquals(2, costs.size());
+        ArgumentCaptor<CostCalculationContext> context = ArgumentCaptor.forClass(CostCalculationContext.class);
+        verify(driverCostService, times(2)).calculateCosts(org.mockito.ArgumentMatchers.any(Driver.class),
+            context.capture(), anyList(), org.mockito.ArgumentMatchers.any(CostParameterSnapshot.class));
+        assertEquals(3.0, context.getAllValues().get(0).driverWorkDurationHours());
+        assertEquals(3.0, context.getAllValues().get(1).driverWorkDurationHours());
+        assertEquals(3, context.getAllValues().get(0).nightTransportCount());
+        verify(routeRepository, times(1)).findByDriverIdInAndDepartureStartGreaterThanEqualAndDepartureStartLessThan(
+            eq(List.of(1L)), any(), any());
+        verify(eventRepository, times(1)).findByRouteIdInOrderByRouteIdAscIdAsc(List.of(10L, 11L, 12L));
+        verify(eventRepository, never()).findByRouteIdOrderByIdAsc(org.mockito.ArgumentMatchers.anyLong());
+        verify(driverRepository, never()).findById(org.mockito.ArgumentMatchers.anyLong());
+        verify(costParameterEngine, times(1)).loadSnapshot();
+    }
 
     @Test
     void shouldIncludeServiceAndEventDurationsInDriverSalaryProration() {

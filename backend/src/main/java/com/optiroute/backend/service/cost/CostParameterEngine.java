@@ -3,6 +3,7 @@ package com.optiroute.backend.service.cost;
 import org.springframework.stereotype.Service;
 
 import com.optiroute.backend.entity.cost.CostParameter;
+import com.optiroute.backend.entity.cost.CostCondition;
 import com.optiroute.backend.repository.cost.CostParameterRepository;
 import com.optiroute.backend.type.cost.CostParameterAssignmentType;
 import com.optiroute.backend.type.cost.CostParameterCategoryType;
@@ -14,6 +15,7 @@ import com.optiroute.backend.dto.request.cost.CostCalculationContext;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,10 +36,50 @@ public class CostParameterEngine {
     }
 
     public List<AppliedCostResponse> calculateCosts(CostParameterCategoryType category, CostCalculationContext context, List<CostCalculationContext> dailyContexts) {
+        return calculateCosts(category, context, dailyContexts, costParameterRepository.findByCategory(category), null);
+    }
+
+    public CostParameterSnapshot loadSnapshot() {
+        List<CostParameter> parameters = costParameterRepository.findByCategoryIn(List.of(
+            CostParameterCategoryType.VEHICLE,
+            CostParameterCategoryType.DRIVER,
+            CostParameterCategoryType.STRUCTURE
+        ));
+        List<Long> parameterIds = parameters.stream().map(CostParameter::getId).toList();
+        Map<Long, List<CostCondition>> conditionsByParameterId = parameterIds.isEmpty()
+            ? Map.of()
+            : costConditionService.findByCostParameterIds(parameterIds);
+        Map<CostParameterCategoryType, List<CostParameter>> parametersByCategory = parameters.stream()
+            .collect(Collectors.groupingBy(CostParameter::getCategory));
+        return new CostParameterSnapshot(parametersByCategory, conditionsByParameterId);
+    }
+
+    public List<AppliedCostResponse> calculateCosts(
+        CostParameterCategoryType category,
+        CostCalculationContext context,
+        List<CostCalculationContext> dailyContexts,
+        CostParameterSnapshot snapshot
+    ) {
+        return calculateCosts(
+            category,
+            context,
+            dailyContexts,
+            snapshot.parametersByCategory().getOrDefault(category, List.of()),
+            snapshot.conditionsByParameterId()
+        );
+    }
+
+    private List<AppliedCostResponse> calculateCosts(
+        CostParameterCategoryType category,
+        CostCalculationContext context,
+        List<CostCalculationContext> dailyContexts,
+        List<CostParameter> parameters,
+        Map<Long, List<CostCondition>> conditionsByParameterId
+    ) {
 
         List<AppliedCostResponse> costs = new ArrayList<>();
 
-        for (CostParameter parameter : costParameterRepository.findByCategory(category)) {
+        for (CostParameter parameter : parameters) {
             if (parameter.isActive() && parameter.getAssignmentType() != CostParameterAssignmentType.MANUAL
                 && parameter.getUnit() == CostParameterUnitType.EUR_PER_NIGHT) {
                 var triggeringDays = dailyContexts.stream()
@@ -46,7 +88,7 @@ public class CostParameterEngine {
                 double amount = 0;
                 boolean applicable = false;
                 for (List<CostCalculationContext> day : triggeringDays.values()) {
-                    if (day.stream().anyMatch(c -> costConditionService.isApplicable(parameter,c))) {
+                    if (day.stream().anyMatch(c -> isApplicable(parameter, c, conditionsByParameterId))) {
                         amount += calculateAmount(parameter,day.getFirst());
                         applicable = true;
                     }
@@ -56,7 +98,8 @@ public class CostParameterEngine {
                 }
                 continue;
             }
-            if (!parameter.isActive() || parameter.getAssignmentType() == CostParameterAssignmentType.MANUAL || !isApplicable(parameter,context,dailyContexts)) {
+            if (!parameter.isActive() || parameter.getAssignmentType() == CostParameterAssignmentType.MANUAL
+                || !isApplicable(parameter, context, dailyContexts, conditionsByParameterId)) {
                 continue;
             }
 
@@ -82,6 +125,32 @@ public class CostParameterEngine {
 
         return dailyContexts.stream().filter(c -> c.date().equals(context.date()))
             .anyMatch(dailyContext -> costConditionService.isApplicable(parameter,dailyContext));
+    }
+
+    private boolean isApplicable(
+        CostParameter parameter,
+        CostCalculationContext context,
+        Map<Long, List<CostCondition>> conditionsByParameterId
+    ) {
+        if (conditionsByParameterId == null) {
+            return costConditionService.isApplicable(parameter, context);
+        }
+        return costConditionService.isApplicable(parameter, context,
+            conditionsByParameterId.getOrDefault(parameter.getId(), List.of()));
+    }
+
+    private boolean isApplicable(
+        CostParameter parameter,
+        CostCalculationContext context,
+        List<CostCalculationContext> dailyContexts,
+        Map<Long, List<CostCondition>> conditionsByParameterId
+    ) {
+        if (parameter.getUnit() != CostParameterUnitType.EUR_PER_DAY) {
+            return isApplicable(parameter, context, conditionsByParameterId);
+        }
+
+        return dailyContexts.stream().filter(c -> c.date().equals(context.date()))
+            .anyMatch(dailyContext -> isApplicable(parameter, dailyContext, conditionsByParameterId));
     }
 
     private double calculateAmount(CostParameter parameter, CostCalculationContext context) {
