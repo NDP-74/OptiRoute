@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.nullable;
@@ -60,47 +59,45 @@ class TransportCostServiceTest {
         VehicleCostService vehicleCostService = mock(VehicleCostService.class);
         StructureCostService structureCostService = mock(StructureCostService.class);
         CostParameterEngine costParameterEngine = mock(CostParameterEngine.class);
-        TransportCostService service = new TransportCostService(routeRepository, driverRepository, tractorRepository,
-            semiTrailerRepository, driverCostService, vehicleCostService, structureCostService, eventRepository, costParameterEngine);
+        TransportCostService service = new TransportCostService(routeRepository, driverRepository, tractorRepository, semiTrailerRepository, driverCostService, vehicleCostService,
+            structureCostService, eventRepository, costParameterEngine);
 
         OffsetDateTime departure = OffsetDateTime.parse("2026-10-12T08:00:00+02:00");
-        Route targetRoute = route(10L, departure, 3600L, 10L);
+        Route targetRoute = route(10L,departure,3600L,10L);
         targetRoute.getService().setLoadingDurationMinutes(30);
         targetRoute.getService().setUnloadingDurationMinutes(30);
-        Route otherRoute = route(11L, departure.plusHours(4), 10800L, 11L);
-        Route nextDayRoute = route(12L, departure.plusDays(1), 3600L, 12L);
+        Route otherRoute = route(11L,departure.plusHours(4),10800L,11L);
+        Route nextDayRoute = route(12L,departure.plusDays(1),3600L,12L);
         Event event = Event.builder().durationMinutes(60).route(targetRoute).build();
         Driver driver = new Driver();
         driver.setId(1L);
         driver.setAnnualSalary(BigDecimal.valueOf(26000));
         CostCategoryResponse emptyCosts = new CostCategoryResponse(List.of(), 0);
 
-        when(routeRepository.findByDriverIdInAndDepartureStartGreaterThanEqualAndDepartureStartLessThan(
-            eq(List.of(1L)), any(), any())).thenReturn(List.of(targetRoute, otherRoute, nextDayRoute));
-        when(eventRepository.findByRouteIdInOrderByRouteIdAscIdAsc(List.of(10L, 11L, 12L))).thenReturn(List.of(event));
+        when(routeRepository.findByDriverIdInAndDepartureStartGreaterThanEqualAndDepartureStartLessThan(eq(List.of(1L)),any(),any()))
+            .thenReturn(List.of(targetRoute,otherRoute,nextDayRoute));
+        when(eventRepository.findByRouteIdInOrderByRouteIdAscIdAsc(List.of(10L,11L,12L))).thenReturn(List.of(event));
         when(driverRepository.findAllById(List.of(1L))).thenReturn(List.of(driver));
         when(costParameterEngine.loadSnapshot()).thenReturn(new CostParameterSnapshot(Map.of(), Map.of()));
-        when(vehicleCostService.calculateCosts(nullable(Tractor.class), nullable(SemiTrailer.class), any(CostCalculationContext.class),
-            anyDouble(), anyDouble(), anyList(), any(CostParameterSnapshot.class)))
-            .thenReturn(emptyCosts);
-        when(driverCostService.calculateCosts(any(), any(), anyList(), any())).thenReturn(emptyCosts);
-        when(structureCostService.calculateCosts(any(), anyList(), any())).thenReturn(emptyCosts);
+        when(vehicleCostService.calculateCosts(nullable(Tractor.class),nullable(SemiTrailer.class),any(CostCalculationContext.class),anyDouble(),anyDouble(),anyList(),
+            any(CostParameterSnapshot.class))).thenReturn(emptyCosts);
+        when(driverCostService.calculateCosts(any(),any(),anyList(),any())).thenReturn(emptyCosts);
+        when(structureCostService.calculateCosts(any(),anyList(),any())).thenReturn(emptyCosts);
 
-        List<TransportCostDetailsResponse> costs = service.calculateAll(List.of(targetRoute, otherRoute));
+        List<TransportCostDetailsResponse> costs = service.calculateAll(List.of(targetRoute,otherRoute));
 
-        assertEquals(2, costs.size());
+        assertEquals(2,costs.size());
         ArgumentCaptor<CostCalculationContext> context = ArgumentCaptor.forClass(CostCalculationContext.class);
-        verify(driverCostService, times(2)).calculateCosts(org.mockito.ArgumentMatchers.any(Driver.class),
-            context.capture(), anyList(), org.mockito.ArgumentMatchers.any(CostParameterSnapshot.class));
-        assertEquals(3.0, context.getAllValues().get(0).driverWorkDurationHours());
-        assertEquals(3.0, context.getAllValues().get(1).driverWorkDurationHours());
-        assertEquals(3, context.getAllValues().get(0).nightTransportCount());
-        verify(routeRepository, times(1)).findByDriverIdInAndDepartureStartGreaterThanEqualAndDepartureStartLessThan(
-            eq(List.of(1L)), any(), any());
-        verify(eventRepository, times(1)).findByRouteIdInOrderByRouteIdAscIdAsc(List.of(10L, 11L, 12L));
-        verify(eventRepository, never()).findByRouteIdOrderByIdAsc(org.mockito.ArgumentMatchers.anyLong());
-        verify(driverRepository, never()).findById(org.mockito.ArgumentMatchers.anyLong());
-        verify(costParameterEngine, times(1)).loadSnapshot();
+        verify(driverCostService,times(2)).calculateCosts(org.mockito.ArgumentMatchers.any(Driver.class),context.capture(),anyList(),
+            org.mockito.ArgumentMatchers.any(CostParameterSnapshot.class));
+        assertEquals(3.0,context.getAllValues().get(0).driverWorkDurationHours());
+        assertEquals(3.0,context.getAllValues().get(1).driverWorkDurationHours());
+        assertEquals(3,context.getAllValues().get(0).nightTransportCount());
+        verify(routeRepository,times(1)).findByDriverIdInAndDepartureStartGreaterThanEqualAndDepartureStartLessThan(eq(List.of(1L)),any(),any());
+        verify(eventRepository,times(1)).findByRouteIdInOrderByRouteIdAscIdAsc(List.of(10L,11L,12L));
+        verify(eventRepository,never()).findByRouteIdOrderByIdAsc(org.mockito.ArgumentMatchers.anyLong());
+        verify(driverRepository,never()).findById(org.mockito.ArgumentMatchers.anyLong());
+        verify(costParameterEngine,times(1)).loadSnapshot();
     }
 
     @Test
@@ -144,13 +141,8 @@ class TransportCostServiceTest {
     }
 
     @ParameterizedTest
-    @CsvSource({
-        "45.0, 6.0, false, false, true",
-        "45.000001, 6.0, false, false, false",
-        "45.0, 6.000001, false, false, false",
-        "45.0, 6.0, true, false,",
-        "45.0, 6.0, false, true,"
-    })
+    @CsvSource({ "45.0, 6.0, false, false, true", "45.000001, 6.0, false, false, false", "45.0, 6.000001, false, false, false", "45.0, 6.0, true, false,",
+        "45.0, 6.0, false, true," })
     void shouldUseLastArrivalForEveryDailyContext(double destinationLat, double destinationLng, boolean missingParking, boolean missingDriver, Boolean expected) {
         RouteRepository routeRepository = mock(RouteRepository.class);
         DriverRepository driverRepository = mock(DriverRepository.class);
@@ -158,11 +150,12 @@ class TransportCostServiceTest {
         VehicleCostService vehicleCostService = mock(VehicleCostService.class);
         StructureCostService structureCostService = mock(StructureCostService.class);
         DriverCostService driverCostService = mock(DriverCostService.class);
-        TransportCostService service = new TransportCostService(routeRepository, driverRepository, mock(TractorRepository.class),
-            mock(SemiTrailerRepository.class), driverCostService, vehicleCostService, structureCostService, eventRepository, mock(CostParameterEngine.class));
+        TransportCostService service = new TransportCostService(routeRepository, driverRepository, mock(TractorRepository.class), mock(SemiTrailerRepository.class),
+            driverCostService, vehicleCostService, structureCostService, eventRepository, mock(CostParameterEngine.class));
         OffsetDateTime departure = OffsetDateTime.parse("2026-11-16T08:00:00+01:00");
         Route targetRoute = route(10L,departure,3600L,10L);
-        // The last arrival is after midnight, even though its departure precedes the other evening trip.
+        // The last arrival is after midnight, even though its departure precedes the
+        // other evening trip.
         Route lastRoute = route(11L,departure.plusHours(14),10800L,11L);
         lastRoute.setDestinationLat(destinationLat);
         lastRoute.setDestinationLng(destinationLng);
@@ -174,8 +167,7 @@ class TransportCostServiceTest {
         }
         when(driverRepository.findById(1L)).thenReturn(missingDriver ? Optional.empty() : Optional.of(driver));
         when(routeRepository.findByDriverIdAndDepartureStartGreaterThanEqualAndDepartureStartLessThan(eq(1L),
-            eq(departure.toLocalDate().atStartOfDay(java.time.ZoneId.of("Europe/Paris")).toOffsetDateTime()),any()))
-            .thenReturn(List.of(lastRoute,targetRoute,eveningRoute));
+            eq(departure.toLocalDate().atStartOfDay(java.time.ZoneId.of("Europe/Paris")).toOffsetDateTime()),any())).thenReturn(List.of(lastRoute,targetRoute,eveningRoute));
         CostCategoryResponse emptyCosts = new CostCategoryResponse(List.of(), 0);
         when(vehicleCostService.calculateCosts(isNull(),isNull(),any(),eq(0.0),eq(0.0),anyList())).thenReturn(emptyCosts);
         when(driverCostService.calculateCosts(any(),any(),anyList())).thenReturn(emptyCosts);
@@ -184,9 +176,9 @@ class TransportCostServiceTest {
         service.calculate(targetRoute);
 
         ArgumentCaptor<CostCalculationContext> context = ArgumentCaptor.forClass(CostCalculationContext.class);
-        verify(structureCostService).calculateCosts(context.capture(), org.mockito.ArgumentMatchers.<List<CostCalculationContext>>argThat(
-            contexts -> contexts.size() == 3 && contexts.stream().allMatch(c -> java.util.Objects.equals(expected, c.driverEndsDayAtParking()))));
-        assertEquals(expected, context.getValue().driverEndsDayAtParking());
+        verify(structureCostService).calculateCosts(context.capture(),org.mockito.ArgumentMatchers.<List<CostCalculationContext>>argThat(
+            contexts -> contexts.size() == 3 && contexts.stream().allMatch(c -> java.util.Objects.equals(expected,c.driverEndsDayAtParking()))));
+        assertEquals(expected,context.getValue().driverEndsDayAtParking());
     }
 
     @Test
@@ -195,32 +187,32 @@ class TransportCostServiceTest {
         DriverRepository driverRepository = mock(DriverRepository.class);
         VehicleCostService vehicleCosts = mock(VehicleCostService.class);
         StructureCostService structureCosts = mock(StructureCostService.class);
-        TransportCostService service = new TransportCostService(routeRepository,driverRepository,mock(TractorRepository.class),
-            mock(SemiTrailerRepository.class),mock(DriverCostService.class),vehicleCosts,structureCosts,mock(EventRepository.class),mock(CostParameterEngine.class));
+        TransportCostService service = new TransportCostService(routeRepository, driverRepository, mock(TractorRepository.class), mock(SemiTrailerRepository.class),
+            mock(DriverCostService.class), vehicleCosts, structureCosts, mock(EventRepository.class), mock(CostParameterEngine.class));
         OffsetDateTime departure = OffsetDateTime.parse("2026-12-01T08:00:00+01:00");
         Route current = route(20L,departure,3600L,20L);
         Route previous = route(19L,departure.minusDays(1),3600L,19L);
         Route next = route(21L,departure.plusDays(1),3600L,21L);
         Route nextSecond = route(22L,departure.plusDays(1).plusHours(2),3600L,22L);
-        when(routeRepository.findByDriverIdAndDepartureStartGreaterThanEqualAndDepartureStartLessThan(eq(1L),any(),any()))
-            .thenAnswer(invocation -> {
-                OffsetDateTime start = invocation.getArgument(1);
-                if (start.toLocalDate().equals(previous.getDepartureStart().toLocalDate())) return List.of(previous);
-                if (start.toLocalDate().equals(next.getDepartureStart().toLocalDate())) return List.of(next,nextSecond);
-                return List.of(current);
-            });
-        CostCategoryResponse empty = new CostCategoryResponse(List.of(),0);
+        when(routeRepository.findByDriverIdAndDepartureStartGreaterThanEqualAndDepartureStartLessThan(eq(1L),any(),any())).thenAnswer(invocation -> {
+            OffsetDateTime start = invocation.getArgument(1);
+            if (start.toLocalDate().equals(previous.getDepartureStart().toLocalDate()))
+                return List.of(previous);
+            if (start.toLocalDate().equals(next.getDepartureStart().toLocalDate()))
+                return List.of(next,nextSecond);
+            return List.of(current);
+        });
+        CostCategoryResponse empty = new CostCategoryResponse(List.of(), 0);
         when(vehicleCosts.calculateCosts(isNull(),isNull(),any(),eq(0.0),eq(0.0),anyList())).thenReturn(empty);
         when(structureCosts.calculateCosts(any(),anyList())).thenReturn(empty);
 
         service.calculate(current);
 
         ArgumentCaptor<CostCalculationContext> context = ArgumentCaptor.forClass(CostCalculationContext.class);
-        verify(structureCosts).calculateCosts(context.capture(), org.mockito.ArgumentMatchers.<List<CostCalculationContext>>argThat(
-            contexts -> contexts.size() == 2
-                && contexts.getFirst().date().equals(previous.getDepartureStart().toLocalDate())
-                && contexts.getFirst().nightTransportCount() == 2
-                && contexts.getFirst().dailyTransportCount() == 1));
+        verify(structureCosts).calculateCosts(context.capture(),
+            org.mockito.ArgumentMatchers
+                .<List<CostCalculationContext>>argThat(contexts -> contexts.size() == 2 && contexts.getFirst().date().equals(previous.getDepartureStart().toLocalDate())
+                    && contexts.getFirst().nightTransportCount() == 2 && contexts.getFirst().dailyTransportCount() == 1));
         assertEquals(3,context.getValue().nightTransportCount());
         assertEquals(1,context.getValue().dailyTransportCount());
     }

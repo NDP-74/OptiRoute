@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 
-import { Trash2, Edit3, CalendarPlus, MapPin, Coins, Zap, ChevronLeft, ChevronRight } from "lucide-vue-next";
+import { Trash2, Edit3, MapPin, Coins, Zap, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-vue-next";
 import AssignEventModal from "@/components/transports/AssignEventModal.vue";
+import TransportEditModal from "@/components/planning/TransportEditModal.vue";
+import { segmentWarnings } from "@/utils/segmentConsistency";
 import { getTransportById } from "@/api/planningApi";
 import { deleteEvent, getEventsByService } from "@/api/eventApi";
 import { getApiErrorMessage } from "@/api/utils";
@@ -108,25 +110,12 @@ async function selectRoute(index: number): Promise<void> {
     await loadEvents(props.transportId, route.routeId);
 }
 
-const handleEdit = async () => {
-    if (!transport.value || props.transportId === null) {
-        return
-    }
+const showEditModal = ref(false)
+const consistencyWarnings = computed(() =>
+    (transport.value?.routes.length ?? 0) > 1 ? segmentWarnings(transport.value!.routes).map(warning => warning.message) : [])
 
-    const serviceTransport = transport.value
-    let serviceEvents = events.value
-    if (serviceTransport.routes.length > 1) {
-        try {
-            const eventsByRoute = await Promise.all(serviceTransport.routes.map((route) =>
-                route.routeId === selectedRouteId.value ? Promise.resolve(events.value) : getEventsByService(serviceTransport.id, route.routeId)))
-            serviceEvents = eventsByRoute.flat()
-        } catch (exception) {
-            notification.error('Modification impossible', getApiErrorMessage(exception, 'Les événements du service n’ont pas pu être chargés.'))
-            return
-        }
-    }
-
-    emit('edit', serviceTransport, serviceEvents)
+const handleEditSaved = async () => {
+    await handleEventsChanged()
 }
 
 const props = defineProps<{
@@ -139,7 +128,6 @@ const emit = defineEmits<{
     close: [];
     deleted: [];
     updated: [];
-    edit: [TransportDetail, EventResponse[]]
 }>();
 
 const transport = ref<TransportDetail | null>(null);
@@ -367,6 +355,14 @@ watch(
         </div>
 
         <div v-else-if="activeTransport" class="space-y-4 p-4">
+            <div v-if="consistencyWarnings.length" role="alert"
+                class="flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                <AlertTriangle class="mt-0.5 h-4 w-4 shrink-0" />
+                <ul class="space-y-1">
+                    <li v-for="warning in consistencyWarnings" :key="warning">{{ warning }}</li>
+                </ul>
+            </div>
+
             <!-- Statut et horaires -->
             <section class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div class="flex items-center justify-between gap-3">
@@ -721,22 +717,17 @@ watch(
                 </button>
 
                 <button type="button"
-                    class="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                    @click="closeEventModal(); showEventModal = true">
-                    <CalendarPlus class="h-4 w-4" />
-                    Assigner un événement
-                </button>
-
-                <button type="button"
                     class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
-                    @click="handleEdit">
+                    @click="showEditModal = true">
                     <Edit3 class="h-4 w-4" />
-
                     Modifier
                 </button>
             </div>
         </template>
     </AppDetailDrawer>
+
+    <TransportEditModal :show="showEditModal" :transport="transport" :initial-route-id="activeRoute?.routeId ?? null"
+        @close="showEditModal = false" @saved="handleEditSaved" />
 
     <AssignEventModal :show="showEventModal" :transport="activeTransport" :event="eventToEdit"
         @close="closeEventModal" @saved="handleEventsChanged" />

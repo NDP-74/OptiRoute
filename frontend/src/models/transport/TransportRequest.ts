@@ -1,4 +1,4 @@
-import type { RouteDto } from '@/models/route/Route'
+import type { RouteDto, RouteWaypoint } from '@/models/route/Route'
 import type { Position } from '@/models/route/Position'
 
 export interface TimeWindows {
@@ -38,12 +38,44 @@ export interface CreateTransportRequest {
 
     revenue?: number | null
     serviceTiming?: ServiceTiming
-    waypoints?: Position[]
+    // Les étapes portant un eventId permettent au backend de rattacher l'événement au bon segment
+    waypoints?: RouteWaypoint[]
 }
 
 export interface CreateTransportFromRouteRequest {
     transport: CreateTransportRequest
     selectedRoute: RouteDto
+}
+
+export interface RouteSegmentRequest {
+    driverId?: number
+    tractorId: number
+    semiTrailerId?: number
+    emptyTrip: boolean
+
+    routeTime: string
+    timeMode: 'DEPARTURE' | 'ARRIVAL'
+
+    originName: string
+    originAddress: string
+    originLat: number
+    originLng: number
+
+    destinationName: string
+    destinationAddress: string
+    destinationLat: number
+    destinationLng: number
+
+    waypoints: Position[]
+    selectedRoute: RouteDto
+}
+
+export interface ServiceInfoRequest {
+    name: string
+    customerId?: number | null
+    revenue?: number | null
+    loadingDurationMinutes?: number | null
+    unloadingDurationMinutes?: number | null
 }
 
 export interface AssignTransport {

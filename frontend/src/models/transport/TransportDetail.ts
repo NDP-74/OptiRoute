@@ -24,6 +24,9 @@ export interface TransportRouteDetail {
     routeNumber: number;
     routeCount: number;
     emptyTrip: boolean;
+    driverId: number | null;
+    tractorId: number | null;
+    semiTrailerId: number | null;
     originName: string;
     originAddress: string | null;
     originLat: number;

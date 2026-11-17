@@ -7,7 +7,6 @@ import com.optiroute.backend.type.cost.CostParameterCategoryType;
 
 import java.util.Optional;
 import java.util.List;
-import com.optiroute.backend.type.cost.CostParameterCategoryType;
 
 public interface CostParameterRepository extends JpaRepository<CostParameter, Long> {
     Optional<CostParameter> findByCategoryAndLabel(CostParameterCategoryType category, String label);

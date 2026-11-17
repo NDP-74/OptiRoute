@@ -256,7 +256,8 @@ defineExpose({
     displayRoutes,
     setMarkers,
     setPointMarker,
-    setPointsOfInterest
+    setPointsOfInterest,
+    resize: () => map?.getViewPort().resize(),
 })
 
 onMounted(() => {

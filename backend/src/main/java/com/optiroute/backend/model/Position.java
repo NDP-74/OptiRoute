@@ -1,5 +1,7 @@
 package com.optiroute.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 
@@ -13,6 +15,9 @@ public class Position {
     private double lng;
     private String name;
     private String address;
+    // Renseigné uniquement pour les étapes issues d'un événement lors d'une replanification, jamais stocké sur le trajet
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Long eventId;
 
     public Position() {
     }
@@ -52,5 +57,13 @@ public class Position {
 
     public void setLng(double lng) {
         this.lng = lng;
+    }
+
+    public Long getEventId() {
+        return eventId;
+    }
+
+    public void setEventId(Long eventId) {
+        this.eventId = eventId;
     }
 }

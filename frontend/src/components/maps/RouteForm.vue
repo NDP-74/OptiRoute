@@ -20,6 +20,7 @@ interface RoutePlace {
 const props = defineProps<{
     initialRequest?: RouteRequest | null
     serviceTiming?: { routeTime?: string; timeMode: 'DEPARTURE' | 'ARRIVAL' }
+    removableEvents?: boolean
 }>()
 
 const tractorId = defineModel<number | null>('tractorId', { default: null })
@@ -36,6 +37,7 @@ const notification = useNotification()
 const emit = defineEmits<{
     'route-calculated': [data: { response: RouteResponse; request: RouteRequest }]
     changed: []
+    'remove-event': [eventId: number]
 }>()
 
 const form = reactive({
@@ -160,7 +162,12 @@ function rowLabel(index: number) {
 }
 
 function removeWaypointAt(index: number) {
-    if (index <= 0 || index >= lastRowIndex.value || isEventRow(index)) return
+    if (index <= 0 || index >= lastRowIndex.value) return
+    const eventId = getRowValue(index)?.eventId
+    if (eventId != null) {
+        if (props.removableEvents) emit('remove-event', eventId)
+        return
+    }
     form.waypoints.splice(index - 1, 1)
 }
 
@@ -241,7 +248,8 @@ function toOffsetDateTime(value: string | null) {
         <!-- LOCATIONS -->
         <div class="relative grid gap-2" :style="{ gridTemplateRows: `repeat(${rowCount}, auto)` }">
             <div v-for="index in rowCount" :key="index - 1" class="flex items-center gap-2" :style="{ gridRow: index }">
-                <div class="flex-1">
+                <div class="min-w-0 flex-1" :class="isEventRow(index - 1) ? 'rounded-xl border-l-4 border-violet-300 bg-violet-50 p-1' : ''">
+                    <span v-if="isEventRow(index - 1)" class="px-2 text-xs font-medium text-violet-700">Événement</span>
                     <HereAutocompleteInput :model-value="getRowValue(index - 1)" :disabled="isEventRow(index - 1)"
                         @update:model-value="updateRowValue(index - 1, $event)" @input="markChanged"
                         :label="rowLabel(index - 1)" />
@@ -256,12 +264,13 @@ function toOffsetDateTime(value: string | null) {
                         <Plus :size="16" :stroke-width="2" aria-hidden="true" />
                     </button>
 
-                    <LockKeyhole v-else-if="isEventRow(index - 1)" :size="16" class="text-slate-400"
+                    <LockKeyhole v-else-if="isEventRow(index - 1) && !removableEvents" :size="16" class="text-slate-400"
                         aria-label="Étape liée à un événement, non supprimable" />
 
                     <button v-else-if="index - 1 !== lastRowIndex" type="button" @click="removeWaypointAt(index - 1)"
                         class="flex h-9 w-9 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 shadow-sm transition hover:bg-red-100"
-                        aria-label="Supprimer cette étape" title="Supprimer cette étape">
+                        :aria-label="isEventRow(index - 1) ? 'Supprimer cet événement' : 'Supprimer cette étape'"
+                        :title="isEventRow(index - 1) ? 'Supprimer cet événement' : 'Supprimer cette étape'">
                         <X :size="16" :stroke-width="2" aria-hidden="true" />
                     </button>
                 </div>

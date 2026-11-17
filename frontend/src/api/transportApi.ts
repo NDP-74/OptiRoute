@@ -1,5 +1,10 @@
 import api from '@/api/axios'
-import type { CreateTransportRequest, CreateTransportFromRouteRequest } from '@/models/transport/TransportRequest'
+import type {
+    CreateTransportRequest,
+    CreateTransportFromRouteRequest,
+    RouteSegmentRequest,
+    ServiceInfoRequest,
+} from '@/models/transport/TransportRequest'
 
 export const createTransport = async (request: CreateTransportRequest) => {
     const response = await api.post('/transports', request)
@@ -17,6 +22,14 @@ export const updateTransportFromRoute = async (id: number, request: CreateTransp
     const response = await api.put(`/transports/${id}/from-route`, request)
 
     return response.data
+}
+
+export const updateTransportRoute = async (serviceId: number, routeId: number, request: RouteSegmentRequest) => {
+    await api.put(`/transports/${serviceId}/routes/${routeId}`, request)
+}
+
+export const updateServiceInfo = async (id: number, request: ServiceInfoRequest) => {
+    await api.patch(`/transports/${id}`, request)
 }
 
 export const deleteTransport = async (id: number) => {

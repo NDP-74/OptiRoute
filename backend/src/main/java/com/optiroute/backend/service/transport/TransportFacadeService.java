@@ -1,6 +1,8 @@
 package com.optiroute.backend.service.transport;
 
 import com.optiroute.backend.dto.request.route.RouteRequest;
+import com.optiroute.backend.dto.request.transport.RouteSegmentRequest;
+import com.optiroute.backend.dto.request.transport.ServiceInfoRequest;
 import com.optiroute.backend.dto.request.transport.TransportFromRouteRequest;
 import com.optiroute.backend.dto.request.transport.TransportRequest;
 import com.optiroute.backend.dto.response.route.RouteDto;
@@ -45,6 +47,16 @@ public class TransportFacadeService {
     public Service updateFromRoute(Long id, TransportFromRouteRequest request) {
         return serviceRouteService.update(id, request.transport(),
             transportRoutePlanner.plan(request.transport(), request.selectedRoute()));
+    }
+
+    @Transactional
+    public void updateRoute(Long serviceId, Long routeId, RouteSegmentRequest request) {
+        serviceRouteService.updateRoute(serviceId, routeId, request);
+    }
+
+    @Transactional
+    public void updateServiceInfo(Long id, ServiceInfoRequest request) {
+        serviceRouteService.updateInfo(id, request);
     }
 
     @Transactional

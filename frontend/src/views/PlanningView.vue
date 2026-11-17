@@ -18,10 +18,9 @@
 
         <TransportDetailDrawer :open="selectedTransport !== null" :transport-id="selectedTransport?.serviceId ?? null"
             :route-id="selectedTransport?.routeId ?? null" @close="closeTransport" @deleted="handleTransportDeleted"
-            @updated="loadCurrentPeriod" @edit="openEditModal" />
+            @updated="loadCurrentPeriod" />
 
-        <PlanningRouteModal :show="showRouteModal" :editing-transport="editingTransport" :events="editingEvents"
-            @close="closeRouteModal" @saved="handleRouteSaved" />
+        <PlanningRouteModal :show="showRouteModal" @close="closeRouteModal" @saved="handleRouteSaved" />
     </div>
 </template>
 
@@ -45,7 +44,6 @@ import { useNotification } from "@/composables/useNotification";
 import type { PlanningDay, PlanningDriver, PlanningTransport, } from "@/models/planning/planning";
 import type { DriverType } from "@/models/driver/Driver";
 import type { TransportDetail } from "@/models/transport/TransportDetail";
-import type { EventResponse } from "@/models/Event";
 import type { RouteRequest, RouteResponse } from "@/models/route/Route";
 import type { CreateTransportFromRouteRequest } from "@/models/transport/TransportRequest";
 import { formatParisDateKey } from "@/utils/formatters";
@@ -54,8 +52,6 @@ import { formatParisDateKey } from "@/utils/formatters";
 const selectedTransport = ref<{ serviceId: number; routeId: number } | null>(null);
 const selectedCostDetailDriverId = ref<number | null>(null);
 const showRouteModal = ref(false);
-const editingTransport = ref<TransportDetail | null>(null);
-const editingEvents = ref<EventResponse[]>([]);
 const daySelectionMode = ref(false);
 const selectedDayKeys = ref<Set<string>>(new Set());
 const isCompletingDays = ref(false);
@@ -316,14 +312,6 @@ function openCostDetail(driverId: number): void {
 function openRouteModal(): void { showRouteModal.value = true; }
 function closeRouteModal(): void {
     showRouteModal.value = false;
-    editingTransport.value = null;
-    editingEvents.value = [];
-}
-function openEditModal(transport: TransportDetail, events: EventResponse[]): void {
-    editingTransport.value = transport;
-    editingEvents.value = [...events];
-    closeTransport();
-    showRouteModal.value = true;
 }
 
 

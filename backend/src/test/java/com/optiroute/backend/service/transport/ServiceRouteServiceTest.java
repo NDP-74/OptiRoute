@@ -12,19 +12,27 @@ import org.mockito.ArgumentCaptor;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.optiroute.backend.dto.request.transport.RouteSegmentRequest;
+import com.optiroute.backend.dto.request.transport.ServiceInfoRequest;
 import com.optiroute.backend.dto.request.transport.TransportRequest;
 import com.optiroute.backend.dto.response.cost.CostCategoryResponse;
 import com.optiroute.backend.dto.response.cost.TransportCostDetailsResponse;
 import com.optiroute.backend.dto.response.route.RouteCostDetailsDto;
 import com.optiroute.backend.dto.response.route.RouteDto;
+import com.optiroute.backend.entity.event.Event;
 import com.optiroute.backend.entity.transport.Route;
 import com.optiroute.backend.entity.transport.Service;
+import com.optiroute.backend.entity.vehicle.SemiTrailer;
+import com.optiroute.backend.entity.vehicle.Tractor;
 import com.optiroute.backend.exception.TransportPlanningException;
 import com.optiroute.backend.mapper.RouteRequestFactory;
 import com.optiroute.backend.model.Position;
 import com.optiroute.backend.repository.EventRepository;
 import com.optiroute.backend.repository.transport.RouteRepository;
 import com.optiroute.backend.repository.transport.ServiceRepository;
+import com.optiroute.backend.repository.vehicle.SemiTrailerRepository;
+import com.optiroute.backend.repository.vehicle.TractorRepository;
+import com.optiroute.backend.type.GpsModeType;
 import com.optiroute.backend.type.RouteTimeMode;
 
 import jakarta.validation.Validation;
@@ -33,7 +41,9 @@ class ServiceRouteServiceTest {
     private final ServiceRepository services = mock(ServiceRepository.class);
     private final RouteRepository routes = mock(RouteRepository.class);
     private final EventRepository events = mock(EventRepository.class);
-    private final ServiceRouteService subject = new ServiceRouteService(services, routes, events);
+    private final TractorRepository tractors = mock(TractorRepository.class);
+    private final SemiTrailerRepository semiTrailers = mock(SemiTrailerRepository.class);
+    private final ServiceRouteService subject = new ServiceRouteService(services, routes, events, tractors, semiTrailers);
     private final JsonMapper mapper = JsonMapper.builder().addModule(new JavaTimeModule()).build();
 
     @Test
@@ -268,22 +278,123 @@ class ServiceRouteServiceTest {
     }
 
     @Test
-    void shouldRefuseUpdateThatRemovesRouteCarryingEvents() throws Exception {
-        TransportRequest request = mapper.readValue("{}", TransportRequest.class);
+    void shouldMoveEventsToTheReplannedSegmentCarryingTheirPointOrDayBeforeDeletingSurplusRoutes() throws Exception {
+        TransportRequest firstRequest = mapper.readValue("""
+            {"tractorId": 7, "routeTime": "2026-10-29T08:00:00+01:00", "timeMode": "DEPARTURE",
+             "waypoints": [{"lat": 48, "lng": 2}]}
+            """, TransportRequest.class);
+        TransportRequest secondRequest = mapper.readValue("""
+            {"tractorId": 7, "routeTime": "2026-10-30T08:00:00+01:00", "timeMode": "DEPARTURE",
+             "waypoints": [{"lat": 46, "lng": 4, "eventId": 101}]}
+            """, TransportRequest.class);
         Service existing = new Service();
-        Route kept = new Route();
-        kept.setId(11L);
-        Route removed = new Route();
-        removed.setId(12L);
+        Route first = new Route();
+        first.setId(11L);
+        Route second = new Route();
+        second.setId(12L);
+        Route third = new Route();
+        third.setId(13L);
+        Tractor oldTractor = new Tractor();
+        oldTractor.setId(3L);
+        Tractor newTractor = new Tractor();
+        newTractor.setId(7L);
+        Event withPoint = Event.builder().id(101L).route(first).tractor(oldTractor).build();
+        Event withoutPoint = Event.builder().id(102L).route(third).tractor(oldTractor)
+            .eventDate(java.time.LocalDateTime.parse("2026-10-30T07:00:00")).build();
         when(services.findById(1L)).thenReturn(Optional.of(existing));
-        when(routes.findByServiceIdOrderByIdAsc(1L)).thenReturn(List.of(kept, removed));
-        when(events.existsByRouteIdIn(List.of(12L))).thenReturn(true);
+        when(services.save(existing)).thenReturn(existing);
+        when(routes.findByServiceIdOrderByIdAsc(1L)).thenReturn(List.of(first, second, third));
+        when(routes.save(any(Route.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(events.findByRouteIdInOrderByRouteIdAscIdAsc(List.of(11L, 12L, 13L))).thenReturn(List.of(withPoint, withoutPoint));
+        when(tractors.getReferenceById(7L)).thenReturn(newTractor);
+
+        subject.update(1L, firstRequest, List.of(
+            new TransportRouteSegment(firstRequest, estimate(), true),
+            new TransportRouteSegment(secondRequest, estimate(), true)));
+
+        assertSame(second, withPoint.getRoute());
+        assertSame(second, withoutPoint.getRoute());
+        assertSame(newTractor, withPoint.getTractor());
+        assertEquals(second.getDepartureStart().toLocalDateTime(), withPoint.getEventDate());
+        assertTrue(second.getWaypoints().isEmpty(), "event points must not be stored as user waypoints");
+        assertEquals(1, first.getWaypoints().size());
+        var order = inOrder(events, routes);
+        order.verify(events).saveAll(List.of(withPoint, withoutPoint));
+        order.verify(routes).deleteAll(List.of(third));
+    }
+
+    @Test
+    void shouldRefuseReplanningThatRemovesTheSemiTrailerOfAnEvent() throws Exception {
+        TransportRequest request = mapper.readValue("{\"tractorId\": 7}", TransportRequest.class);
+        Service existing = new Service();
+        Route route = new Route();
+        route.setId(11L);
+        SemiTrailer semiTrailer = new SemiTrailer();
+        semiTrailer.setId(5L);
+        Event event = Event.builder().id(101L).route(route).semiTrailer(semiTrailer).build();
+        when(services.findById(1L)).thenReturn(Optional.of(existing));
+        when(services.save(existing)).thenReturn(existing);
+        when(routes.findByServiceIdOrderByIdAsc(1L)).thenReturn(List.of(route));
+        when(routes.save(any(Route.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(events.findByRouteIdInOrderByRouteIdAscIdAsc(List.of(11L))).thenReturn(List.of(event));
 
         assertThrows(TransportPlanningException.class, () -> subject.update(1L, request, estimate()));
+    }
 
+    @Test
+    void shouldUpdateOnlyTheEditedSegmentAndKeepItsEvents() throws Exception {
+        Service service = new Service();
+        service.setId(1L);
+        Route route = new Route();
+        route.setId(12L);
+        route.setService(service);
+        Event event = Event.builder().id(101L).route(route).build();
+        RouteDto selected = estimate();
+        selected.setType(GpsModeType.CHEAPEST);
+        RouteSegmentRequest request = new RouteSegmentRequest(4L, 7L, null, true,
+            java.time.OffsetDateTime.parse("2026-10-30T10:00:00+01:00"), RouteTimeMode.ARRIVAL,
+            "Départ", "Adresse départ", 48, 2, "Arrivée", "Adresse arrivée", 46, 4,
+            List.of(position(47, 3, null), position(46.5, 3.5, 101L)), selected);
+        when(routes.findById(12L)).thenReturn(Optional.of(route));
+        when(routes.save(route)).thenReturn(route);
+        when(events.findByRouteIdOrderByIdAsc(12L)).thenReturn(List.of(event));
+
+        subject.updateRoute(1L, 12L, request);
+
+        assertEquals(GpsModeType.CHEAPEST, route.getRouteType());
+        assertEquals(request.routeTime(), route.getArrivalStart());
+        assertEquals(request.routeTime().minusSeconds(900), route.getDepartureStart());
+        assertEquals(List.of(47.0), route.getWaypoints().stream().map(Position::getLat).toList());
+        assertEquals("Départ", route.getOriginName());
+        assertTrue(route.isEmptyTrip());
+        assertSame(route, event.getRoute());
+        assertEquals(route.getDepartureStart().toLocalDateTime(), event.getEventDate());
+        verify(routes, times(1)).save(any());
         verify(services, never()).save(any());
-        verify(routes, never()).save(any());
-        verify(routes, never()).deleteAll(any());
+        assertThrows(jakarta.persistence.EntityNotFoundException.class, () -> subject.updateRoute(2L, 12L, request));
+    }
+
+    @Test
+    void shouldUpdateServiceInformationWithoutTouchingRoutes() {
+        Service service = new Service();
+        service.setName("Ancien");
+        when(services.findById(1L)).thenReturn(Optional.of(service));
+
+        subject.updateInfo(1L, new ServiceInfoRequest("Client", 9L, new java.math.BigDecimal("1500.00"), 30, 45));
+
+        assertEquals("Client", service.getName());
+        assertEquals(9L, service.getCustomerId());
+        assertEquals(new java.math.BigDecimal("1500.00"), service.getRevenue());
+        assertEquals(30, service.getLoadingDurationMinutes());
+        assertEquals(45, service.getUnloadingDurationMinutes());
+        verify(services).save(service);
+        verifyNoInteractions(routes);
+    }
+
+    private Position position(double lat, double lng, Long eventId) {
+        Position position = new Position(lat, lng);
+        position.setEventId(eventId);
+        return position;
     }
 
     @Test

@@ -121,7 +121,8 @@ public class TransportDetailService {
                 break;
             }
         }
-        return new TransportRouteDetailResponse(route.getId(), routeNumber, serviceRoutes.size(), route.isEmptyTrip(), route.getOriginName(),
+        return new TransportRouteDetailResponse(route.getId(), routeNumber, serviceRoutes.size(), route.isEmptyTrip(),
+            route.getDriverId(), route.getTractorId(), route.getSemiTrailerId(), route.getOriginName(),
             route.getOriginAddress(), route.getOriginLat(), route.getOriginLng(), route.getDestinationName(),
             route.getDestinationAddress(), route.getDestinationLat(), route.getDestinationLng(),
             route.getDistanceMeters(), route.getDurationSeconds(), route.getPolyline(), route.getRouteType(),

@@ -2,11 +2,13 @@
 import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 
 import AppModal from '@/components/ui/AppModal.vue'
+import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal.vue'
 import HereMap from '@/components/maps/HereMap.vue'
 import RouteForm from '@/components/maps/RouteForm.vue'
 
 import { createTransportFromRoute, updateTransportFromRoute } from '@/api/transportApi'
 import { calculateRoute } from '@/api/here/mapsApi'
+import { deleteEvent } from '@/api/eventApi'
 import { getCustomers } from '@/api/customerApi'
 import { getDriver, getDrivers } from '@/api/driver/driverApi'
 import { getTractors } from '@/api/vehicle/tractorApi'
@@ -40,6 +42,7 @@ import {
     X,
     Euro,
     Receipt,
+    ArrowLeft,
 } from 'lucide-vue-next'
 
 const props = defineProps<{
@@ -49,6 +52,8 @@ const props = defineProps<{
     initialSelectedRouteIndex?: number
     editingTransport?: TransportDetail | null
     events?: EventResponse[]
+    // Rendu sans fenêtre propre, à l'intérieur d'une autre modale (replanification depuis la modale de modification)
+    embedded?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -57,6 +62,23 @@ const emit = defineEmits<{
 }>()
 
 const notification = useNotification()
+const eventToDelete = ref<number | null>(null)
+const deletingEvent = ref(false)
+
+async function confirmDeleteEvent() {
+    if (eventToDelete.value == null || deletingEvent.value) return
+    deletingEvent.value = true
+    try {
+        await deleteEvent(eventToDelete.value)
+        eventToDelete.value = null
+        notification.success('Événement supprimé', 'L’événement a été supprimé et l’itinéraire recalculé.')
+        emit('saved')
+    } catch (error) {
+        notification.error('Suppression impossible', getApiErrorMessage(error, 'L’événement n’a pas pu être supprimé.'))
+    } finally {
+        deletingEvent.value = false
+    }
+}
 const mapRef = ref<InstanceType<typeof HereMap> | null>(null)
 const isDashdocSimulationEnabled = ref(false)
 const formSession = ref(0)
@@ -315,9 +337,8 @@ async function initializeFromProps() {
     for (const { key } of windowFields) {
         serviceWindows[key] = localDate(props.editingTransport?.serviceTiming?.[key])
     }
-    isDashdocSimulationEnabled.value = props.editingTransport
-        ? windowFields.some(({ key }) => Boolean(props.editingTransport?.serviceTiming?.[key]))
-        : false
+    // En modification, la replanification passe par le mode manuel : un service issu de la simulation Dashdoc redevient manuel
+    isDashdocSimulationEnabled.value = false
     initialEditingMode.value = activeMode.value
 
     if (props.editingTransport) {
@@ -450,8 +471,7 @@ async function saveRoute() {
                     unloadingDurationMinutes: unloadingDurationMinutes.value === '' ? null : unloadingDurationMinutes.value,
                 },
                 waypoints: (routeRequest.value.waypoints ?? [])
-                    .filter(point => point.eventId == null)
-                    .map(({ lat, lng, name, address }) => ({ lat, lng, name, address })),
+                    .map(({ lat, lng, name, address, eventId }) => ({ lat, lng, name, address, eventId })),
             },
             selectedRoute: savedRoute,
         }
@@ -473,13 +493,15 @@ async function saveRoute() {
     }
 }
 
-watch(() => props.show, (show) => {
-    if (!show) return
-
+function openForm() {
     driverId.value = undefined
     customerId.value = undefined
     revenue.value = null
     void initializeFromProps()
+}
+
+watch(() => props.show, (show) => {
+    if (show) openForm()
 })
 
 watch(driverId, async (id) => {
@@ -491,6 +513,9 @@ watch(driverId, async (id) => {
 })
 
 onMounted(async () => {
+    // Monté déjà ouvert (mode intégré) : le watch sur show ne se déclenche pas
+    if (props.show) openForm()
+
     const [loadedDrivers, loadedCustomers, loadedTractors, loadedSemiTrailers] = await Promise.all([
         getDrivers(),
         getCustomers(),
@@ -505,13 +530,21 @@ onMounted(async () => {
 </script>
 
 <template>
-    <AppModal :show="show" panel-class="max-w-screen-2xl" @close="close">
+    <component :is="embedded ? 'div' : AppModal" v-bind="embedded ? {} : { show, panelClass: 'max-w-screen-2xl' }"
+        @close="close">
         <div class="flex h-[82vh] max-h-[720px] flex-col">
             <!-- HEADER -->
             <div class="flex shrink-0 items-start justify-between gap-4 pb-4">
-                <h2 class="text-xl font-bold text-slate-900">{{ props.editingTransport ? "Modifier l'itinéraire" :
-                    'Créer et assigner un itinéraire' }}</h2>
-                <button type="button"
+                <div class="flex items-center gap-3">
+                    <button v-if="embedded" type="button" :disabled="isSaving"
+                        class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                        @click="close">
+                        <ArrowLeft :size="16" /> Retour
+                    </button>
+                    <h2 class="text-xl font-bold text-slate-900">{{ props.editingTransport ? 'Replanifier le service' :
+                        'Créer et assigner un itinéraire' }}</h2>
+                </div>
+                <button v-if="!embedded" type="button"
                     class="rounded-full p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
                     aria-label="Fermer" @click="close">
                     <X :size="20" />
@@ -655,6 +688,8 @@ onMounted(async () => {
                                         :service-timing="mode === 'dashdoc' ? simulationTiming : undefined"
                                         v-model:tractor-id="tractorId" v-model:semi-trailer-id="semiTrailerId"
                                         v-model:driver-id="driverId" v-model:empty-trip="emptyTrip"
+                                        :removable-events="!!editingTransport"
+                                        @remove-event="eventToDelete = $event"
                                         @changed="modeStates[mode].dirty = true"
                                         @route-calculated="handleRouteCalculated($event, mode)">
                                         <fieldset v-if="mode === 'dashdoc'" class="space-y-3">
@@ -804,5 +839,8 @@ onMounted(async () => {
             </div>
 
         </div>
-    </AppModal>
+    </component>
+    <ConfirmDeleteModal :show="eventToDelete !== null" :loading="deletingEvent" title="Supprimer l’événement"
+        message="Supprimer cet événement et son point de passage ? Le trajet sera recalculé et les modifications non enregistrées de la replanification seront remplacées."
+        @close="!deletingEvent && (eventToDelete = null)" @confirm="confirmDeleteEvent" />
 </template>

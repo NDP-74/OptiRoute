@@ -5,6 +5,8 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.optiroute.backend.dto.request.transport.RouteSegmentRequest;
+import com.optiroute.backend.dto.request.transport.ServiceInfoRequest;
 import com.optiroute.backend.dto.request.transport.TransportFromRouteRequest;
 import com.optiroute.backend.dto.request.transport.TransportRequest;
 import com.optiroute.backend.dto.response.transport.TransportDetailResponse;
@@ -62,6 +64,21 @@ public class TransportController {
         Service service = transportFacadeService.updateFromRoute(id,request);
 
         return ResponseEntity.ok(service);
+    }
+
+    @PutMapping("/{serviceId}/routes/{routeId}")
+    public ResponseEntity<Void> updateRoute(@PathVariable Long serviceId, @PathVariable Long routeId,
+            @Valid @RequestBody RouteSegmentRequest request) {
+        transportFacadeService.updateRoute(serviceId, routeId, request);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<Void> updateServiceInfo(@PathVariable Long id, @Valid @RequestBody ServiceInfoRequest request) {
+        transportFacadeService.updateServiceInfo(id, request);
+
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")
