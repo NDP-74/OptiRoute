@@ -11,8 +11,8 @@ export const getDriver = async (id: number): Promise<DriverDetails> => {
   return response.data;
 };
 
-export const createDriver = async (driver: CreateDriverRequest) => {
-  const response = await api.post('/drivers', driver)
+export const createDriver = async (driver: CreateDriverRequest): Promise<DriverDetails> => {
+  const response = await api.post<DriverDetails>('/drivers', driver)
   return response.data
 }
 

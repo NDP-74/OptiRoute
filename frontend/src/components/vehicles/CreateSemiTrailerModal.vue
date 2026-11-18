@@ -5,7 +5,7 @@ import { createSemiTrailer, getSemiTrailerTypes } from "@/api/vehicle/semiTraile
 import type { TrailerTypeOption } from "@/api/vehicle/semiTrailerApi"
 import { getApiErrorMessage } from "@/api/utils"
 
-import type { CreateSemiTrailerRequest, SemiTrailerFormData } from "@/models/vehicle/SemiTrailer"
+import type { CreateSemiTrailerRequest, SemiTrailerFormData, SemiTrailerSummary } from "@/models/vehicle/SemiTrailer"
 import { createEmptySemiTrailerForm } from "@/utils/vehicleUtils"
 
 import AppModal from "@/components/ui/AppModal.vue"
@@ -25,7 +25,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     close: []
-    created: []
+    created: [semiTrailer: SemiTrailerSummary]
 }>()
 
 //Manage Modal
@@ -72,14 +72,14 @@ const submitSemiTrailer = async () => {
             maintenanceCostPerKm: form.maintenanceCostPerKm,
         }
 
-        await createSemiTrailer(payload)
+        const semiTrailer = await createSemiTrailer(payload)
 
         notification.success(
             "Semi-remorque créée",
             `La semi-remorque « ${payload.registration} » a bien été créée.`,
         )
 
-        emit("created")
+        emit("created", semiTrailer)
     } catch (error: unknown) {
         notification.error(
             "Création impossible",

@@ -6,6 +6,9 @@ import type { TractorSummary } from "@/models/vehicle/Tractor"
 import type { SemiTrailerSummary } from "@/models/vehicle/SemiTrailer"
 import type { DriverFormData } from "@/models/driver/Driver"
 import HereAutocompleteInput from "@/components/maps/HereAutocompleteInput.vue"
+import CreateSelect from "@/components/ui/CreateSelect.vue"
+import CreateTractorModal from "@/components/vehicles/CreateTractorModal.vue"
+import CreateSemiTrailerModal from "@/components/vehicles/CreateSemiTrailerModal.vue"
 
 const form = defineModel<DriverFormData>({
     required: true,
@@ -14,6 +17,28 @@ const form = defineModel<DriverFormData>({
 const tractors = ref<TractorSummary[]>([])
 const semiTrailers = ref<SemiTrailerSummary[]>([])
 const optionsError = ref(false)
+const showCreateTractor = ref(false)
+const showCreateSemiTrailer = ref(false)
+const tractorOptions = computed(() => tractors.value.map((tractor) => ({
+    value: tractor.id,
+    label: tractor.registration,
+})))
+const semiTrailerOptions = computed(() => semiTrailers.value.map((semiTrailer) => ({
+    value: semiTrailer.id,
+    label: semiTrailer.registration,
+})))
+
+const onTractorCreated = (tractor: TractorSummary) => {
+    tractors.value.push(tractor)
+    form.value.tractorId = tractor.id
+    showCreateTractor.value = false
+}
+
+const onSemiTrailerCreated = (semiTrailer: SemiTrailerSummary) => {
+    semiTrailers.value.push(semiTrailer)
+    form.value.semiTrailerId = semiTrailer.id
+    showCreateSemiTrailer.value = false
+}
 
 const parkingLocation = computed({
     get: () => form.value.locationLabel ? { address: form.value.locationLabel } : undefined,
@@ -106,18 +131,9 @@ onMounted(async () => {
                         Tracteur
                     </label>
 
-                    <select v-model="form.tractorId" :disabled="disabled" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm
-                               outline-none transition
-                               focus:border-blue-500 focus:ring-2 focus:ring-blue-100
-                               disabled:cursor-not-allowed disabled:bg-slate-100">
-                        <option :value="null">
-                            Aucun tracteur
-                        </option>
-
-                        <option v-for="tractor in tractors" :key="tractor.id" :value="tractor.id">
-                            {{ tractor.registration }}
-                        </option>
-                    </select>
+                    <CreateSelect v-model="form.tractorId" :options="tractorOptions" :disabled="disabled"
+                        label="Tracteur" placeholder="Aucun tracteur" create-label="Nouveau véhicule"
+                        @create="showCreateTractor = true" />
                 </div>
 
                 <!-- Semi-remorque -->
@@ -126,18 +142,9 @@ onMounted(async () => {
                         Semi-remorque
                     </label>
 
-                    <select v-model="form.semiTrailerId" :disabled="disabled" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm
-                               outline-none transition
-                               focus:border-blue-500 focus:ring-2 focus:ring-blue-100
-                               disabled:cursor-not-allowed disabled:bg-slate-100">
-                        <option :value="null">
-                            Aucune semi-remorque
-                        </option>
-
-                        <option v-for="semiTrailer in semiTrailers" :key="semiTrailer.id" :value="semiTrailer.id">
-                            {{ semiTrailer.registration }}
-                        </option>
-                    </select>
+                    <CreateSelect v-model="form.semiTrailerId" :options="semiTrailerOptions" :disabled="disabled"
+                        label="Semi-remorque" placeholder="Aucune semi-remorque" create-label="Nouveau véhicule"
+                        @create="showCreateSemiTrailer = true" />
                 </div>
             </div>
 
@@ -358,5 +365,9 @@ onMounted(async () => {
                 </div>
             </div>
         </section>
+        <CreateTractorModal :show="showCreateTractor" @close="showCreateTractor = false"
+            @created="onTractorCreated" />
+        <CreateSemiTrailerModal :show="showCreateSemiTrailer" @close="showCreateSemiTrailer = false"
+            @created="onSemiTrailerCreated" />
     </div>
 </template>

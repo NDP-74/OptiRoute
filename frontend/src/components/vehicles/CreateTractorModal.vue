@@ -4,7 +4,7 @@ import { reactive, ref, watch } from "vue"
 import { createTractor } from "@/api/vehicle/tractorApi"
 import { getApiErrorMessage } from "@/api/utils"
 
-import type { CreateTractorRequest, TractorFormData } from "@/models/vehicle/Tractor"
+import type { CreateTractorRequest, TractorFormData, TractorSummary } from "@/models/vehicle/Tractor"
 import { createEmptyTractorForm } from "@/utils/vehicleUtils"
 
 import AppModal from "@/components/ui/AppModal.vue"
@@ -23,7 +23,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     close: []
-    created: []
+    created: [tractor: TractorSummary]
 }>()
 
 //Manage Modal
@@ -57,14 +57,14 @@ const submitTractor = async () => {
             maintenanceCostPerKm: form.maintenanceCostPerKm,
         }
 
-        await createTractor(payload)
+        const tractor = await createTractor(payload)
 
         notification.success(
             "Tracteur créé",
             `Le tracteur « ${payload.registration} » a bien été créé.`,
         )
 
-        emit("created")
+        emit("created", tractor)
     } catch (error: unknown) {
         notification.error(
             "Création impossible",

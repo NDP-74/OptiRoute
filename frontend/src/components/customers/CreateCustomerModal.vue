@@ -8,7 +8,7 @@ import CustomerForm from "@/components/customers/CustomerForm.vue"
 import { createCustomer } from "@/api/customerApi"
 import { getApiErrorMessage } from "@/api/utils"
 
-import type { CustomerCreateRequest, CustomerFormData } from "@/models/Customer"
+import type { CustomerCreateRequest, CustomerDetails, CustomerFormData } from "@/models/Customer"
 import { useNotification } from "@/composables/useNotification"
 
 const notification = useNotification()
@@ -19,7 +19,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     close: []
-    created: []
+    created: [customer: CustomerDetails]
 }>()
 
 const initialForm = (): CustomerFormData => ({
@@ -43,14 +43,14 @@ const submitCustomer = async () => {
             address: form.value.address?.trim() || null,
         }
 
-        await createCustomer(payload)
+        const customer = await createCustomer(payload)
 
         notification.success(
             'Donneur d’ordre créé',
             `Le donneur d’ordre « ${form.value.name.trim()} » a bien été créé.`
         )
 
-        emit('created')
+        emit('created', customer)
         emit('close')
 
         resetForm()

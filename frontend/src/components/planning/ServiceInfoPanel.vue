@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { Building2, Euro, RefreshCw } from 'lucide-vue-next'
+import CreateSelect from '@/components/ui/CreateSelect.vue'
+import CreateCustomerModal from '@/components/customers/CreateCustomerModal.vue'
 
 import { getCustomers } from '@/api/customerApi'
 import { updateServiceInfo } from '@/api/transportApi'
@@ -22,11 +24,22 @@ const emit = defineEmits<{
 
 const notification = useNotification()
 const customers = ref<CustomerSummary[]>([])
+const showCreateCustomer = ref(false)
+const customerOptions = computed(() => customers.value.map(customer => ({
+    value: customer.id,
+    label: customer.name,
+})))
 const customerId = ref<number | null>(props.transport.customerId)
 const revenue = ref<number | ''>(serviceRevenue(props.transport))
 const loadingDurationMinutes = ref<number | ''>(props.transport.serviceTiming?.loadingDurationMinutes ?? '')
 const unloadingDurationMinutes = ref<number | ''>(props.transport.serviceTiming?.unloadingDurationMinutes ?? '')
 const isSaving = ref(false)
+
+function onCustomerCreated(customer: CustomerSummary) {
+    customers.value.push(customer)
+    customerId.value = customer.id
+    showCreateCustomer.value = false
+}
 
 // Même règle de nommage qu'à la création : donneur d'ordre, sinon trajet à vide, sinon origine - destination
 const serviceName = computed(() => {
@@ -96,15 +109,14 @@ async function save() {
                     <p class="text-xs text-slate-500">Ces informations ne modifient ni les itinéraires ni les horaires.</p>
                 </div>
 
-                <label class="block space-y-1.5">
+                <div class="space-y-1.5">
                     <span class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
                         <Building2 :size="14" /> Donneur d’ordre
                     </span>
-                    <select v-model="customerId" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
-                        <option :value="null">Aucun donneur d’ordre</option>
-                        <option v-for="customer in customers" :key="customer.id" :value="customer.id">{{ customer.name }}</option>
-                    </select>
-                </label>
+                    <CreateSelect v-model="customerId" :options="customerOptions" :disabled="isSaving"
+                        label="Donneur d’ordre" placeholder="Aucun donneur d’ordre" create-label="Nouveau donneur d’ordre"
+                        @create="showCreateCustomer = true" />
+                </div>
 
                 <label class="block space-y-1.5">
                     <span class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -160,4 +172,5 @@ async function save() {
             </button>
         </div>
     </div>
+    <CreateCustomerModal :show="showCreateCustomer" @close="showCreateCustomer = false" @created="onCustomerCreated" />
 </template>

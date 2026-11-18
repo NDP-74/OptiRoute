@@ -1,5 +1,24 @@
 # frontend
 
+## Sélecteurs avec création
+
+`CreateSelect` (`src/components/ui/CreateSelect.vue`) propose une sélection nullable
+et une action de création, sans modification ni suppression. Il reçoit `v-model`,
+`options` (`{ value, label }[]`), `label` (nom accessible), `placeholder`,
+`createLabel` et `disabled`. L'événement `create` permet au parent d'ouvrir le modal
+adapté ; après création, le parent ajoute l'option et met à jour la sélection.
+
+Les formulaires conducteur, de planification et de modification d'un trajet
+(`PlanningRouteModal` et `RouteSegmentPanel`) l'utilisent pour les tracteurs et semi-remorques :
+**Nouveau véhicule** ouvre le modal existant et sélectionne le véhicule créé,
+sans enregistrer ni réinitialiser le formulaire en cours.
+
+Le même principe s'applique aux chauffeurs dans `RouteSegmentPanel` et
+`PlanningRouteModal`, et aux donneurs d'ordre dans `ServiceInfoPanel` et
+`PlanningRouteModal`. Le chauffeur créé est sélectionné avec ses véhicules
+habituels, y compris ceux créés depuis son propre formulaire. Le donneur d'ordre
+créé est sélectionné et utilisé pour le titre du service lors de l'enregistrement.
+
 ## Titre des services
 
 À chaque création ou modification depuis le planning, le titre du service est

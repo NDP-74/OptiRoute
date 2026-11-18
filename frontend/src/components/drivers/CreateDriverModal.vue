@@ -4,7 +4,7 @@ import { reactive, ref, watch } from "vue"
 
 import { getApiErrorMessage } from '@/api/utils'
 import { createEmptyDriverForm } from "@/utils/driverUtils"
-import type { CreateDriverRequest, DriverFormData } from "@/models/driver/Driver"
+import type { CreateDriverRequest, DriverDetails, DriverFormData } from "@/models/driver/Driver"
 
 import AppModal from '@/components/ui/AppModal.vue'
 import { useNotification } from '@/composables/useNotification'
@@ -22,7 +22,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     close: []
-    created: []
+    created: [driver: DriverDetails]
 }>()
 
 //Manage Modal
@@ -62,14 +62,14 @@ const submitDriver = async () => {
             locationLongitude: form.locationLongitude,
         }
 
-        await createDriver(payload)
+        const driver = await createDriver(payload)
 
         notification.success(
             "Conducteur créé",
             `Le conducteur « ${form.firstName} ${form.lastName} » a bien été ajouté.`,
         )
 
-        emit("created")
+        emit("created", driver)
     } catch (error: unknown) {
         notification.error(
             "Création impossible",
@@ -94,7 +94,7 @@ watch(
 
 <template>
 
-    <AppModal :show="props.show" @close="emit('close')">
+    <AppModal :show="props.show" @close="closeModal">
 
         <form @submit.prevent="submitDriver">
             <h2 class="mb-6 text-2xl font-bold text-slate-900">

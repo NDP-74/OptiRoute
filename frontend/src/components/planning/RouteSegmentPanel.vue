@@ -6,6 +6,10 @@ import HereMap from '@/components/maps/HereMap.vue'
 import RouteForm from '@/components/maps/RouteForm.vue'
 import AssignEventModal from '@/components/transports/AssignEventModal.vue'
 import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal.vue'
+import CreateSelect from '@/components/ui/CreateSelect.vue'
+import CreateTractorModal from '@/components/vehicles/CreateTractorModal.vue'
+import CreateSemiTrailerModal from '@/components/vehicles/CreateSemiTrailerModal.vue'
+import CreateDriverModal from '@/components/drivers/CreateDriverModal.vue'
 import { deleteEvent } from '@/api/eventApi'
 
 import { updateTransportRoute } from '@/api/transportApi'
@@ -71,6 +75,47 @@ const emptyTrip = ref(false)
 const drivers = ref<DriverSummary[]>([])
 const tractors = ref<TractorSummary[]>([])
 const semiTrailers = ref<SemiTrailerSummary[]>([])
+const showCreateDriver = ref(false)
+const driverOptions = computed(() => drivers.value.map(driver => ({
+    value: driver.id,
+    label: `${driver.firstName} ${driver.lastName}`,
+})))
+const showCreateTractor = ref(false)
+const showCreateSemiTrailer = ref(false)
+const tractorOptions = computed(() => tractors.value.map(tractor => ({
+    value: tractor.id,
+    label: tractor.registration,
+})))
+const semiTrailerOptions = computed(() => semiTrailers.value.map(semiTrailer => ({
+    value: semiTrailer.id,
+    label: semiTrailer.registration,
+})))
+
+function onTractorCreated(tractor: TractorSummary) {
+    tractors.value.push(tractor)
+    tractorId.value = tractor.id
+    showCreateTractor.value = false
+}
+
+function onSemiTrailerCreated(semiTrailer: SemiTrailerSummary) {
+    semiTrailers.value.push(semiTrailer)
+    semiTrailerId.value = semiTrailer.id
+    showCreateSemiTrailer.value = false
+}
+
+async function onDriverCreated(driver: DriverSummary) {
+    drivers.value.push(driver)
+    driverId.value = driver.id
+    showCreateDriver.value = false
+    void applyDriverVehicles()
+    try {
+        const [loadedTractors, loadedSemiTrailers] = await Promise.all([getTractors(), getSemiTrailers()])
+        tractors.value = loadedTractors
+        semiTrailers.value = loadedSemiTrailers
+    } catch (error) {
+        notification.error('Chargement impossible', getApiErrorMessage(error, 'Les véhicules du chauffeur n’ont pas pu être actualisés.'))
+    }
+}
 
 const segments = computed(() => props.transport?.routes ?? [])
 const segmentIndex = computed(() => segments.value.findIndex(route => route.routeId === props.routeId))
@@ -318,43 +363,33 @@ async function save() {
                 <!-- AFFECTATION -->
                 <section class="min-h-0 overflow-auto rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
                     <div class="space-y-4">
-                        <label class="block space-y-1.5">
+                        <div class="space-y-1.5">
                             <span
                                 class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
                                 <User :size="14" /> Chauffeur
                             </span>
-                            <select v-model="driverId" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm"
-                                @change="applyDriverVehicles">
-                                <option :value="null">Aucun chauffeur</option>
-                                <option v-for="driver in drivers" :key="driver.id" :value="driver.id">
-                                    {{ driver.firstName }} {{ driver.lastName }}
-                                </option>
-                            </select>
-                        </label>
-                        <label class="block space-y-1.5">
+                            <CreateSelect v-model="driverId" :options="driverOptions" :disabled="isSaving"
+                                label="Chauffeur" placeholder="Aucun chauffeur" create-label="Nouveau chauffeur"
+                                @update:model-value="applyDriverVehicles" @create="showCreateDriver = true" />
+                        </div>
+                        <div class="space-y-1.5">
                             <span
                                 class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
                                 <Truck :size="14" /> Tracteur
                             </span>
-                            <select v-model="tractorId" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
-                                <option :value="null">Sélectionner un tracteur</option>
-                                <option v-for="tractor in tractors" :key="tractor.id" :value="tractor.id">
-                                    {{ tractor.registration }}
-                                </option>
-                            </select>
-                        </label>
-                        <label class="block space-y-1.5">
+                            <CreateSelect v-model="tractorId" :options="tractorOptions" :disabled="isSaving"
+                                label="Tracteur" placeholder="Sélectionner un tracteur" create-label="Nouveau véhicule"
+                                @create="showCreateTractor = true" />
+                        </div>
+                        <div class="space-y-1.5">
                             <span
                                 class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
                                 <Truck :size="14" /> Semi-remorque
                             </span>
-                            <select v-model="semiTrailerId" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
-                                <option :value="null">Aucune semi-remorque</option>
-                                <option v-for="semiTrailer in semiTrailers" :key="semiTrailer.id" :value="semiTrailer.id">
-                                    {{ semiTrailer.registration }}
-                                </option>
-                            </select>
-                        </label>
+                            <CreateSelect v-model="semiTrailerId" :options="semiTrailerOptions" :disabled="isSaving"
+                                label="Semi-remorque" placeholder="Aucune semi-remorque" create-label="Nouveau véhicule"
+                                @create="showCreateSemiTrailer = true" />
+                        </div>
                         <label
                             class="flex cursor-pointer items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-700">
                             <span class="flex items-center gap-2">
@@ -478,4 +513,8 @@ async function save() {
     <ConfirmDeleteModal :show="eventToDelete !== null" :loading="deletingEvent" title="Supprimer l’événement"
         message="Supprimer cet événement et son point de passage ? Le trajet sera recalculé et les modifications non enregistrées de cet onglet seront remplacées."
         @close="!deletingEvent && (eventToDelete = null)" @confirm="confirmDeleteEvent" />
+    <CreateTractorModal :show="showCreateTractor" @close="showCreateTractor = false" @created="onTractorCreated" />
+    <CreateSemiTrailerModal :show="showCreateSemiTrailer" @close="showCreateSemiTrailer = false"
+        @created="onSemiTrailerCreated" />
+    <CreateDriverModal :show="showCreateDriver" @close="showCreateDriver = false" @created="onDriverCreated" />
 </template>
