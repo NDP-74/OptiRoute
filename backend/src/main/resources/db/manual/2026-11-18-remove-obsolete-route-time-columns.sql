@@ -1,0 +1,8 @@
+BEGIN;
+
+ALTER TABLE route DROP COLUMN IF EXISTS departure_start;
+ALTER TABLE route DROP COLUMN IF EXISTS departure_end;
+ALTER TABLE route DROP COLUMN IF EXISTS arrival_start;
+ALTER TABLE route DROP COLUMN IF EXISTS arrival_end;
+
+COMMIT;

@@ -1,0 +1,7 @@
+BEGIN;
+
+ALTER TABLE route DROP COLUMN IF EXISTS driver_cost;
+ALTER TABLE route DROP COLUMN IF EXISTS vehicle_cost;
+ALTER TABLE route DROP COLUMN IF EXISTS structure_cost;
+
+COMMIT;

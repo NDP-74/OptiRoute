@@ -1,0 +1,7 @@
+BEGIN;
+
+UPDATE service SET revenue = 0 WHERE revenue IS NULL;
+ALTER TABLE service ALTER COLUMN revenue SET DEFAULT 0;
+ALTER TABLE service ALTER COLUMN revenue SET NOT NULL;
+
+COMMIT;
