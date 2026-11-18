@@ -102,8 +102,8 @@ function close() {
 
 <template>
     <AppModal :show="show" panel-class="max-w-screen-2xl" @close="close">
-        <PlanningRouteModal v-if="editingTransport && replanning" embedded :show="true" :editing-transport="editingTransport"
-            :events="events" @close="replanning = false" @saved="handleSaved" />
+        <PlanningRouteModal v-if="editingTransport && replanning" embedded :show="true"
+            :editing-transport="editingTransport" :events="events" @close="replanning = false" @saved="handleSaved" />
 
         <div v-if="editingTransport" v-show="!replanning" class="flex h-[82vh] max-h-[720px] flex-col">
             <div class="flex shrink-0 items-start justify-between gap-4">
@@ -118,9 +118,10 @@ function close() {
                 </button>
             </div>
 
-            <div class="mt-4 flex shrink-0 gap-1 overflow-x-auto overflow-y-hidden border-b border-slate-200" role="tablist">
+            <div class="mt-4 flex shrink-0 gap-1 overflow-x-auto overflow-y-hidden border-b border-slate-200"
+                role="tablist">
                 <button type="button" role="tab" :aria-selected="activeTab === SERVICE_TAB"
-                    class="mr-2 inline-flex shrink-0 items-center gap-2 rounded-t-xl border-b-2 px-4 py-2 text-sm font-bold transition"
+                    class="mr-2 inline-flex shrink-0 items-center gap-2 rounded-t-xl border-b-2 px-4 py-2 text-sm font-semibold transition"
                     :class="activeTab === SERVICE_TAB ? 'border-blue-600 bg-blue-100 text-blue-800' : 'border-transparent bg-blue-50 text-blue-700 hover:bg-blue-100'"
                     @click="activeTab = SERVICE_TAB">
                     <Settings2 class="h-4 w-4" />
@@ -133,7 +134,7 @@ function close() {
                     @click="activeTab = route.routeId">
                     <span class="block text-sm font-semibold">Trajet {{ index + 1 }}</span>
                     <span class="block max-w-56 truncate text-xs">{{ route.originName }} → {{ route.destinationName
-                        }}</span>
+                    }}</span>
                 </button>
             </div>
 
@@ -144,11 +145,13 @@ function close() {
                 </div>
                 <!-- Les onglets visités restent montés : les modifications en cours ne sont pas perdues en changeant d'onglet -->
                 <KeepAlive v-else>
-                    <RouteSegmentPanel v-if="activeRoute" :key="`${activeRoute.routeId}-${revisions[activeRoute.routeId] ?? 0}`" :transport="editingTransport"
-                        :route-id="activeRoute.routeId" :events="eventsForRoute(activeRoute.routeId)" @cancel="close"
-                        @saved="handleSaved" />
-                    <ServiceInfoPanel v-else :key="`${SERVICE_TAB}-${revisions[SERVICE_TAB] ?? 0}`" :transport="editingTransport" @cancel="close"
-                        @saved="handleSaved" @replan="replanning = true" />
+                    <RouteSegmentPanel v-if="activeRoute"
+                        :key="`${activeRoute.routeId}-${revisions[activeRoute.routeId] ?? 0}`"
+                        :transport="editingTransport" :route-id="activeRoute.routeId"
+                        :events="eventsForRoute(activeRoute.routeId)" @cancel="close" @saved="handleSaved" />
+                    <ServiceInfoPanel v-else :key="`${SERVICE_TAB}-${revisions[SERVICE_TAB] ?? 0}`"
+                        :transport="editingTransport" @cancel="close" @saved="handleSaved"
+                        @replan="replanning = true" />
                 </KeepAlive>
             </div>
         </div>
