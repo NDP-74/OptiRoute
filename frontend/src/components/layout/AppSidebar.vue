@@ -51,11 +51,11 @@ watch(isVehiclesSection, (isActive) => {
 </script>
 
 <template>
-    <aside class="flex h-full w-64 flex-col border-r border-[#263f5e] bg-[#101f36] text-white">
+    <aside class="flex h-full w-64 flex-col border-r border-white bg-[#101f36] text-white">
 
         <!-- LOGO -->
-        <div class="flex h-14 items-center justify-center border-b border-slate-200 bg-white px-4">
-            <img src="@/assets/images/logo2.png" alt="OptiRoute logo" class="h-12 w-auto object-contain" />
+        <div class="flex h-14 items-center justify-center border-b border-white px-4">
+            <img src="@/assets/images/logo3.png" alt="OptiRoute logo" class="h-14 w-auto object-contain" />
         </div>
 
         <!-- NAVIGATION -->
@@ -64,23 +64,25 @@ watch(isVehiclesSection, (isActive) => {
             <!-- ROUTES SECTION -->
             <template v-if="isRoutesSection">
                 <SidebarLink to="/routes" label="Rechercher un itinéraire" :icon="Route" />
-                <div aria-hidden="true" class="mx-4 my-1 h-px bg-blue-100/10"></div>
+                <div aria-hidden="true" class="mx-4 my-1 h-0.5 bg-blue-100/10"></div>
                 <SidebarLink to="/routes/pointsOfInterest" label="Points d'intérêt" :icon="MapPin" />
+                <div aria-hidden="true" class="mx-4 my-1 h-0.5 bg-blue-100/10"></div>
             </template>
 
             <!-- HOMEPAGE SECTION -->
             <template v-else-if="isHomepageSection">
                 <SidebarLink to="/homepage/planning" label="Planning" :icon="CalendarDays" />
+                <div aria-hidden="true" class="mx-4 my-1 h-0.5 bg-blue-100/10"></div>
             </template>
 
 
             <!-- GESTION SECTION -->
             <template v-else-if="isGestionSection">
                 <SidebarLink to="/gestion/operationCosts" label="Coûts référentiels" :icon="Coins" />
-                <div aria-hidden="true" class="mx-4 my-1 h-px bg-blue-100/10"></div>
+                <div aria-hidden="true" class="mx-4 my-1 h-0.5 bg-blue-100/10"></div>
 
                 <SidebarLink to="/gestion/drivers" label="Conducteurs" :icon="Users" />
-                <div aria-hidden="true" class="mx-4 my-1 h-px bg-blue-100/10"></div>
+                <div aria-hidden="true" class="mx-4 my-1 h-0.5 bg-blue-100/10"></div>
 
                 <!-- VEHICLES MENU -->
                 <div>
@@ -98,22 +100,23 @@ watch(isVehiclesSection, (isActive) => {
 
                     <div v-show="vehiclesOpen" class="mt-1 space-y-1 border-l border-blue-400/25 pl-3">
                         <SidebarLink to="/gestion/tractors" label="Tracteurs" :icon="Truck" />
-                        <div aria-hidden="true" class="mx-4 my-1 h-px bg-blue-100/10"></div>
+                        <div aria-hidden="true" class="mx-4 my-1 h-0.5 bg-blue-100/10"></div>
                         <SidebarLink to="/gestion/semiTrailers" label="Semi-remorques" :icon="Container" />
                     </div>
                 </div>
 
-                <div aria-hidden="true" class="mx-4 my-1 h-px bg-blue-100/10"></div>
+                <div aria-hidden="true" class="mx-4 my-1 h-0.5 bg-blue-100/10"></div>
                 <SidebarLink to="/gestion/customers" label="Donneurs d’ordres" :icon="Building2" />
+                <div aria-hidden="true" class="mx-4 my-1 h-0.5 bg-blue-100/10"></div>
             </template>
 
             <!-- USER SECTION -->
             <template v-else-if="isUserSection">
                 <SidebarLink to="/user" label="Mes informations" :icon="CircleUser" />
-                <div aria-hidden="true" class="mx-4 my-1 h-px bg-blue-100/10"></div>
+                <div aria-hidden="true" class="mx-4 my-1 h-0.5 bg-blue-100/10"></div>
                 <SidebarLink to="/user/password" label="Modifier mon mot de passe" :icon="KeyRound" />
 
-                <div aria-hidden="true" class="mx-4 my-1 h-px bg-blue-100/10"></div>
+                <div aria-hidden="true" class="mx-4 my-1 h-0.5 bg-blue-100/10"></div>
                 <button type="button"
                     class="flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-left font-medium text-slate-200 transition-colors hover:bg-[#1d3555] hover:text-white"
                     @click="logout">
