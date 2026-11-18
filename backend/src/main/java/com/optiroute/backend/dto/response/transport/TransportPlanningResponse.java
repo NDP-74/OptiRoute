@@ -10,8 +10,7 @@ public record TransportPlanningResponse(
 
         String tractorRegistration, String semiTrailerRegistration,
 
-        OffsetDateTime departureStart, OffsetDateTime departureEnd,
-        OffsetDateTime arrivalStart, OffsetDateTime arrivalEnd,
+        OffsetDateTime departureStart, OffsetDateTime arrivalStart,
 
         String originName, String destinationName,
 

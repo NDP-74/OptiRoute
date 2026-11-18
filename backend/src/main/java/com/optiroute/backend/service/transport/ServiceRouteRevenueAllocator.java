@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 import com.optiroute.backend.entity.transport.Route;
 
@@ -13,9 +14,7 @@ final class ServiceRouteRevenueAllocator {
     }
 
     static BigDecimal allocate(BigDecimal serviceRevenue, List<Route> serviceRoutes, Route route) {
-        if (serviceRevenue == null) {
-            return null;
-        }
+        Objects.requireNonNull(serviceRevenue, "Service revenue must not be null");
         if (serviceRoutes.size() <= 1) {
             return serviceRevenue;
         }

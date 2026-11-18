@@ -103,7 +103,7 @@ public class TransportPlanningService {
             return new TransportPlanningResponse(service.getId(), route.getId(), routeNumber, serviceRoutes.size(),
                 service.getName(), driver != null ? driver.getId() : null,
                 driver != null ? driver.getFirstName() + " " + driver.getLastName() : null, tractorRegistration, semiTrailerRegistration,
-                route.getDepartureStart(), route.getDepartureEnd(), route.getArrivalStart(), route.getArrivalEnd(),
+                route.getDepartureStart(), route.getArrivalStart(),
                 route.getOriginName(), route.getDestinationName(), route.isEmptyTrip(), costs.totalCost(), costs.driver().totalCost(), costs.structure().totalCost(),
                 costs.vehicle().totalCost(), revenue);
         }).toList();

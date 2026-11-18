@@ -16,7 +16,7 @@ Les champs horaires actuellement nommés sur le service sont :
 | `departureStart` / `departureEnd` | Début / fin du créneau du point de chargement (`origin.slots`) |
 | `arrivalStart` / `arrivalEnd` | Début / fin du créneau du point de livraison (`destination.slots`) |
 
-`Route` possède lui aussi `departureStart`, `departureEnd`, `arrivalStart`, `arrivalEnd`, mais ces bornes sont **calculées** : l'utilisateur ne les saisit pas.
+`Route` conserve uniquement les heures calculées `departureStart` et `arrivalStart`. Les quatre bornes de créneau restent sur `Service`.
 
 ## 2. Données Dashdoc à importer
 
@@ -111,16 +111,14 @@ Une durée s'applique à l'opération réelle de chargement ou de déchargement.
 
 ### 3.3 Calcul des horaires de trajet
 
-Les quatre bornes calculées d'un trajet sont :
+Les horaires calculés d'un trajet sont :
 
-- `departureStart` : départ minimal ;
-- `departureEnd` : départ maximal ;
-- `arrivalStart` : arrivée minimale ;
-- `arrivalEnd` : arrivée maximale.
+- `departureStart` : heure de départ ;
+- `arrivalStart` : heure d'arrivée.
 
-Pour le calcul initial en simulation/import, prendre comme référence le **départ minimal**, en mode « Partir à ». Sans départ minimal, utiliser l'arrivée minimale, sinon l'heure de recherche. Le chargement renseigné s'ajoute au départ minimal pour déterminer le début de conduite. La planification nocturne recalcule ensuite chaque portion à son horaire effectif. Les fenêtres sources restent sur le service ; les bornes de route ne sont pas des champs à saisir dans l'interface.
+Pour le calcul initial en simulation/import, prendre comme référence le **départ minimal du service**, en mode « Partir à ». Sans départ minimal, utiliser l'arrivée minimale, sinon l'heure de recherche. Le chargement renseigné s'ajoute au départ minimal pour déterminer le début de conduite. La planification nocturne recalcule ensuite chaque portion à son horaire effectif. Les fenêtres sources restent sur le service ; les horaires calculés de route ne sont pas des champs à saisir dans l'interface.
 
-Pour une création manuelle, seule l'heure de recherche et le calcul de durée déterminent les bornes minimales ; les bornes maximales restent nulles. Pour Dashdoc, la synchronisation doit distinguer les fenêtres sources enregistrées sur le service des horaires effectivement calculés pour chacun des trajets.
+Pour une création manuelle, seule l'heure de recherche et le calcul de durée déterminent les horaires du trajet. Pour Dashdoc, la synchronisation doit distinguer les fenêtres sources enregistrées sur le service des horaires effectivement calculés pour chacun des trajets.
 
 Les heures calculées doivent utiliser le fuseau métier `Europe/Paris` pour les règles locales, notamment la coupure de 20 h. Les dates sources Dashdoc restent des instants ISO non ambigus.
 
@@ -300,7 +298,7 @@ Vérifier dans la réponse :
 
 - `serviceTiming.loadingDurationMinutes` et `unloadingDurationMinutes` ;
 - les quatre bornes sources de `serviceTiming` ;
-- `departureStart`, `departureEnd`, `arrivalStart`, `arrivalEnd` du trajet ;
+- `departureStart` et `arrivalStart` du trajet ;
 - `waypoints`, la distance, la durée et les coûts.
 
 Le planning se vérifie également avec :

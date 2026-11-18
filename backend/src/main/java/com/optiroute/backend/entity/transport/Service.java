@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 import com.optiroute.backend.entity.EntityUtils;
+import org.hibernate.annotations.ColumnDefault;
 
 @Entity
 @Getter
@@ -35,6 +36,11 @@ public class Service extends EntityUtils {
     private OffsetDateTime arrivalStart;
     private OffsetDateTime arrivalEnd;
 
-    @Column(precision = 12, scale = 2)
-    private BigDecimal revenue;
+    @Column(nullable = false, precision = 12, scale = 2)
+    @ColumnDefault("0")
+    private BigDecimal revenue = BigDecimal.ZERO;
+
+    public void setRevenue(BigDecimal revenue) {
+        this.revenue = revenue == null ? BigDecimal.ZERO : revenue;
+    }
 }

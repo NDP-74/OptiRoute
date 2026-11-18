@@ -107,7 +107,7 @@ public class TransportDetailService {
             costs, revenue,
             new ServiceTiming(service.getLoadingDurationMinutes(), service.getUnloadingDurationMinutes(),
                 service.getDepartureStart(), service.getDepartureEnd(), service.getArrivalStart(), service.getArrivalEnd()),
-            route.getDepartureStart(), route.getDepartureEnd(), route.getArrivalStart(), route.getArrivalEnd(),
+            route.getDepartureStart(), route.getArrivalStart(),
             route.getWaypoints() == null ? List.of() : route.getWaypoints(),
             routeDetails);
     }
@@ -126,7 +126,7 @@ public class TransportDetailService {
             route.getOriginAddress(), route.getOriginLat(), route.getOriginLng(), route.getDestinationName(),
             route.getDestinationAddress(), route.getDestinationLat(), route.getDestinationLng(),
             route.getDistanceMeters(), route.getDurationSeconds(), route.getPolyline(), route.getRouteType(),
-            route.getDepartureStart(), route.getDepartureEnd(), route.getArrivalStart(), route.getArrivalEnd(),
+            route.getDepartureStart(), route.getArrivalStart(),
             route.getWaypoints() == null ? List.of() : route.getWaypoints(), transportCostService.calculate(route),
             ServiceRouteRevenueAllocator.allocate(service.getRevenue(), serviceRoutes, route));
     }

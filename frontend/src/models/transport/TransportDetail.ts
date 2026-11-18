@@ -1,5 +1,5 @@
 import type { TransportStatus } from "@/types/planningType"
-import type { ServiceTiming, TimeWindows } from "./TransportRequest"
+import type { ServiceTiming } from "./TransportRequest"
 import type { Position } from "@/models/route/Position"
 
 export interface TransportCostItem {
@@ -40,15 +40,13 @@ export interface TransportRouteDetail {
     polyline: string | null;
     routeType: "FASTEST" | "CHEAPEST" | null;
     departureStart: string | null;
-    departureEnd: string | null;
     arrivalStart: string | null;
-    arrivalEnd: string | null;
     waypoints: Position[];
     costs: TransportCosts;
-    revenue: number | null;
+    revenue: number;
 }
 
-export interface TransportDetail extends TimeWindows {
+export interface TransportDetail {
     id: number;
     routeId: number;
     routeNumber: number;
@@ -86,6 +84,8 @@ export interface TransportDetail extends TimeWindows {
 
     polyline: string | null;
     routeType: "FASTEST" | "CHEAPEST" | null;
+    departureStart: string | null;
+    arrivalStart: string | null;
 
     costs: TransportCosts;
     revenue: number;

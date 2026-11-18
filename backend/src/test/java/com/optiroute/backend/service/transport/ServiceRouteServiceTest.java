@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -47,6 +48,15 @@ class ServiceRouteServiceTest {
     private final JsonMapper mapper = JsonMapper.builder().addModule(new JavaTimeModule()).build();
 
     @Test
+    void shouldDefaultRevenueToZeroAndNormalizeNullAssignment() {
+        Service service = new Service();
+
+        assertEquals(BigDecimal.ZERO, service.getRevenue());
+        service.setRevenue(null);
+        assertEquals(BigDecimal.ZERO, service.getRevenue());
+    }
+
+    @Test
     void shouldSaveIndependentServiceAndRouteWindowsAndOrderedWaypoints() throws Exception {
         TransportRequest request = mapper.readValue("""
             {
@@ -79,9 +89,7 @@ class ServiceRouteServiceTest {
         Route route = capture.getValue();
         assertSame(saved, route.getService());
         assertEquals(request.routeTime().minusSeconds(900), route.getDepartureStart());
-        assertNull(route.getDepartureEnd());
         assertEquals(request.routeTime(), route.getArrivalStart());
-        assertNull(route.getArrivalEnd());
         assertEquals(List.of(48.0, 47.0), route.getWaypoints().stream().map(Position::getLat).toList());
         String json = mapper.writeValueAsString(route.getWaypoints());
         Position[] restored = mapper.readValue(json, Position[].class);
@@ -113,9 +121,7 @@ class ServiceRouteServiceTest {
         assertEquals(30, existing.getLoadingDurationMinutes());
         assertEquals(1, route.getWaypoints().size());
         assertEquals(request.routeTime(), route.getDepartureStart());
-        assertNull(route.getDepartureEnd());
         assertEquals(request.routeTime().plusSeconds(900), route.getArrivalStart());
-        assertNull(route.getArrivalEnd());
         var calculation = new RouteRequestFactory().fromTransport(request);
         assertEquals(RouteTimeMode.DEPARTURE, calculation.getTimeMode());
         assertEquals(request.routeTime(), calculation.getRouteTime());
@@ -123,7 +129,7 @@ class ServiceRouteServiceTest {
     }
 
     @Test
-    void shouldCopyDashdocSourceWindowsToRoute() throws Exception {
+    void shouldKeepDashdocSourceWindowsOnServiceAndUseTheirStartTimesOnRoute() throws Exception {
         TransportRequest request = mapper.readValue("""
             {
               "externalId": "dashdoc-123",
@@ -148,9 +154,9 @@ class ServiceRouteServiceTest {
         verify(routes).save(capture.capture());
         Route route = capture.getValue();
         assertEquals(request.serviceTiming().departureStart(), route.getDepartureStart());
-        assertEquals(request.serviceTiming().departureEnd(), route.getDepartureEnd());
         assertEquals(request.serviceTiming().arrivalStart(), route.getArrivalStart());
-        assertEquals(request.serviceTiming().arrivalEnd(), route.getArrivalEnd());
+        assertEquals(request.serviceTiming().departureEnd(), service.getDepartureEnd());
+        assertEquals(request.serviceTiming().arrivalEnd(), service.getArrivalEnd());
     }
 
     @Test

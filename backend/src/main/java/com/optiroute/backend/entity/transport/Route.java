@@ -35,10 +35,8 @@ public class Route extends EntityUtils {
 
     @Column(name = "start_date")
     private OffsetDateTime departureStart;
-    private OffsetDateTime departureEnd;
     @Column(name = "end_date")
     private OffsetDateTime arrivalStart;
-    private OffsetDateTime arrivalEnd;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
@@ -74,13 +72,4 @@ public class Route extends EntityUtils {
 
     @Column(precision = 10, scale = 2)
     private BigDecimal tollCost;
-
-    @Column(precision = 10, scale = 2)
-    private BigDecimal driverCost;
-
-    @Column(precision = 10, scale = 2)
-    private BigDecimal vehicleCost;
-
-    @Column(precision = 10, scale = 2)
-    private BigDecimal structureCost;
 }

@@ -4,8 +4,8 @@
 
 ## Étapes implémentées : données, points de passage et coupures nocturnes multi-jours
 
-- `Service` conserve `loadingDurationMinutes`, `unloadingDurationMinutes` et les fenêtres sources `departureStart`, `departureEnd`, `arrivalStart`, `arrivalEnd`.
-- `Route` conserve quatre bornes : `departureStart`, `departureEnd`, `arrivalStart`, `arrivalEnd`. Elles ne sont jamais saisies par l'utilisateur. La planification calcule désormais les horaires de chaque trajet, même pour Dashdoc et pour un trajet unique ; les bornes maximales restent nulles. Les fenêtres sources restent sur le service.
+- `Service` conserve `loadingDurationMinutes`, `unloadingDurationMinutes`, les fenêtres sources `departureStart`, `departureEnd`, `arrivalStart`, `arrivalEnd`, et un `revenue` non nul (0 par défaut).
+- `Route` conserve uniquement les heures calculées `departureStart` et `arrivalStart`. Les fenêtres sources, y compris leurs bornes maximales, restent sur `Service`.
 - Les champs entité `startDate` / `endDate` sont supprimés. Les bornes minimales départ/arrivée réutilisent les colonnes physiques existantes `start_date` / `end_date` pour préserver les données, et les dates calculées remplacent `plannedStart` / `plannedEnd` dans les contrats API et le planning.
 - `Route.waypoints` est une colonne PostgreSQL `jsonb` contenant la liste ordonnée des positions utilisateur (`lat`, `lng`, `name`, `address`), sans les points liés aux événements.
 - Les requêtes de création/modification acceptent `waypoints` et un objet `serviceTiming` regroupant les durées et fenêtres sources du service. Elles n'acceptent pas de bornes de route ; celles-ci sont calculées côté serveur et retournées dans les réponses. Les champs `externalId` et `externalSource` permettent de distinguer une création manuelle d'une source Dashdoc.

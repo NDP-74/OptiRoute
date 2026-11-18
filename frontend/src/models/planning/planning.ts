@@ -16,9 +16,7 @@ export interface PlanningTransport {
     semiTrailerRegistration: string | null;
 
     departureStart: string | null;
-    departureEnd: string | null;
     arrivalStart: string | null;
-    arrivalEnd: string | null;
 
     originName: string;
     destinationName: string;

@@ -38,8 +38,7 @@ public record TransportDetailResponse(Long id, Long routeId, int routeNumber, in
         TransportCostDetailsResponse costs, BigDecimal revenue,
 
         ServiceTiming serviceTiming,
-        OffsetDateTime departureStart, OffsetDateTime departureEnd,
-        OffsetDateTime arrivalStart, OffsetDateTime arrivalEnd,
+        OffsetDateTime departureStart, OffsetDateTime arrivalStart,
         List<Position> waypoints,
         List<TransportRouteDetailResponse> routes) {
 }

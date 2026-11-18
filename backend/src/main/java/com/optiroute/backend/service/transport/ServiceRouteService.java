@@ -124,8 +124,6 @@ public class ServiceRouteService {
         route.setDestinationLng(req.destinationLng());
 
         applyRouteDto(route, routeDto);
-        route.setDepartureEnd(null);
-        route.setArrivalEnd(null);
         if (req.timeMode() == RouteTimeMode.ARRIVAL) {
             route.setArrivalStart(req.routeTime());
             route.setDepartureStart(req.routeTime().minusSeconds(routeDto.getDuration()));
@@ -290,14 +288,10 @@ public class ServiceRouteService {
         Service service = route.getService();
         if (!calculatedTimes && "DASHDOC".equalsIgnoreCase(service.getExternalSource())) {
             route.setDepartureStart(service.getDepartureStart());
-            route.setDepartureEnd(service.getDepartureEnd());
             route.setArrivalStart(service.getArrivalStart());
-            route.setArrivalEnd(service.getArrivalEnd());
             return;
         }
 
-        route.setDepartureEnd(null);
-        route.setArrivalEnd(null);
         if (req.routeTime() == null) {
             route.setDepartureStart(null);
             route.setArrivalStart(null);

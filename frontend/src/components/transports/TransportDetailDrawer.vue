@@ -24,14 +24,6 @@ import ConfirmDeleteModal from "@/components/ui/ConfirmDeleteModal.vue"
 
 import { formatDurationSeconds, formatCurrency, formatDateTime, formatDistance } from "@/utils/formatters"
 
-function formatTimeWindow(start?: string | null, end?: string | null): string {
-    if (start && end) {
-        return `${formatDateTime(start)} - ${formatDateTime(end)}`
-    }
-
-    return formatDateTime(start ?? end)
-}
-
 const showDeleteModal = ref(false)
 const showEventModal = ref(false)
 const eventToEdit = ref<EventResponse | null>(null)
@@ -383,12 +375,10 @@ watch(
                 </div>
 
                 <div class="mt-4 grid grid-cols-2 gap-4">
-                    <TransportDetailItem v-if="activeTransport.departureStart || activeTransport.departureEnd"
-                        label="Départ"
-                        :value="formatTimeWindow(activeTransport.departureStart, activeTransport.departureEnd)" />
-                    <TransportDetailItem v-if="activeTransport.arrivalStart || activeTransport.arrivalEnd"
-                        label="Arrivée"
-                        :value="formatTimeWindow(activeTransport.arrivalStart, activeTransport.arrivalEnd)" />
+                    <TransportDetailItem v-if="activeTransport.departureStart" label="Départ"
+                        :value="formatDateTime(activeTransport.departureStart)" />
+                    <TransportDetailItem v-if="activeTransport.arrivalStart" label="Arrivée"
+                        :value="formatDateTime(activeTransport.arrivalStart)" />
                     <TransportDetailItem v-if="activeTransport.serviceTiming?.loadingDurationMinutes != null"
                         label="Chargement" :value="`${activeTransport.serviceTiming.loadingDurationMinutes} min`" />
                     <TransportDetailItem v-if="activeTransport.serviceTiming?.unloadingDurationMinutes != null"
@@ -425,11 +415,10 @@ watch(
 
                 <div v-if="activeRoute" class="mt-4">
                     <div class="grid gap-3 sm:grid-cols-2">
-                        <TransportDetailItem v-if="activeRoute.departureStart || activeRoute.departureEnd"
-                            label="Départ"
-                            :value="formatTimeWindow(activeRoute.departureStart, activeRoute.departureEnd)" />
-                        <TransportDetailItem v-if="activeRoute.arrivalStart || activeRoute.arrivalEnd" label="Arrivée"
-                            :value="formatTimeWindow(activeRoute.arrivalStart, activeRoute.arrivalEnd)" />
+                        <TransportDetailItem v-if="activeRoute.departureStart" label="Départ"
+                            :value="formatDateTime(activeRoute.departureStart)" />
+                        <TransportDetailItem v-if="activeRoute.arrivalStart" label="Arrivée"
+                            :value="formatDateTime(activeRoute.arrivalStart)" />
                     </div>
                     <div class="mt-3 flex gap-3">
                         <div class="mt-1 h-3 w-3 shrink-0 rounded-full bg-emerald-500" />

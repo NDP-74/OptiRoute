@@ -40,8 +40,7 @@ const serviceName = computed(() => {
 
 function serviceRevenue(transport: TransportDetail): number | '' {
     if (!transport.routes.length) return transport.revenue ?? ''
-    const revenues = transport.routes.map(route => route.revenue).filter((value): value is number => value != null)
-    if (!revenues.length) return ''
+    const revenues = transport.routes.map(route => route.revenue)
     return Math.round(revenues.reduce((total, value) => total + value, 0) * 100) / 100
 }
 

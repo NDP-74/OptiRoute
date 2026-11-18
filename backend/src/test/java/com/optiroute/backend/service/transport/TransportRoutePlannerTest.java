@@ -187,8 +187,6 @@ class TransportRoutePlannerTest {
             assertSame(service, route.getService());
             assertEquals(departure(segments.get(i)), route.getDepartureStart());
             assertEquals(arrival(segments.get(i)), route.getArrivalStart());
-            assertNull(route.getDepartureEnd());
-            assertNull(route.getArrivalEnd());
         }
         assertEquals(40 * 3600, capture.getAllValues().stream().mapToLong(r -> r.getDurationSeconds()).sum());
     }

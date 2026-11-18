@@ -29,9 +29,7 @@ public record TransportRouteDetailResponse(
     String polyline,
     GpsModeType routeType,
     OffsetDateTime departureStart,
-    OffsetDateTime departureEnd,
     OffsetDateTime arrivalStart,
-    OffsetDateTime arrivalEnd,
     List<Position> waypoints,
     TransportCostDetailsResponse costs,
     BigDecimal revenue) {
