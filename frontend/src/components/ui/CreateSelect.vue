@@ -1,5 +1,6 @@
 <script setup lang="ts" generic="T extends string | number">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from "vue"
+import { Pencil } from "lucide-vue-next"
 
 const selected = defineModel<T | null>({ required: true })
 
@@ -9,9 +10,10 @@ const props = defineProps<{
     placeholder: string
     createLabel: string
     disabled?: boolean
+    editable?: boolean
 }>()
 
-const emit = defineEmits<{ create: [] }>()
+const emit = defineEmits<{ create: []; edit: [value: T] }>()
 const id = useId()
 const root = ref<HTMLElement | null>(null)
 const trigger = ref<HTMLButtonElement | null>(null)
@@ -36,6 +38,11 @@ const choose = (value: T | null) => {
 const create = () => {
     closeAndFocus()
     emit("create")
+}
+
+const edit = (value: T) => {
+    closeAndFocus()
+    emit("edit", value)
 }
 
 const moveFocus = async (direction: number) => {
@@ -67,11 +74,10 @@ onBeforeUnmount(() => document.removeEventListener("mousedown", onOutsideClick))
 </script>
 
 <template>
-    <div ref="root" class="relative" @focusout="onFocusOut"
-        @keydown.esc.stop.prevent="closeAndFocus" @keydown.down.prevent="moveFocus(1)"
-        @keydown.up.prevent="moveFocus(-1)">
-        <button ref="trigger" type="button" :disabled="disabled" :aria-label="label"
-            :aria-expanded="open" :aria-controls="id"
+    <div ref="root" class="relative" @focusout="onFocusOut" @keydown.esc.stop.prevent="closeAndFocus"
+        @keydown.down.prevent="moveFocus(1)" @keydown.up.prevent="moveFocus(-1)">
+        <button ref="trigger" type="button" :disabled="disabled" :aria-label="label" :aria-expanded="open"
+            :aria-controls="id"
             class="flex w-full items-center justify-between rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-left text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100"
             @click="open = !open">
             <span class="truncate" :class="selectedLabel ? 'text-slate-900' : 'text-slate-400'">
@@ -90,12 +96,19 @@ onBeforeUnmount(() => document.removeEventListener("mousedown", onOutsideClick))
                         {{ placeholder }}
                     </button>
                 </li>
-                <li v-for="option in options" :key="option.value">
+                <li v-for="option in options" :key="option.value" class="flex items-center"
+                    :class="{ 'bg-blue-50': editable && selected === option.value }">
                     <button type="button" :aria-pressed="selected === option.value"
-                        class="w-full truncate px-4 py-2 text-left text-sm hover:bg-slate-50 focus:bg-slate-50"
+                        class="min-w-0 flex-1 truncate px-4 py-2 text-left text-sm hover:bg-slate-50 focus:bg-slate-50"
                         :class="{ 'bg-blue-50 font-medium text-blue-700': selected === option.value }"
                         @click="choose(option.value)">
                         {{ option.label }}
+                    </button>
+                    <button v-if="editable" type="button" :aria-label="`Modifier ${option.label}`"
+                        :title="`Modifier ${option.label}`"
+                        class="mr-2 shrink-0 rounded-md p-1.5 text-slate-500 hover:bg-blue-100 hover:text-blue-700 focus-visible:bg-blue-100"
+                        @click="edit(option.value)">
+                        <Pencil :size="14" aria-hidden="true" />
                     </button>
                 </li>
             </ul>

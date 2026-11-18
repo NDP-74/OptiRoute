@@ -1,6 +1,8 @@
 package com.optiroute.backend.controller.transport;
 
 import java.time.LocalDate;
+import java.security.Principal;
+import java.util.List;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +17,8 @@ import com.optiroute.backend.entity.transport.Service;
 import com.optiroute.backend.service.transport.TransportDetailService;
 import com.optiroute.backend.service.transport.TransportFacadeService;
 import com.optiroute.backend.service.transport.TransportPlanningService;
+import com.optiroute.backend.service.transport.PlanningViewService;
+import com.optiroute.backend.entity.transport.PlanningView.RowType;
 
 @RestController
 @RequestMapping("/api/transports")
@@ -23,11 +27,13 @@ public class TransportController {
     private final TransportFacadeService transportFacadeService;
     private final TransportPlanningService transportPlanningService;
     private final TransportDetailService transportDetailService;
+    private final PlanningViewService planningViewService;
 
-    public TransportController(TransportFacadeService transportFacadeService, TransportPlanningService transportPlanningService, TransportDetailService transportDetailService) {
+    public TransportController(TransportFacadeService transportFacadeService, TransportPlanningService transportPlanningService, TransportDetailService transportDetailService, PlanningViewService planningViewService) {
         this.transportFacadeService = transportFacadeService;
         this.transportPlanningService = transportPlanningService;
         this.transportDetailService = transportDetailService;
+        this.planningViewService = planningViewService;
     }
 
     @PostMapping
@@ -38,8 +44,15 @@ public class TransportController {
     }
 
     @GetMapping("/planning")
-    public ResponseEntity<PlanningResponse> getPlanning(@RequestParam LocalDate startDate, @RequestParam LocalDate endDate) {
-        return ResponseEntity.ok(transportPlanningService.getPlanning(startDate,endDate));
+    public ResponseEntity<PlanningResponse> getPlanning(@RequestParam LocalDate startDate, @RequestParam LocalDate endDate,
+            @RequestParam(required = false) Long viewId, Principal principal) {
+        if (viewId == null) {
+            return ResponseEntity.ok(transportPlanningService.getPlanning(startDate, endDate));
+        }
+        var rows = planningViewService.get(principal.getName(), viewId).rows();
+        List<Long> driverIds = rows.stream().filter(row -> row.type() == RowType.DRIVER).map(row -> row.driverId()).toList();
+        boolean includeUnusedVehicles = rows.stream().anyMatch(row -> row.type() == RowType.UNUSED_VEHICLES);
+        return ResponseEntity.ok(transportPlanningService.getPlanning(startDate, endDate, driverIds, includeUnusedVehicles));
     }
 
     @GetMapping("/{id}")

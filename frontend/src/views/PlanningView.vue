@@ -2,13 +2,13 @@
     <div class="relative flex h-full min-h-0 flex-col overflow-hidden bg-slate-100">
         <PlanningToolbar :start-date="selectedStartDate" :end-date="selectedEndDate"
             :day-selection-mode="daySelectionMode" :selected-day-count="selectedDayKeys.size"
-            :selected-driver-type="selectedDriverType" :driver-type-labels="driverTypeLabels"
+            v-model:view-id="selectedViewId" :views="savedViews" :loading-views="loadingViews"
             :is-completing-days="isCompletingDays" @update:range="handleRangeChange" @today-range="applyTodayRange"
-            @driver-type-change="selectedDriverType = $event"
+            @create-view="openViewEditor(null)" @edit-view="editSavedView"
             @create-route="openRouteModal" @start-day-selection="startDaySelection"
             @cancel-day-selection="cancelDaySelection" @complete-days="completeSelectedDays" />
 
-        <PlanningGrid :drivers="planningDrivers" :days="days" :loading="loading" :error="error"
+        <PlanningGrid :drivers="planningDrivers" :days="days" :loading="loading || loadingViews" :error="error"
             :day-selection-mode="daySelectionMode" :selected-day-keys="selectedDayKeys" @retry="loadCurrentPeriod"
             @transport-select="openTransport" @cost-detail-select="openCostDetail"
             @day-selection-toggle="toggleDaySelection" />
@@ -21,28 +21,32 @@
             @updated="loadCurrentPeriod" />
 
         <PlanningRouteModal :show="showRouteModal" @close="closeRouteModal" @saved="handleRouteSaved" />
+        <PlanningViewModal v-if="showViewEditor" :view="viewToEdit"
+            @close="showViewEditor = false" @saved="handleViewSaved" @deleted="handleViewDeleted" />
     </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import PlanningGrid from "@/components/planning/PlanningGrid.vue";
 import PlanningToolbar from "@/components/planning/PlanningToolbar.vue";
+import PlanningViewModal from "@/components/planning/PlanningViewModal.vue";
 import PlanningRouteModal from "@/components/planning/PlanningRouteModal.vue";
 import CostDetailDrawer from "@/components/planning/CostDetailDrawer.vue";
 import TransportDetailDrawer from "@/components/transports/TransportDetailDrawer.vue";
 
 import { usePlanning } from "@/utils/planningUtils";
-import { getTransportById } from "@/api/planningApi";
+import { getPlanningViews, getTransportById } from "@/api/planningApi";
+import { getCurrentUser } from "@/api/userApi";
 import { createTransportFromRoute } from "@/api/transportApi";
 import { calculateRoute } from "@/api/here/mapsApi";
 import { getApiErrorMessage } from "@/api/utils";
 import { useNotification } from "@/composables/useNotification";
 
 import type { PlanningDay, PlanningDriver, PlanningTransport, } from "@/models/planning/planning";
-import type { DriverType } from "@/models/driver/Driver";
+import type { SavedPlanningView } from "@/models/planning/PlanningView";
 import type { TransportDetail } from "@/models/transport/TransportDetail";
 import type { RouteRequest, RouteResponse } from "@/models/route/Route";
 import type { CreateTransportFromRouteRequest } from "@/models/transport/TransportRequest";
@@ -365,31 +369,58 @@ const router = useRouter();
 
 const today = startOfDay(new Date());
 const PLANNING_RANGE_STORAGE_KEY = "optiroute:lastPlanningRange";
-const PLANNING_DRIVER_TYPE_STORAGE_KEY = "optiroute:lastPlanningDriverType";
-const driverTypeLabels: Record<DriverType, string> = {
-    LONG_HAUL: "Grand routier",
-    SHORT_DISTANCE: "Grand régional",
-    REGIONAL: "Régional",
-};
+const savedViews = ref<SavedPlanningView[]>([]);
+const selectedViewId = ref<number | null>(null);
+const activeView = computed(() => savedViews.value.find(view => view.id === selectedViewId.value));
+const loadingViews = ref(true);
+const showViewEditor = ref(false);
+const viewToEdit = ref<SavedPlanningView | null>(null);
+let viewStorageKey: string | undefined;
 
-function restoreDriverTypeFilter(): DriverType | "ALL" {
+onMounted(async () => {
     try {
-        const storedDriverType = window.localStorage.getItem(PLANNING_DRIVER_TYPE_STORAGE_KEY);
-        if (
-            storedDriverType === "LONG_HAUL"
-            || storedDriverType === "SHORT_DISTANCE"
-            || storedDriverType === "REGIONAL"
-        ) {
-            return storedDriverType;
+        const [views, user] = await Promise.allSettled([getPlanningViews(), getCurrentUser()]);
+        if (views.status === "rejected") throw views.reason;
+        savedViews.value = views.value;
+        if (user.status === "fulfilled") {
+            viewStorageKey = `optiroute:lastPlanningView:${user.value.id}`;
+            const lastId = Number(window.localStorage.getItem(viewStorageKey));
+            selectedViewId.value = savedViews.value.find(view => view.id === lastId)?.id ?? null;
         }
-    } catch {
-        return "ALL";
+    } catch (reason) {
+        notification.error("Vues du planning", getApiErrorMessage(reason, "Impossible de charger les vues enregistrées ou la dernière sélection."));
+    } finally {
+        loadingViews.value = false;
     }
+});
 
-    return "ALL";
+function openViewEditor(view: SavedPlanningView | null) {
+    viewToEdit.value = view;
+    showViewEditor.value = true;
 }
 
-const selectedDriverType = ref<DriverType | "ALL">(restoreDriverTypeFilter());
+function editSavedView(id: number) {
+    const view = savedViews.value.find(item => item.id === id);
+    if (view) openViewEditor(view);
+}
+
+function handleViewSaved(view: SavedPlanningView) {
+    savedViews.value = [...savedViews.value.filter(item => item.id !== view.id), view]
+        .sort((a, b) => a.name.localeCompare(b.name, "fr") || a.id - b.id);
+    showViewEditor.value = false;
+    if (selectedViewId.value === view.id) {
+        resetViewSelection();
+        void loadCurrentPeriod();
+    } else if (viewToEdit.value === null) {
+        selectedViewId.value = view.id;
+    }
+}
+
+function handleViewDeleted(id: number) {
+    savedViews.value = savedViews.value.filter(view => view.id !== id);
+    if (selectedViewId.value === id) selectedViewId.value = null;
+    showViewEditor.value = false;
+}
 
 function parseQueryDate(value: unknown): Date | null {
     const rawValue = Array.isArray(value) ? value[0] : value;
@@ -487,10 +518,6 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
     const driversMap = new Map<number, PlanningDriver>();
 
     drivers.value.forEach((driverSummary) => {
-        if (selectedDriverType.value !== "ALL" && driverSummary.driverType !== selectedDriverType.value) {
-            return;
-        }
-
         driversMap.set(driverSummary.id, {
             id: driverSummary.id,
             name: driverSummary.name,
@@ -511,7 +538,7 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
     });
 
     sortedTransports.forEach((transport: PlanningTransport) => {
-        let driver = driversMap.get(transport.driverId);
+        const driver = driversMap.get(transport.driverId);
 
         if (!driver) {
             return;
@@ -557,18 +584,30 @@ const planningDrivers = computed<PlanningDriver[]>(() => {
         sortedDrivers.push(unassignedDriver);
     }
 
-    return sortedDrivers;
+    const view = activeView.value;
+    if (!view) return sortedDrivers;
+
+    const rowsById = new Map(sortedDrivers.map(driver => [driver.id, driver]));
+    return view.rows.flatMap(row => {
+        const driver = rowsById.get(row.type === "DRIVER" ? row.driverId : UNASSIGNED_VEHICLES_ROW_ID);
+        return driver ? [driver] : [];
+    });
 });
 
-watch(selectedDriverType, (driverType) => {
+function resetViewSelection() {
     selectedDayKeys.value = new Set();
     daySelectionMode.value = false;
-    selectedCostDetailDriverId.value = null;
+    closePlanningDrawers();
+}
 
+watch(selectedViewId, (viewId) => {
+    resetViewSelection();
+    if (!viewStorageKey) return;
     try {
-        window.localStorage.setItem(PLANNING_DRIVER_TYPE_STORAGE_KEY, driverType);
-    } catch {
-        // Ignore storage errors silently.
+        if (viewId === null) window.localStorage.removeItem(viewStorageKey);
+        else window.localStorage.setItem(viewStorageKey, String(viewId));
+    } catch (reason) {
+        notification.error("Préférence non enregistrée", getApiErrorMessage(reason, "La dernière vue ne pourra pas être mémorisée sur ce navigateur."));
     }
 });
 
@@ -586,6 +625,7 @@ async function loadCurrentPeriod(): Promise<void> {
     await loadPlanning({
         startDate: formatDateKey(selectedStartDate.value),
         endDate: formatDateKey(endDateExclusive),
+        viewId: selectedViewId.value ?? undefined,
     });
 }
 
@@ -633,8 +673,9 @@ function applyTodayRange(startOffset: number, additionalDays: number): void {
 }
 
 watch(
-    [() => formatDateKey(selectedStartDate.value), () => formatDateKey(selectedEndDate.value),],
+    [() => formatDateKey(selectedStartDate.value), () => formatDateKey(selectedEndDate.value), selectedViewId, loadingViews],
     () => {
+        if (loadingViews.value) return;
         selectedDayKeys.value = new Set();
         daySelectionMode.value = false;
         void loadCurrentPeriod();

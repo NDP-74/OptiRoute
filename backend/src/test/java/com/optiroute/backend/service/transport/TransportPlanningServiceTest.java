@@ -2,7 +2,9 @@ package com.optiroute.backend.service.transport;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -16,6 +18,8 @@ import com.optiroute.backend.dto.response.cost.CostCategoryResponse;
 import com.optiroute.backend.dto.response.cost.TransportCostDetailsResponse;
 import com.optiroute.backend.entity.transport.Route;
 import com.optiroute.backend.entity.transport.Service;
+import com.optiroute.backend.entity.driver.Driver;
+import com.optiroute.backend.entity.vehicle.Tractor;
 import com.optiroute.backend.repository.driver.DriverRepository;
 import com.optiroute.backend.repository.transport.RouteRepository;
 import com.optiroute.backend.repository.vehicle.SemiTrailerRepository;
@@ -34,10 +38,16 @@ class TransportPlanningServiceTest {
         SemiTrailerRepository semiTrailers = mock(SemiTrailerRepository.class);
         Route first = route(11L, 300_000L);
         Route second = route(12L, 500_000L);
+        first.setDriverId(9L);
+        Driver visible = new Driver();
+        visible.setId(9L);
+        visible.setFirstName("Alice");
+        visible.setLastName("Martin");
         when(routes.findByDepartureStartGreaterThanEqualAndDepartureStartLessThan(any(), any()))
             .thenReturn(List.of(first, second));
         when(routes.findByServiceIdIn(List.of(1L))).thenReturn(List.of(first, second));
-        when(drivers.findAll()).thenReturn(List.of());
+        when(drivers.findAll()).thenReturn(List.of(visible));
+        when(drivers.findAllById(List.of(9L))).thenReturn(List.of(visible));
         when(tractors.findAll()).thenReturn(List.of());
         when(semiTrailers.findAll()).thenReturn(List.of());
         var emptyCategory = new CostCategoryResponse(List.of(), 0);
@@ -60,6 +70,43 @@ class TransportPlanningServiceTest {
         assertEquals(100.0, response.transports().get(0).totalCost());
         assertEquals(200.0, response.transports().get(1).totalCost());
         assertEquals(1000.0, response.transports().stream().mapToDouble(transport -> transport.revenue()).sum());
+
+        when(routes.findByDriverIdInAndDepartureStartGreaterThanEqualAndDepartureStartLessThan(eq(List.of(9L)), any(), any()))
+            .thenReturn(List.of(first));
+        when(transportCosts.calculateAll(List.of(first))).thenReturn(List.of(
+            new TransportCostDetailsResponse(emptyCategory, emptyCategory, emptyCategory, 100)
+        ));
+        var filtered = subject.getPlanning(LocalDate.parse("2026-10-29"), LocalDate.parse("2026-10-31"), List.of(9L), false);
+        assertEquals(response.transports().subList(0, 1), filtered.transports());
+        assertEquals(response.drivers(), filtered.drivers());
+    }
+
+    @Test
+    void vehiclesOnlyViewDoesNotTreatHiddenDriversVehiclesAsUnused() {
+        RouteRepository routes = mock(RouteRepository.class);
+        TransportCostService costs = mock(TransportCostService.class);
+        DriverRepository drivers = mock(DriverRepository.class);
+        TractorRepository tractors = mock(TractorRepository.class);
+        Tractor assigned = new Tractor();
+        assigned.setId(1L);
+        assigned.setRegistration("ASSIGNED");
+        Tractor unused = new Tractor();
+        unused.setId(2L);
+        unused.setRegistration("UNUSED");
+        Driver hidden = new Driver();
+        hidden.setId(5L);
+        hidden.setTractor(assigned);
+        when(drivers.findAll()).thenReturn(List.of(hidden));
+        when(tractors.findAll()).thenReturn(List.of(assigned, unused));
+        var subject = new TransportPlanningService(routes, drivers, costs, mock(DriverCostService.class),
+            tractors, mock(SemiTrailerRepository.class), mock(VehicleCostService.class));
+
+        var filtered = subject.getPlanning(LocalDate.parse("2026-10-29"), LocalDate.parse("2026-10-31"), List.of(), true);
+
+        assertEquals(List.of("UNUSED"), filtered.unassignedVehicles().registrations());
+        assertEquals(List.of(), filtered.drivers());
+        assertEquals(List.of(), filtered.transports());
+        verifyNoInteractions(routes, costs);
     }
 
     private Route route(Long routeId, long distanceMeters) {

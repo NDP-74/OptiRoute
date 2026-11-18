@@ -5,15 +5,16 @@ import { fr } from "date-fns/locale";
 import { VueDatePicker } from "@vuepic/vue-datepicker";
 import "@vuepic/vue-datepicker/dist/main.css";
 
-import type { DriverType } from "@/models/driver/Driver";
+import CreateSelect from "@/components/ui/CreateSelect.vue";
+import type { SavedPlanningView } from "@/models/planning/PlanningView";
 
 type DateRange = [Date, Date] | null;
 
 const props = defineProps<{
     startDate: Date;
     endDate: Date;
-    selectedDriverType: DriverType | "ALL";
-    driverTypeLabels: Record<DriverType, string>;
+    views: SavedPlanningView[];
+    loadingViews: boolean;
     daySelectionMode: boolean;
     selectedDayCount: number;
     isCompletingDays: boolean;
@@ -21,13 +22,16 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     "update:range": [value: [Date, Date]];
-    "driver-type-change": [value: DriverType | "ALL"];
+    "create-view": [];
+    "edit-view": [id: number];
     "today-range": [startOffset: number, additionalDays: number];
     "create-route": [];
     "start-day-selection": [];
     "cancel-day-selection": [];
     "complete-days": [];
 }>();
+
+const selectedViewId = defineModel<number | null>("viewId", { required: true });
 
 const selectedRange = ref<DateRange>([
     new Date(props.startDate),
@@ -76,23 +80,17 @@ watch(
 </script>
 
 <template>
-    <div class="border-b border-slate-200 bg-white px-4 py-3">
+    <div class="relative z-50 border-b border-slate-200 bg-white px-4 py-3">
         <div class="flex flex-wrap items-end justify-between gap-4">
 
             <div class="flex flex-wrap items-end gap-3">
                 <div>
-                    <label for="planning-driver-type-filter" class="mb-1 block text-xs font-medium text-slate-600">
-                        Type de chauffeur
-                    </label>
-                    <select id="planning-driver-type-filter" :value="props.selectedDriverType"
-                        class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                        @change="emit('driver-type-change', ($event.target as HTMLSelectElement).value as DriverType | 'ALL')">
-                        <option value="ALL">Tous les chauffeurs</option>
-                        <option v-for="(label, driverType) in props.driverTypeLabels" :key="driverType"
-                            :value="driverType">
-                            {{ label }}
-                        </option>
-                    </select>
+                    <span class="mb-1 block text-xs font-medium text-slate-600">Vue du planning</span>
+                    <CreateSelect v-model="selectedViewId" class="w-56"
+                        :options="views.map(view => ({ value: view.id, label: view.name }))"
+                        :disabled="loadingViews || isCompletingDays" label="Vue du planning"
+                        placeholder="Planning complet" create-label="Créer une vue" editable
+                        @create="emit('create-view')" @edit="emit('edit-view', $event)" />
                 </div>
 
                 <div>

@@ -49,6 +49,10 @@ public class TransportPlanningService {
     private static final ZoneId PLANNING_ZONE = ZoneId.of("Europe/Paris");
 
     public PlanningResponse getPlanning(LocalDate startDate, LocalDate endDate) {
+        return getPlanning(startDate, endDate, null, true);
+    }
+
+    public PlanningResponse getPlanning(LocalDate startDate, LocalDate endDate, List<Long> driverIds, boolean includeUnusedVehicles) {
 
         if (endDate.isBefore(startDate) || endDate.isEqual(startDate)) {
             throw new IllegalArgumentException("endDate must be after startDate");
@@ -57,7 +61,10 @@ public class TransportPlanningService {
         OffsetDateTime start = startDate.atStartOfDay(PLANNING_ZONE).toOffsetDateTime();
         OffsetDateTime end = endDate.atStartOfDay(PLANNING_ZONE).toOffsetDateTime();
 
-        List<Route> routes = routeRepository.findByDepartureStartGreaterThanEqualAndDepartureStartLessThan(start,end);
+        List<Route> routes = driverIds == null
+            ? routeRepository.findByDepartureStartGreaterThanEqualAndDepartureStartLessThan(start, end)
+            : driverIds.isEmpty() ? List.of()
+            : routeRepository.findByDriverIdInAndDepartureStartGreaterThanEqualAndDepartureStartLessThan(driverIds, start, end);
         Map<Long, List<Route>> routesByServiceId = new HashMap<>();
         if (!routes.isEmpty()) {
             List<Long> serviceIds = routes.stream().map(route -> route.getService().getId()).distinct().toList();
@@ -66,17 +73,20 @@ public class TransportPlanningService {
                 .forEach(route -> routesByServiceId.computeIfAbsent(route.getService().getId(), ignored -> new ArrayList<>()).add(route));
         }
 
-        List<TransportCostDetailsResponse> routeCosts = transportCostService.calculateAll(routes);
+        List<TransportCostDetailsResponse> routeCosts = routes.isEmpty() ? List.of() : transportCostService.calculateAll(routes);
         Map<Long, TransportCostDetailsResponse> costsByRouteId = new HashMap<>();
         for (int index = 0; index < routes.size(); index++) {
             costsByRouteId.put(routes.get(index).getId(), routeCosts.get(index));
         }
 
-        List<Driver> allDrivers = driverRepository.findAll();
-        Map<Long, Driver> driversById = allDrivers.stream().collect(Collectors.toMap(Driver::getId, driver -> driver));
-        List<Tractor> allTractors = tractorRepository.findAll();
+        List<Driver> availableDrivers = driverIds == null || includeUnusedVehicles ? driverRepository.findAll()
+            : driverIds.isEmpty() ? List.of() : driverRepository.findAllById(driverIds);
+        Map<Long, Driver> driversById = availableDrivers.stream().collect(Collectors.toMap(Driver::getId, driver -> driver));
+        List<Tractor> allTractors = includeUnusedVehicles ? tractorRepository.findAll()
+            : routes.isEmpty() ? List.of() : tractorRepository.findAllById(routes.stream().map(Route::getTractorId).filter(java.util.Objects::nonNull).distinct().toList());
         Map<Long, Tractor> tractorsById = allTractors.stream().collect(Collectors.toMap(Tractor::getId, tractor -> tractor));
-        List<SemiTrailer> allSemiTrailers = semiTrailerRepository.findAll();
+        List<SemiTrailer> allSemiTrailers = includeUnusedVehicles ? semiTrailerRepository.findAll()
+            : routes.isEmpty() ? List.of() : semiTrailerRepository.findAllById(routes.stream().map(Route::getSemiTrailerId).filter(java.util.Objects::nonNull).distinct().toList());
         Map<Long, SemiTrailer> semiTrailersById = allSemiTrailers.stream()
             .collect(Collectors.toMap(SemiTrailer::getId, semiTrailer -> semiTrailer));
 
@@ -111,16 +121,17 @@ public class TransportPlanningService {
         Map<Long, Set<LocalDate>> transportDatesByDriver = routes.stream().filter(route -> route.getDriverId() != null && route.getDepartureStart() != null)
             .collect(Collectors.groupingBy(Route::getDriverId,Collectors.mapping(route -> route.getDepartureStart().atZoneSameInstant(PLANNING_ZONE).toLocalDate(),Collectors.toSet())));
 
-        List<PlanningDriverResponse> drivers = allDrivers.stream()
+        var visibleDrivers = driverIds == null ? availableDrivers.stream() : driverIds.stream().map(driversById::get).filter(java.util.Objects::nonNull);
+        List<PlanningDriverResponse> drivers = visibleDrivers
             .map(driver -> new PlanningDriverResponse(driver.getId(), driver.getFirstName() + " " + driver.getLastName(),
                 driver.getTractor() != null ? driver.getTractor().getRegistration() : null, driver.getSemiTrailer() != null ? driver.getSemiTrailer().getRegistration() : null,
                 driverCostService.calculateSalaryForPeriodExcludingDates(driver,startDate,endDate,transportDatesByDriver.getOrDefault(driver.getId(),Set.of())),
                 driver.getCostType(), driver.getDriverType()))
             .toList();
 
-        PlanningUnassignedVehiclesResponse unassignedVehicles = buildUnassignedVehicles(
-            allDrivers, allTractors, allSemiTrailers, startDate, endDate
-        );
+        PlanningUnassignedVehiclesResponse unassignedVehicles = includeUnusedVehicles
+            ? buildUnassignedVehicles(availableDrivers, allTractors, allSemiTrailers, startDate, endDate)
+            : new PlanningUnassignedVehiclesResponse(List.of(), 0, List.of());
 
         return new PlanningResponse(transports, drivers, unassignedVehicles);
     }

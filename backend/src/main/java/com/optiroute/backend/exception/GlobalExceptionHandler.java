@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.time.Instant;
@@ -13,6 +14,12 @@ import com.optiroute.backend.dto.response.ApiErrorResponse;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ApiErrorResponse> handleResponseStatus(ResponseStatusException exception, HttpServletRequest request) {
+        return ResponseEntity.status(exception.getStatusCode()).body(new ApiErrorResponse(
+            exception.getStatusCode().value(), "REQUEST_ERROR", exception.getReason(), request.getRequestURI(), Instant.now()));
+    }
 
     @ExceptionHandler(TransportPlanningException.class)
     public ResponseEntity<ApiErrorResponse> handleTransportPlanningException(TransportPlanningException exception,

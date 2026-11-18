@@ -288,6 +288,18 @@ Si cette obligation rend la mission irréalisable, signaler le conflit. Ne pas a
 | Grand régional | Stationnement si distance au tracé < 50 km et livraison réalisable le lendemain avec départ ≥ 5 h ; sinon règle grand routier |
 | Régional | Stationnement, sans heure obligatoire de retour |
 
+### Vues personnelles du planning
+
+Le sélecteur **Vue du planning** propose le planning complet ou les vues enregistrées du compte. Une vue contient des chauffeurs dans l’ordre choisi et, facultativement, la ligne **Véhicules non utilisés**. Le total de la grille porte sur les lignes affichées. La dernière sélection est mémorisée par compte et par navigateur ; la configuration des vues est stockée en base et accessible sur les autres postes.
+
+Dans la fenêtre de création ou de modification d’une vue, les listes **Lignes disponibles** et **Ordre d’affichage** défilent séparément : déplacer une ligne ne change pas la hauteur de la fenêtre.
+
+Le crayon à côté d’une vue enregistrée ouvre son formulaire sans changer la vue affichée. Supprimer la vue active ramène au **Planning complet**.
+
+L’API de planning accepte un `viewId` facultatif et filtre les trajets avant le calcul des coûts. La répartition du chiffre d’affaires continue d’utiliser tous les segments du service. La ligne des véhicules non utilisés, si sélectionnée, tient compte de tous les chauffeurs du parc, y compris ceux qui sont masqués.
+
+Pour les déploiements où Hibernate ne crée pas le schéma automatiquement, appliquer le [script SQL des vues du planning](../backend/src/main/resources/db/manual/2026-11-18-add-planning-views.sql).
+
 ## 7. Import du planning des conducteurs régionaux
 
 Ces règles définissent les horaires proposés par défaut lors de l'import.

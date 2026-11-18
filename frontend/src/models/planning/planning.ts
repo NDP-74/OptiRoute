@@ -31,6 +31,7 @@ export interface PlanningTransport {
 export interface PlanningRequest {
     startDate: string;
     endDate: string;
+    viewId?: number;
 }
 
 export interface PlanningDriverSummary {

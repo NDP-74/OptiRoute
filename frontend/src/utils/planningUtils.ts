@@ -13,19 +13,22 @@ export function usePlanning() {
     const drivers = ref<PlanningResponse["drivers"]>([]);
     const unassignedVehicles = ref<PlanningResponse["unassignedVehicles"]>({ registrations: [], depreciationCost: 0, vehicles: [] });
     const error = ref<string | null>(null);
+    let latestRequest = 0;
 
     async function loadPlanning(request: PlanningRequest) {
+        const requestId = ++latestRequest;
         try {
             loading.value = true;
             error.value = null;
             const planning = await getPlanning(request);
+            if (requestId !== latestRequest) return;
             transports.value = planning.transports;
             drivers.value = planning.drivers;
             unassignedVehicles.value = planning.unassignedVehicles;
-        } catch (e) {
-            error.value = "Impossible de charger le planning.";
+        } catch {
+            if (requestId === latestRequest) error.value = "Impossible de charger le planning.";
         } finally {
-            loading.value = false;
+            if (requestId === latestRequest) loading.value = false;
         }
     }
 
