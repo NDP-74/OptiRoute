@@ -9,6 +9,8 @@ import java.util.List;
 public interface DriverRepository extends JpaRepository<Driver, Long> {
     boolean existsByLogin(String login);
 
+    boolean existsByLoginAndIdNot(String login, Long id);
+
     @Override
     @EntityGraph(attributePaths = {"tractor", "semiTrailer"})
     List<Driver> findAll();

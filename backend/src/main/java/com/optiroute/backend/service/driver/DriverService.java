@@ -64,9 +64,11 @@ public class DriverService {
     @Transactional
     public DriverResponse updateDriver(Long id, DriverRequest request) {
         Driver driver = driverRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Driver not found with id " + id));
+        if (!DriverUtils.loginMatchesName(driver.getLogin(), request.firstName(), request.lastName())) {
+            driver.setLogin(DriverUtils.generateUniqueLogin(driverRepository, request.firstName(), request.lastName(), id));
+        }
         driver.setFirstName(request.firstName());
         driver.setLastName(request.lastName());
-        driver.setLogin(DriverUtils.generateUniqueLogin(driverRepository,request.firstName(),request.lastName()));
         driver.setAnnualSalary(request.annualSalary());
         driver.setMonthlyWorkingHours(request.monthlyWorkingHours());
         applyLocation(driver,request);

@@ -25,18 +25,50 @@ public class DriverUtils {
     }
 
     public static String generateUniqueLogin(DriverRepository driverRepository, String firstName, String lastName) {
-        String normalizedFirstName = CommonUtils.normalizeText(firstName).toUpperCase();
-        String normalizedLastName = CommonUtils.normalizeText(lastName).toUpperCase();
+        return generateUniqueLogin(driverRepository, firstName, lastName, null);
+    }
 
-        String baseLogin = normalizedFirstName.substring(0,1) + normalizedLastName;
+    /**
+     * Génère un login unique. {@code excludedDriverId} permet d'ignorer le conducteur en cours de modification.
+     */
+    public static String generateUniqueLogin(DriverRepository driverRepository, String firstName, String lastName,
+            Long excludedDriverId) {
+        String baseLogin = baseLogin(firstName, lastName);
         String login = baseLogin;
         int suffix = 2;
 
-        while (driverRepository.existsByLogin(login)) {
+        while (loginTaken(driverRepository, login, excludedDriverId)) {
             login = baseLogin + suffix;
             suffix++;
         }
 
         return login;
+    }
+
+    /**
+     * Indique si le login correspond déjà aux nom et prénom (login de base, éventuellement suffixé d'un numéro).
+     */
+    public static boolean loginMatchesName(String login, String firstName, String lastName) {
+        if (login == null) {
+            return false;
+        }
+        String baseLogin = baseLogin(firstName, lastName);
+        return login.equals(baseLogin)
+            || (login.startsWith(baseLogin) && login.substring(baseLogin.length()).matches("\\d+"));
+    }
+
+    private static String baseLogin(String firstName, String lastName) {
+        String normalizedFirstName = CommonUtils.normalizeText(firstName).toUpperCase();
+        String normalizedLastName = CommonUtils.normalizeText(lastName).toUpperCase();
+        String initial = normalizedFirstName.isEmpty() ? "" : normalizedFirstName.substring(0, 1);
+        String baseLogin = initial + normalizedLastName;
+
+        return baseLogin.isEmpty() ? "DRIVER" : baseLogin;
+    }
+
+    private static boolean loginTaken(DriverRepository driverRepository, String login, Long excludedDriverId) {
+        return excludedDriverId == null
+            ? driverRepository.existsByLogin(login)
+            : driverRepository.existsByLoginAndIdNot(login, excludedDriverId);
     }
 }
