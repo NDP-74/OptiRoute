@@ -73,7 +73,7 @@ public class DashdocTransportMapper {
         }
         String name = reference == null ? "Transport Dashdoc " + externalId(transport) : "Transport Dashdoc " + reference;
 
-        JsonNode revenueNode = transport.path("agreed_price_total");
+        JsonNode revenueNode = transport.path("pricing_total_price");
         BigDecimal revenue = revenueNode.isNumber()
             ? revenueNode.decimalValue()
             : parseDecimal(revenueNode.asText(null));

@@ -459,6 +459,6 @@ Le POST permet de vérifier les découpages nocturnes, le stationnement des gran
 - Un transport avec plusieurs livraisons, plusieurs créneaux pour un même point, une affectation non unique, des coordonnées invalides ou un mapping manquant est ignoré et comptabilisé dans la réponse.
 - Les transports existants sont replannifiés depuis Dashdoc ; les événements associés aux trajets sont réaffectés par les services de planification existants.
 - En cas d'échec de calcul ou d'écriture sur un transport, l'erreur est incluse dans le bilan. Les autres transports de la période continuent d'être traités.
-- Les identifiants externes utilisent `uid`, avec `remote_id` comme repli. Le chiffre d'affaires vient de `agreed_price_total`. Le client reste non associé faute de règle de mapping définie.
+- Les identifiants externes utilisent `uid`, avec `remote_id` comme repli. Le chiffre d'affaires vient de `pricing_total_price`. Le client reste non associé faute de règle de mapping définie.
 
 Les limites métier restantes sont la représentation des transports multi-livraisons (ils sont volontairement ignorés), les créneaux multiples et la politique de protection des trajets déjà commencés, terminés ou modifiés manuellement.

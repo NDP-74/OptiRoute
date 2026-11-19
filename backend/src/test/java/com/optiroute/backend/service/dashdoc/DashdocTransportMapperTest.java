@@ -28,6 +28,7 @@ class DashdocTransportMapperTest {
               "uid": "dashdoc-uid-1",
               "sequential_id": 1234,
               "agreed_price_total": 875.50,
+              "pricing_total_price": "912.34",
               "deliveries": [{
                 "origin": {
                   "address": {"name": "Entrepôt", "address": "1 rue A", "city": "Lyon", "latitude": 45.75, "longitude": 4.85},
@@ -80,7 +81,7 @@ class DashdocTransportMapperTest {
         assertNull(request.semiTrailerId());
         assertEquals(RouteTimeMode.DEPARTURE, request.timeMode());
         assertEquals(OffsetDateTime.parse("2026-11-20T08:00:00Z"), request.routeTime());
-        assertEquals(875.50, request.revenue().doubleValue());
+        assertEquals(912.34, request.revenue().doubleValue());
         assertEquals("3 rue C, Avignon", request.originAddress());
         assertEquals(44.12312, request.originLat());
         assertEquals(5.18025, request.originLng());
