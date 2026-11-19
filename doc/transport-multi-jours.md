@@ -13,7 +13,7 @@
 - Le formulaire propose deux modes exclusifs, Manuel et Simulation Dashdoc, avec leurs propres lieux et points de passage. Seul le mode actif est enregistré. En mode Manuel, les fenêtres sources ne sont pas envoyées et sont effacées sur une modification. Les bornes calculées de route ne sont jamais saisies. Les points utilisateur sont restaurés à la réouverture et conservés lors d'un recalcul lié aux événements ; les points d'événements sont ajoutés après les points utilisateur dans l'ordre des événements.
 - En création manuelle ou Dashdoc, les bornes minimales de Route représentent la conduite effectivement planifiée, pas la simple copie des créneaux logistiques.
 - Pour un conducteur `REGIONAL`, une mission nécessitant une nuit passe par son stationnement : origine initiale → stationnement (avec les waypoints), puis stationnement → destination (sans waypoints). Le retour peut dépasser 20 h. Une destination inaccessible avant 20 h depuis le stationnement est signalée comme incompatible.
-- Les grands régionaux (`SHORT_DISTANCE`) utilisent leur stationnement s'il est à moins de 50 km du tracé et si la livraison reste réalisable le lendemain en repartant à partir de 5 h. Sinon, ils appliquent la coupure sur route à 20 h.
+- Les grands régionaux (`SHORT_DISTANCE`) utilisent leur stationnement s'il est à moins de 50 km du tracé et si la livraison reste réalisable le lendemain en repartant à partir de 5 h. Le trajet vers le stationnement ne doit pas dépasser 10 h de conduite, et une fenêtre de livraison qui ouvre après le lendemain 20 h repousse la décision à la nuit suivante. Sinon, ils appliquent la coupure sur route à 20 h.
 - Les grands routiers, les grands régionaux non éligibles au stationnement et les trajets sans conducteur affecté suivent la coupure sur route à 20 h dès que la conduite doit se poursuivre. Cela s'applique sans fenêtre source et au-delà de J+1, autant de nuits que nécessaire. Les pauses réglementaires restent exclues.
 - Le planning expose les trajets séparément et répartit le CA du service au prorata des distances, avec le reliquat d'arrondi sur le dernier trajet. La fiche détail expose chaque segment.
 - Le schéma est enrichi par Hibernate avec la configuration existante `spring.jpa.hibernate.ddl-auto=update`. Les nouvelles colonnes sont nullables pour les données existantes ; les anciens points utilisateur non enregistrés ne peuvent pas être reconstruits depuis cette évolution.
@@ -285,7 +285,7 @@ Si cette obligation rend la mission irréalisable, signaler le conflit. Ne pas a
 | Type de conducteur | Point d'arrêt |
 |---|---|
 | Grand routier | Position estimée à 20 h exactement |
-| Grand régional | Stationnement si distance au tracé < 50 km et livraison réalisable le lendemain avec départ ≥ 5 h ; sinon règle grand routier |
+| Grand régional | Stationnement si distance au tracé < 50 km et livraison réalisable le lendemain avec départ ≥ 5 h, trajet vers le stationnement ≤ 10 h de conduite ; sinon règle grand routier |
 | Régional | Stationnement, sans heure obligatoire de retour |
 
 ### Vues personnelles du planning
