@@ -1,5 +1,7 @@
 package com.optiroute.backend.service.vehicle;
 
+import com.optiroute.backend.exception.ResourceInUseException;
+import com.optiroute.backend.repository.EventRepository;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -20,9 +22,11 @@ import jakarta.persistence.EntityNotFoundException;
 public class TractorService {
 
     private final TractorRepository tractorRepository;
+    private final EventRepository eventRepository;
 
-    public TractorService(TractorRepository tractorRepository) {
+    public TractorService(TractorRepository tractorRepository, EventRepository eventRepository) {
         this.tractorRepository = tractorRepository;
+        this.eventRepository = eventRepository;
     }
 
     @Transactional(readOnly = true)
@@ -32,13 +36,13 @@ public class TractorService {
 
     @Transactional(readOnly = true)
     public TractorResponse getById(Long id) {
-        Tractor tractor = tractorRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Tractor not found with id: " + id));
+        Tractor tractor = tractorRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Tractor not found with id: " + id));
 
         return VehicleUtils.toTractorResponse(tractor);
     }
 
     public Tractor getEntityById(Long id) {
-        return tractorRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Tractor not found with id: " + id));
+        return tractorRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Tractor not found with id: " + id));
     }
 
     @Transactional
@@ -77,6 +81,7 @@ public class TractorService {
         if (!tractorRepository.existsById(id)) {
             throw new EntityNotFoundException("Tractor not found with id " + id);
         }
+        ResourceInUseException.ensureUnused("ce tracteur", eventRepository.countByTractorId(id));
 
         tractorRepository.deleteById(id);
     }

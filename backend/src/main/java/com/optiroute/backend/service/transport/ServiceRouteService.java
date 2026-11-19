@@ -163,6 +163,8 @@ public class ServiceRouteService {
             throw new EntityNotFoundException("Service not found with id " + id);
         }
 
+        // Les événements n'ont pas de sens sans le transport : ils sont supprimés avec lui
+        eventRepository.deleteByServiceId(id);
         routeRepository.deleteByServiceId(id);
         serviceRepository.deleteById(id);
     }

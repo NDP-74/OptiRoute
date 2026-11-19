@@ -1,5 +1,7 @@
 package com.optiroute.backend.service.vehicle;
 
+import com.optiroute.backend.exception.ResourceInUseException;
+import com.optiroute.backend.repository.EventRepository;
 import java.util.List;
 
 import org.springframework.data.domain.Sort;
@@ -24,8 +26,10 @@ public class SemiTrailerService {
 
     private final SemiTrailerRepository semiTrailerRepository;
     private final TrailerTypeRepository trailerTypeRepository;
+    private final EventRepository eventRepository;
 
-    public SemiTrailerService(SemiTrailerRepository semiTrailerRepository, TrailerTypeRepository trailerTypeRepository) {
+    public SemiTrailerService(SemiTrailerRepository semiTrailerRepository, TrailerTypeRepository trailerTypeRepository, EventRepository eventRepository) {
+        this.eventRepository = eventRepository;
         this.semiTrailerRepository = semiTrailerRepository;
         this.trailerTypeRepository = trailerTypeRepository;
     }
@@ -71,13 +75,13 @@ public class SemiTrailerService {
 
     @Transactional(readOnly = true)
     public SemiTrailerResponse getById(Long id) {
-        SemiTrailer semiTrailer = semiTrailerRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("SemiTrailer not found with id: " + id));
+        SemiTrailer semiTrailer = semiTrailerRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("SemiTrailer not found with id: " + id));
 
         return VehicleUtils.toSemiTrailerResponse(semiTrailer);
     }
 
     public SemiTrailer getEntityById(Long id) {
-        return semiTrailerRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("SemiTrailer not found with id: " + id));
+        return semiTrailerRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("SemiTrailer not found with id: " + id));
     }
 
     @Transactional
@@ -120,6 +124,7 @@ public class SemiTrailerService {
         if (!semiTrailerRepository.existsById(id)) {
             throw new EntityNotFoundException("SemiTrailer not found with id " + id);
         }
+        ResourceInUseException.ensureUnused("cette semi-remorque", eventRepository.countBySemiTrailerId(id));
 
         semiTrailerRepository.deleteById(id);
     }

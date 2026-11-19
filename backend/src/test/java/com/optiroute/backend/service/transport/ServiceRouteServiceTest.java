@@ -48,6 +48,18 @@ class ServiceRouteServiceTest {
     private final JsonMapper mapper = JsonMapper.builder().addModule(new JavaTimeModule()).build();
 
     @Test
+    void shouldDeleteTheServiceEventsBeforeItsRoutes() {
+        when(services.existsById(3L)).thenReturn(true);
+
+        subject.delete(3L);
+
+        var order = inOrder(events, routes, services);
+        order.verify(events).deleteByServiceId(3L);
+        order.verify(routes).deleteByServiceId(3L);
+        order.verify(services).deleteById(3L);
+    }
+
+    @Test
     void shouldDefaultRevenueToZeroAndNormalizeNullAssignment() {
         Service service = new Service();
 

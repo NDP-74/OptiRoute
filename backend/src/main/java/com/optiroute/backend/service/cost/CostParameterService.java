@@ -1,5 +1,7 @@
 package com.optiroute.backend.service.cost;
 
+import com.optiroute.backend.exception.ResourceInUseException;
+import com.optiroute.backend.repository.EventRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,8 +26,11 @@ public class CostParameterService {
 
     private final CostParameterRepository costParameterRepository;
     private final CostConditionRepository costConditionRepository;
+    private final EventRepository eventRepository;
 
-    public CostParameterService(CostParameterRepository costParameterRepository, CostConditionRepository costConditionRepository) {
+    public CostParameterService(CostParameterRepository costParameterRepository, CostConditionRepository costConditionRepository,
+        EventRepository eventRepository) {
+        this.eventRepository = eventRepository;
         this.costParameterRepository = costParameterRepository;
         this.costConditionRepository = costConditionRepository;
     }
@@ -87,6 +92,8 @@ public class CostParameterService {
     public void delete(Long id) {
 
         CostParameter parameter = costParameterRepository.findById(id).orElseThrow(() -> new RuntimeException("Cost parameter not found"));
+
+        ResourceInUseException.ensureUnused("ce paramètre de coût", eventRepository.countByCostParameterId(id));
 
         costConditionRepository.deleteByCostParameterId(parameter.getId());
 

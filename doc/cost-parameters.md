@@ -71,6 +71,9 @@ pour autoriser cette unité en base. Aucune donnée existante n'est modifiée.
   d'intérêt des événements restants, y compris lorsque la dernière étape est supprimée.
   Ces opérations sont transactionnelles : un échec du recalcul annule la suppression.
   Le détail du transport (carte, événements et coûts) est ensuite rechargé.
+- Supprimer un transport supprime aussi ses événements. Un tracteur, une semi-remorque, un paramètre de coût
+  ou un point d’intérêt utilisé par au moins un événement ne peut pas être supprimé : l’API répond HTTP 409
+  en indiquant le nombre d’événements concernés.
 - Lors de la modification d'un transport, les événements géolocalisés sont préremplis
   comme points de passage verrouillés. Ils restent inclus dans les calculs et ne peuvent
   être remplacés, déplacés ou supprimés depuis le formulaire d'itinéraire.
