@@ -34,6 +34,8 @@ class TransportRoutePlanner {
     private static final ZoneId PLANNING_ZONE = ZoneId.of("Europe/Paris");
     // Conduite maximale pour rejoindre le stationnement d'un grand régional (le retour peut dépasser 20 h)
     static final long MAX_PARKING_DRIVING_SECONDS = 10 * 3600;
+    // Écart toléré entre deux calculs HERE d'un même trajet (durées recalculées vers une autre destination ou heure)
+    static final Duration HERE_TOLERANCE = Duration.ofMinutes(5);
 
     private final DriverService driverService;
     private final RouteRequestFactory routeRequestFactory;
@@ -71,7 +73,7 @@ class TransportRoutePlanner {
             RouteDto route = calculate(current, mode);
             OffsetDateTime start = current.timeMode() == RouteTimeMode.ARRIVAL
                 ? current.routeTime().minusSeconds(route.getDuration()) : current.routeTime();
-            if (availableFrom != null && start.isBefore(availableFrom)) {
+            if (startsTooEarly(start, availableFrom)) {
                 throw conflict("le départ recalculé précède la disponibilité du conducteur après la coupure.");
             }
             OffsetDateTime cutoff = at(date(start), 20);
@@ -80,7 +82,7 @@ class TransportRoutePlanner {
                 current = timedRequest(current, deadline, RouteTimeMode.ARRIVAL);
                 route = calculate(current, mode);
                 start = current.routeTime().minusSeconds(route.getDuration());
-                if (availableFrom != null && start.isBefore(availableFrom)) {
+                if (startsTooEarly(start, availableFrom)) {
                     throw conflict("le départ recalculé précède la disponibilité du conducteur après la coupure.");
                 }
                 cutoff = at(date(start), 20);
@@ -120,6 +122,12 @@ class TransportRoutePlanner {
             }
             Duration interval = Duration.between(start, cutoff);
             double elapsed = interval.getSeconds() + interval.getNano() / 1_000_000_000.0;
+            if (elapsed >= timeline.durationSeconds() && !arrival.isAfter(cutoff.plus(HERE_TOLERANCE))
+                    && (deadline == null || !arrival.isAfter(deadline))) {
+                // La chronologie HERE termine le trajet avant 20 h : le dépassement du calcul principal est dans la tolérance
+                segments.add(new TransportRouteSegment(current, route, true));
+                return segments;
+            }
             if (elapsed <= 0 || elapsed >= timeline.durationSeconds()) {
                 throw conflict("la chronologie HERE est incompatible avec la durée du trajet à découper.");
             }
@@ -134,7 +142,7 @@ class TransportRoutePlanner {
                 waypoints.subList(0, cut.firstWaypointCount()), cutoff, RouteTimeMode.ARRIVAL);
             RouteDto firstRoute = calculate(first, mode);
             OffsetDateTime firstDeparture = cutoff.minusSeconds(firstRoute.getDuration());
-            if (firstDeparture.isBefore(start) || !date(firstDeparture).equals(date(start))) {
+            if (firstDeparture.isBefore(start.minus(HERE_TOLERANCE)) || !date(firstDeparture).equals(date(start))) {
                 throw conflict("rejoindre le point d'arrêt à 20 h impose un départ avant l'heure disponible.");
             }
             segments.add(new TransportRouteSegment(first, firstRoute, true));
@@ -395,6 +403,11 @@ class TransportRoutePlanner {
         OffsetDateTime midnight = at(date(segment.request().routeTime()).plusDays(1), 0);
         OffsetDateTime arrival = arrival(segment);
         return arrival.isAfter(midnight) ? arrival : midnight;
+    }
+
+    // Un départ recalculé jusqu'à HERE_TOLERANCE avant la disponibilité est accepté
+    private static boolean startsTooEarly(OffsetDateTime start, OffsetDateTime availableFrom) {
+        return availableFrom != null && start.isBefore(availableFrom.minus(HERE_TOLERANCE));
     }
 
     private static TransportPlanningException conflict(String reason) {

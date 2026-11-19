@@ -359,6 +359,38 @@ class TransportRoutePlannerTest {
     }
 
     @Test
+    void shouldTolerateAFewMinutesOfHereVarianceWhenRecalculatingTheFirstLeg() {
+        doAnswer(invocation -> {
+            RouteRequest request = invocation.getArgument(0);
+            RoutesResponse response = response(request);
+            if (request.getTimeMode() == RouteTimeMode.ARRIVAL && request.getDestination().getLng() == 5) {
+                response.getRoutes().getFirst().setDuration(5 * 3600 + 120);
+            }
+            return response;
+        }).when(routing).calculateRoute(any(), any());
+
+        var segments = planner.plan(request("2026-11-03T15:00:00+01:00", null, 10), selected(10));
+
+        assertEquals(time("2026-11-03T14:58:00+01:00"), departure(segments.getFirst()));
+        assertEquals(time("2026-11-03T20:00:00+01:00"), arrival(segments.getFirst()));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"180, true", "600, false"})
+    void shouldKeepASingleSegmentWhenTheTimelineEndsBeforeTwentyWithinTolerance(long overrunSeconds, boolean accepted) {
+        doAnswer(invocation -> responseWithDuration(5 * 3600 + overrunSeconds)).when(routing).calculateRoute(any(), any());
+
+        if (accepted) {
+            var segments = planner.plan(request("2026-11-03T15:00:00+01:00", null, 5), selected(5));
+            assertEquals(1, segments.size());
+            assertEquals("Destination", segments.getFirst().request().destinationName());
+        } else {
+            assertThrows(TransportPlanningException.class,
+                () -> planner.plan(request("2026-11-03T15:00:00+01:00", null, 5), selected(5)));
+        }
+    }
+
+    @Test
     void shouldRejectRecalculationThatMovesFirstDepartureBeforeAvailability() {
         doAnswer(invocation -> {
             RouteRequest request = invocation.getArgument(0);
