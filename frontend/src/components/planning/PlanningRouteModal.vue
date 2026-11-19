@@ -30,7 +30,7 @@ import type { CreateTransportFromRouteRequest, TimeWindows } from '@/models/tran
 import type { TransportDetail } from '@/models/transport/TransportDetail'
 import type { EventResponse } from '@/models/Event'
 
-import { formatCurrency, formatDateTime, formatDistance, formatDurationSeconds } from '@/utils/formatters'
+import { formatCurrency, formatDateTime, formatDistance, formatDurationSeconds, formatParisDateTimeLocal, parisDateTimeLocalToIso } from '@/utils/formatters'
 
 import {
     Building2,
@@ -191,20 +191,19 @@ const windowFields = [
 const serviceWindows = reactive({ departureStart: '', departureEnd: '', arrivalStart: '', arrivalEnd: '' })
 const simulationTiming = computed(() => ({
     routeTime: serviceWindows.departureStart
-        ? new Date(serviceWindows.departureStart).toISOString()
-        : serviceWindows.arrivalStart ? new Date(serviceWindows.arrivalStart).toISOString() : undefined,
+        ? parisDateTimeLocalToIso(serviceWindows.departureStart)
+        : serviceWindows.arrivalStart ? parisDateTimeLocalToIso(serviceWindows.arrivalStart) : undefined,
     timeMode: !serviceWindows.departureStart && serviceWindows.arrivalStart ? 'ARRIVAL' as const : 'DEPARTURE' as const,
 }))
 
+// Les fenêtres horaires sont saisies et affichées en heure de Paris (fuseau métier), quel que soit le navigateur
 function localDate(value?: string | null): string {
-    if (!value) return ''
-    const date = new Date(value)
-    const pad = (part: number) => String(part).padStart(2, '0')
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+    if (!value || Number.isNaN(new Date(value).getTime())) return ''
+    return formatParisDateTimeLocal(value)
 }
 
 function serializeWindows(values: typeof serviceWindows): TimeWindows {
-    return Object.fromEntries(windowFields.map(({ key }) => [key, values[key] ? new Date(values[key]).toISOString() : null]))
+    return Object.fromEntries(windowFields.map(({ key }) => [key, values[key] ? parisDateTimeLocalToIso(values[key]) : null]))
 }
 
 const selectedRoute = computed(() => routeResponse.value?.routes[selectedRouteIndex.value])
@@ -761,7 +760,7 @@ onMounted(async () => {
                                                 class="block text-xs font-medium text-slate-600">
                                                 {{ field.label }}
                                                 <input v-model="serviceWindows[field.key]" type="datetime-local"
-                                                    step="1"
+                                                    step="60"
                                                     class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
                                             </label>
                                         </fieldset>

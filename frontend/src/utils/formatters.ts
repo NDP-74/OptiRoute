@@ -45,9 +45,15 @@ export const formatDate = (value: string | null,): string => {
     )
 }
 
+// Une date avec fuseau (Z ou ±hh:mm) est un instant : elle est affichée dans le fuseau métier Europe/Paris.
+// Une date sans fuseau (LocalDateTime côté backend) est affichée telle quelle.
 export const formatDateTime = (value: string | null | undefined,): string => {
     if (!value) {
         return "Non renseignée"
+    }
+
+    if (/(?:[zZ]|[+-]\d{2}:?\d{2})$/.test(value)) {
+        return formatParisDateTime(value)
     }
 
     return new Intl.DateTimeFormat("fr-FR", {

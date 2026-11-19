@@ -5,6 +5,7 @@ import HereAutocompleteInput from './HereAutocompleteInput.vue'
 
 import { calculateRoute } from '@/api/here/mapsApi'
 import { getApiErrorMessage } from '@/api/utils'
+import { formatParisDateTimeLocal, parisDateTimeLocalToIso } from '@/utils/formatters'
 import { useNotification } from '@/composables/useNotification'
 
 import type { Position } from '@/models/route/Position'
@@ -62,14 +63,13 @@ function toPlace(position: RouteWaypoint): RoutePlace {
     }
 }
 
-// Convertit un ISO string (UTC ou avec offset) en valeur locale attendue par <input type="datetime-local">
+// Convertit un ISO string (UTC ou avec offset) en heure de Paris attendue par <input type="datetime-local">,
+// quel que soit le fuseau du navigateur
 function toDateTimeLocalValue(isoValue: string): string | null {
     const date = new Date(isoValue)
     if (Number.isNaN(date.getTime())) return null
 
-    const pad = (n: number) => String(n).padStart(2, '0')
-
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+    return formatParisDateTimeLocal(isoValue)
 }
 
 function applyInitialRequest(request: RouteRequest | null | undefined) {
@@ -237,7 +237,8 @@ async function submit() {
 function toOffsetDateTime(value: string | null) {
     if (departureMode.value === 'NOW' || !value) return null
 
-    return new Date(value).toISOString()
+    // La saisie est une heure de Paris (fuseau métier), pas une heure du navigateur
+    return parisDateTimeLocalToIso(value)
 }
 
 </script>
