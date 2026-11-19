@@ -1,5 +1,6 @@
 package com.optiroute.backend.service.transport;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
@@ -37,6 +38,7 @@ import com.optiroute.backend.service.cost.DriverCostService;
 import com.optiroute.backend.service.cost.StructureCostService;
 import com.optiroute.backend.service.cost.VehicleCostService;
 import com.optiroute.backend.service.cost.CostParameterSnapshot;
+import com.optiroute.backend.utils.MoneyUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -84,11 +86,11 @@ public class TransportCostService {
         Tractor tractor = route.getTractorId() == null ? null : tractorRepository.findById(route.getTractorId()).orElse(null);
         SemiTrailer semiTrailer = route.getSemiTrailerId() == null ? null : semiTrailerRepository.findById(route.getSemiTrailerId()).orElse(null);
 
-        double fuelCost = route.getFuelCost() == null ? 0 : route.getFuelCost().doubleValue();
-        double tollCost = route.getTollCost() == null ? 0 : route.getTollCost().doubleValue();
+        BigDecimal fuelCost = MoneyUtils.orZero(route.getFuelCost());
+        BigDecimal tollCost = MoneyUtils.orZero(route.getTollCost());
 
         CostCategoryResponse vehicle = vehicleCostService.calculateCosts(tractor,semiTrailer,context,fuelCost,tollCost,dailyContexts);
-        CostCategoryResponse driverCosts = driver == null ? new CostCategoryResponse(List.of(), 0) : driverCostService.calculateCosts(driver,context,dailyContexts);
+        CostCategoryResponse driverCosts = driver == null ? CostCategoryResponse.empty() : driverCostService.calculateCosts(driver,context,dailyContexts);
         CostCategoryResponse structure = structureCostService.calculateCosts(context,dailyContexts);
 
         List<Event> events = route.getId() == null ? List.of() : eventRepository.findByRouteIdOrderByIdAsc(route.getId());
@@ -107,7 +109,7 @@ public class TransportCostService {
             }
         }
 
-        return new TransportCostDetailsResponse(vehicle, driverCosts, structure, vehicle.totalCost() + driverCosts.totalCost() + structure.totalCost());
+        return TransportCostDetailsResponse.of(vehicle, driverCosts, structure);
     }
 
     public List<TransportCostDetailsResponse> calculateAll(List<Route> requestedRoutes) {
@@ -195,11 +197,11 @@ public class TransportCostService {
             Driver driver = route.getDriverId() == null ? null : driversById.get(route.getDriverId());
             Tractor tractor = route.getTractorId() == null ? null : tractorsById.get(route.getTractorId());
             SemiTrailer semiTrailer = route.getSemiTrailerId() == null ? null : semiTrailersById.get(route.getSemiTrailerId());
-            double fuelCost = route.getFuelCost() == null ? 0 : route.getFuelCost().doubleValue();
-            double tollCost = route.getTollCost() == null ? 0 : route.getTollCost().doubleValue();
+            BigDecimal fuelCost = MoneyUtils.orZero(route.getFuelCost());
+            BigDecimal tollCost = MoneyUtils.orZero(route.getTollCost());
 
             CostCategoryResponse vehicle = vehicleCostService.calculateCosts(tractor,semiTrailer,context,fuelCost,tollCost,dailyContexts,costParameters);
-            CostCategoryResponse driverCosts = driver == null ? new CostCategoryResponse(List.of(), 0)
+            CostCategoryResponse driverCosts = driver == null ? CostCategoryResponse.empty()
                 : driverCostService.calculateCosts(driver,context,dailyContexts,costParameters);
             CostCategoryResponse structure = structureCostService.calculateCosts(context,dailyContexts,costParameters);
 
@@ -218,7 +220,7 @@ public class TransportCostService {
                 }
             }
 
-            results.add(new TransportCostDetailsResponse(vehicle, driverCosts, structure, vehicle.totalCost() + driverCosts.totalCost() + structure.totalCost()));
+            results.add(TransportCostDetailsResponse.of(vehicle, driverCosts, structure));
         }
         return results;
     }
@@ -248,7 +250,7 @@ public class TransportCostService {
     private CostCategoryResponse withCost(CostCategoryResponse category, AppliedCostResponse cost) {
         List<AppliedCostResponse> costs = new ArrayList<>(category.costs());
         costs.add(cost);
-        return new CostCategoryResponse(costs, category.totalCost() + cost.amount());
+        return CostCategoryResponse.of(costs);
     }
 
     // Trajets du même jour pour le même conducteur (le véhicule suit le conducteur)

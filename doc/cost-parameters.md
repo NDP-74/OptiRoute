@@ -96,6 +96,8 @@ Les conditions horaires (`DEPARTURE_TIME`, `ARRIVAL_TIME`, `DRIVER_DAY_START_TIM
 
 À l’enregistrement, chaque condition est contrôlée : champ cohérent avec la source, opérateur autorisé pour le champ (`LESS_THAN`/`GREATER_THAN` pour les nombres, `BEFORE`/`AFTER` pour les heures, égalité seule pour les booléens et le type de semi-remorque) et valeur lisible (nombre, `HH:mm`, `true`/`false`, identifiant). Une condition invalide est refusée en HTTP 400. Une condition invalide déjà en base est journalisée et considérée non satisfaite, sans bloquer le calcul des coûts.
 
+Les montants sont calculés en `BigDecimal` ; chaque ligne de coût est arrondie au centime (HALF_UP) et les totaux sont la somme des lignes arrondies.
+
 ### Fin de journée au stationnement
 
 La condition conducteur `DRIVER_ENDS_DAY_AT_PARKING` (« Termine la journée à son lieu de stationnement »)

@@ -1,4 +1,12 @@
 package com.optiroute.backend.dto.response.cost;
 
-public record AppliedCostResponse(String label, double amount) {
+import java.math.BigDecimal;
+
+import com.optiroute.backend.utils.MoneyUtils;
+
+public record AppliedCostResponse(String label, BigDecimal amount) {
+
+    public AppliedCostResponse {
+        amount = MoneyUtils.round(amount);
+    }
 }

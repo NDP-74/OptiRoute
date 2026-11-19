@@ -37,8 +37,6 @@ public class StructureCostService {
             ? costParameterEngine.calculateCosts(CostParameterCategoryType.STRUCTURE,context,dailyContexts)
             : costParameterEngine.calculateCosts(CostParameterCategoryType.STRUCTURE,context,dailyContexts,snapshot);
 
-        double totalCost = costs.stream().mapToDouble(AppliedCostResponse::amount).sum();
-
-        return new CostCategoryResponse(costs, totalCost);
+        return CostCategoryResponse.of(costs);
     }
 }

@@ -72,14 +72,14 @@ class TransportCostServiceTest {
         Driver driver = new Driver();
         driver.setId(1L);
         driver.setAnnualSalary(BigDecimal.valueOf(26000));
-        CostCategoryResponse emptyCosts = new CostCategoryResponse(List.of(), 0);
+        CostCategoryResponse emptyCosts = new CostCategoryResponse(List.of(), BigDecimal.valueOf(0));
 
         when(routeRepository.findByDriverIdInAndDepartureStartGreaterThanEqualAndDepartureStartLessThan(eq(List.of(1L)),any(),any()))
             .thenReturn(List.of(targetRoute,otherRoute,nextDayRoute));
         when(eventRepository.findByRouteIdInOrderByRouteIdAscIdAsc(List.of(10L,11L,12L))).thenReturn(List.of(event));
         when(driverRepository.findAllById(List.of(1L))).thenReturn(List.of(driver));
         when(costParameterEngine.loadSnapshot()).thenReturn(new CostParameterSnapshot(Map.of(), Map.of()));
-        when(vehicleCostService.calculateCosts(nullable(Tractor.class),nullable(SemiTrailer.class),any(CostCalculationContext.class),anyDouble(),anyDouble(),anyList(),
+        when(vehicleCostService.calculateCosts(nullable(Tractor.class),nullable(SemiTrailer.class),any(CostCalculationContext.class),any(BigDecimal.class),any(BigDecimal.class),anyList(),
             any(CostParameterSnapshot.class))).thenReturn(emptyCosts);
         when(driverCostService.calculateCosts(any(),any(),anyList(),any())).thenReturn(emptyCosts);
         when(structureCostService.calculateCosts(any(),anyList(),any())).thenReturn(emptyCosts);
@@ -131,13 +131,13 @@ class TransportCostServiceTest {
         when(eventRepository.findByRouteIdOrderByIdAsc(11L)).thenReturn(List.of());
         when(costParameterEngine.calculateCosts(any(),any(CostCalculationContext.class),anyList())).thenReturn(List.of());
         when(costParameterEngine.calculateManualCost(any(),any(CostCalculationContext.class))).thenReturn(null);
-        when(vehicleCostService.calculateCosts(isNull(),isNull(),any(CostCalculationContext.class),eq(0.0),eq(0.0),anyList())).thenReturn(new CostCategoryResponse(List.of(), 0));
-        when(structureCostService.calculateCosts(any(CostCalculationContext.class),anyList())).thenReturn(new CostCategoryResponse(List.of(), 0));
+        when(vehicleCostService.calculateCosts(isNull(),isNull(),any(CostCalculationContext.class),eq(BigDecimal.ZERO),eq(BigDecimal.ZERO),anyList())).thenReturn(new CostCategoryResponse(List.of(), BigDecimal.valueOf(0)));
+        when(structureCostService.calculateCosts(any(CostCalculationContext.class),anyList())).thenReturn(new CostCategoryResponse(List.of(), BigDecimal.valueOf(0)));
 
         var costs = service.calculate(targetRoute);
 
         double dailySalary = driver.getAnnualSalary().doubleValue() / new WorkingDaysService().getWorkingDaysInYear(2026);
-        assertEquals(dailySalary * 0.5,costs.driver().totalCost(),0.01);
+        assertEquals(dailySalary * 0.5,costs.driver().totalCost().doubleValue(),0.01);
     }
 
     @ParameterizedTest
@@ -168,8 +168,8 @@ class TransportCostServiceTest {
         when(driverRepository.findById(1L)).thenReturn(missingDriver ? Optional.empty() : Optional.of(driver));
         when(routeRepository.findByDriverIdAndDepartureStartGreaterThanEqualAndDepartureStartLessThan(eq(1L),
             eq(departure.toLocalDate().atStartOfDay(java.time.ZoneId.of("Europe/Paris")).toOffsetDateTime()),any())).thenReturn(List.of(lastRoute,targetRoute,eveningRoute));
-        CostCategoryResponse emptyCosts = new CostCategoryResponse(List.of(), 0);
-        when(vehicleCostService.calculateCosts(isNull(),isNull(),any(),eq(0.0),eq(0.0),anyList())).thenReturn(emptyCosts);
+        CostCategoryResponse emptyCosts = new CostCategoryResponse(List.of(), BigDecimal.valueOf(0));
+        when(vehicleCostService.calculateCosts(isNull(),isNull(),any(),eq(BigDecimal.ZERO),eq(BigDecimal.ZERO),anyList())).thenReturn(emptyCosts);
         when(driverCostService.calculateCosts(any(),any(),anyList())).thenReturn(emptyCosts);
         when(structureCostService.calculateCosts(any(),anyList())).thenReturn(emptyCosts);
 
@@ -202,8 +202,8 @@ class TransportCostServiceTest {
                 return List.of(next,nextSecond);
             return List.of(current);
         });
-        CostCategoryResponse empty = new CostCategoryResponse(List.of(), 0);
-        when(vehicleCosts.calculateCosts(isNull(),isNull(),any(),eq(0.0),eq(0.0),anyList())).thenReturn(empty);
+        CostCategoryResponse empty = new CostCategoryResponse(List.of(), BigDecimal.valueOf(0));
+        when(vehicleCosts.calculateCosts(isNull(),isNull(),any(),eq(BigDecimal.ZERO),eq(BigDecimal.ZERO),anyList())).thenReturn(empty);
         when(structureCosts.calculateCosts(any(),anyList())).thenReturn(empty);
 
         service.calculate(current);

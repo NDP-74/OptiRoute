@@ -210,8 +210,8 @@ public class EventService {
         route.setDurationSeconds(selected.getDuration());
         route.setPolyline(selected.getPolyline());
         route.setRouteType(selected.getType());
-        route.setFuelCost(BigDecimal.valueOf(selected.getCosts().getFuelCost()));
-        route.setTollCost(BigDecimal.valueOf(selected.getCosts().getTollCost()));
+        route.setFuelCost(selected.getCosts().getFuelCost());
+        route.setTollCost(selected.getCosts().getTollCost());
 
         if (!"DASHDOC".equalsIgnoreCase(route.getService().getExternalSource()) && route.getArrivalStart() != null) {
             route.setDepartureStart(route.getArrivalStart().minusSeconds(selected.getDuration()));

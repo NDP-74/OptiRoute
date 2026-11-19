@@ -11,7 +11,9 @@ import com.optiroute.backend.type.cost.CostParameterUnitType;
 
 import com.optiroute.backend.dto.response.cost.AppliedCostResponse;
 import com.optiroute.backend.dto.request.cost.CostCalculationContext;
+import com.optiroute.backend.utils.MoneyUtils;
 
+import java.math.BigDecimal;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,11 +64,11 @@ public class CostParameterEngine {
             if (parameter.isActive() && parameter.getAssignmentType() != CostParameterAssignmentType.MANUAL && parameter.getUnit() == CostParameterUnitType.EUR_PER_NIGHT) {
                 var triggeringDays = dailyContexts.stream().filter(c -> c.date().equals(context.date()) || c.date().equals(context.date().minusDays(1)))
                     .collect(Collectors.groupingBy(CostCalculationContext::date));
-                double amount = 0;
+                BigDecimal amount = BigDecimal.ZERO;
                 boolean applicable = false;
                 for (List<CostCalculationContext> day : triggeringDays.values()) {
                     if (day.stream().anyMatch(c -> isApplicable(parameter,c,conditionsByParameterId))) {
-                        amount += calculateAmount(parameter,day.getFirst());
+                        amount = amount.add(calculateAmount(parameter,day.getFirst()));
                         applicable = true;
                     }
                 }
@@ -80,7 +82,7 @@ public class CostParameterEngine {
                 continue;
             }
 
-            double amount = calculateAmount(parameter,context);
+            BigDecimal amount = calculateAmount(parameter,context);
             costs.add(new AppliedCostResponse(parameter.getLabel(), amount));
         }
 
@@ -112,57 +114,59 @@ public class CostParameterEngine {
         return dailyContexts.stream().filter(c -> c.date().equals(context.date())).anyMatch(dailyContext -> isApplicable(parameter,dailyContext,conditionsByParameterId));
     }
 
-    private double calculateAmount(CostParameter parameter, CostCalculationContext context) {
+    // Montant non arrondi : l'arrondi au centime est appliqué par AppliedCostResponse
+    private BigDecimal calculateAmount(CostParameter parameter, CostCalculationContext context) {
+        BigDecimal value = MoneyUtils.orZero(parameter.getValue());
         return switch (parameter.getUnit()) {
 
-            case EUR_PER_KM -> context.distanceKm() * parameter.getValue().doubleValue();
+            case EUR_PER_KM -> MoneyUtils.multiply(value, context.distanceKm());
 
-            case EUR_PER_TRIP -> parameter.getValue().doubleValue();
+            case EUR_PER_TRIP -> value;
 
-            case EUR_PER_HOUR -> context.durationHours() * parameter.getValue().doubleValue();
+            case EUR_PER_HOUR -> MoneyUtils.multiply(value, context.durationHours());
 
-            case EUR_PER_DAY -> calculateDailyCost(parameter,context);
+            case EUR_PER_DAY -> calculateDailyCost(value,context);
 
             case EUR_PER_NIGHT -> {
                 if (context.nightTransportCount() <= 0) {
                     throw new IllegalStateException("Night costs require a positive two-day transport count");
                 }
-                yield parameter.getValue().doubleValue() / context.nightTransportCount();
+                yield MoneyUtils.divide(value, context.nightTransportCount());
             }
 
-            case EUR_PER_MONTH -> calculateMonthlyCost(parameter,context);
+            case EUR_PER_MONTH -> calculateMonthlyCost(value,context);
 
-            case EUR_PER_YEAR -> calculateYearlyCost(parameter,context);
+            case EUR_PER_YEAR -> calculateYearlyCost(value,context);
         };
     }
 
-    private double calculateDailyCost(CostParameter parameter, CostCalculationContext context) {
+    private BigDecimal calculateDailyCost(BigDecimal value, CostCalculationContext context) {
         if (context.dailyTransportCount() <= 0) {
-            return parameter.getValue().doubleValue();
+            return value;
         }
 
-        return parameter.getValue().doubleValue() / context.dailyTransportCount();
+        return MoneyUtils.divide(value, context.dailyTransportCount());
     }
 
-    private double calculateMonthlyCost(CostParameter parameter, CostCalculationContext context) {
+    private BigDecimal calculateMonthlyCost(BigDecimal value, CostCalculationContext context) {
         int workingDays = workingDaysService.getWorkingDaysInMonth(YearMonth.from(context.date()));
 
         if (workingDays <= 0 || context.dailyVehicleDistanceKm() <= 0) {
-            return 0;
+            return BigDecimal.ZERO;
         }
 
-        double dailyCost = parameter.getValue().doubleValue() / workingDays;
-        return dailyCost * (context.distanceKm() / context.dailyVehicleDistanceKm());
+        BigDecimal dailyCost = MoneyUtils.divide(value, workingDays);
+        return MoneyUtils.multiply(dailyCost, context.distanceKm() / context.dailyVehicleDistanceKm());
     }
 
-    private double calculateYearlyCost(CostParameter parameter, CostCalculationContext context) {
+    private BigDecimal calculateYearlyCost(BigDecimal value, CostCalculationContext context) {
         int workingDays = workingDaysService.getWorkingDaysInYear(context.date().getYear());
 
         if (workingDays <= 0 || context.dailyTransportCount() <= 0) {
-            return 0;
+            return BigDecimal.ZERO;
         }
 
-        double dailyCost = parameter.getValue().doubleValue() / workingDays;
-        return dailyCost / context.dailyTransportCount();
+        BigDecimal dailyCost = MoneyUtils.divide(value, workingDays);
+        return MoneyUtils.divide(dailyCost, context.dailyTransportCount());
     }
 }

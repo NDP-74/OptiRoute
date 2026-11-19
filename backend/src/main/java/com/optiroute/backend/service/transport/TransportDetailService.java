@@ -1,5 +1,6 @@
 package com.optiroute.backend.service.transport;
 
+import com.optiroute.backend.utils.MoneyUtils;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
@@ -136,14 +137,13 @@ public class TransportDetailService {
         CostCategoryResponse vehicle = aggregateCategory(costs, TransportCostDetailsResponse::vehicle);
         CostCategoryResponse driver = aggregateCategory(costs, TransportCostDetailsResponse::driver);
         CostCategoryResponse structure = aggregateCategory(costs, TransportCostDetailsResponse::structure);
-        double total = costs.stream().mapToDouble(TransportCostDetailsResponse::totalCost).sum();
-        return new TransportCostDetailsResponse(vehicle, driver, structure, total);
+        return TransportCostDetailsResponse.of(vehicle, driver, structure);
     }
 
     private CostCategoryResponse aggregateCategory(List<TransportCostDetailsResponse> routeCosts,
         Function<TransportCostDetailsResponse, CostCategoryResponse> categoryExtractor) {
         List<CostCategoryResponse> categories = routeCosts.stream().map(categoryExtractor).toList();
         return new CostCategoryResponse(categories.stream().flatMap(category -> category.costs().stream()).toList(),
-            categories.stream().mapToDouble(CostCategoryResponse::totalCost).sum());
+            MoneyUtils.sum(categories, CostCategoryResponse::totalCost));
     }
 }

@@ -50,10 +50,10 @@ class TransportPlanningServiceTest {
         when(drivers.findAllById(List.of(9L))).thenReturn(List.of(visible));
         when(tractors.findAll()).thenReturn(List.of());
         when(semiTrailers.findAll()).thenReturn(List.of());
-        var emptyCategory = new CostCategoryResponse(List.of(), 0);
+        var emptyCategory = new CostCategoryResponse(List.of(), BigDecimal.valueOf(0));
         when(transportCosts.calculateAll(List.of(first, second))).thenReturn(List.of(
-            new TransportCostDetailsResponse(emptyCategory, emptyCategory, emptyCategory, 100),
-            new TransportCostDetailsResponse(emptyCategory, emptyCategory, emptyCategory, 200)
+            new TransportCostDetailsResponse(emptyCategory, emptyCategory, emptyCategory, BigDecimal.valueOf(100)),
+            new TransportCostDetailsResponse(emptyCategory, emptyCategory, emptyCategory, BigDecimal.valueOf(200))
         ));
 
         TransportPlanningService subject = new TransportPlanningService(routes, drivers, transportCosts,
@@ -61,20 +61,20 @@ class TransportPlanningServiceTest {
 
         var response = subject.getPlanning(LocalDate.parse("2026-10-29"), LocalDate.parse("2026-10-31"));
 
-        assertEquals(375.0, response.transports().get(0).revenue());
-        assertEquals(625.0, response.transports().get(1).revenue());
+        assertEquals(375.0, response.transports().get(0).revenue().doubleValue());
+        assertEquals(625.0, response.transports().get(1).revenue().doubleValue());
         assertEquals(1, response.transports().get(0).routeNumber());
         assertEquals(2, response.transports().get(0).routeCount());
         assertEquals(2, response.transports().get(1).routeNumber());
         assertEquals(2, response.transports().get(1).routeCount());
-        assertEquals(100.0, response.transports().get(0).totalCost());
-        assertEquals(200.0, response.transports().get(1).totalCost());
-        assertEquals(1000.0, response.transports().stream().mapToDouble(transport -> transport.revenue()).sum());
+        assertEquals(100.0, response.transports().get(0).totalCost().doubleValue());
+        assertEquals(200.0, response.transports().get(1).totalCost().doubleValue());
+        assertEquals(1000.0, response.transports().stream().mapToDouble(transport -> transport.revenue().doubleValue()).sum());
 
         when(routes.findByDriverIdInAndDepartureStartGreaterThanEqualAndDepartureStartLessThan(eq(List.of(9L)), any(), any()))
             .thenReturn(List.of(first));
         when(transportCosts.calculateAll(List.of(first))).thenReturn(List.of(
-            new TransportCostDetailsResponse(emptyCategory, emptyCategory, emptyCategory, 100)
+            new TransportCostDetailsResponse(emptyCategory, emptyCategory, emptyCategory, BigDecimal.valueOf(100))
         ));
         var filtered = subject.getPlanning(LocalDate.parse("2026-10-29"), LocalDate.parse("2026-10-31"), List.of(9L), false);
         assertEquals(response.transports().subList(0, 1), filtered.transports());

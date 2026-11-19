@@ -13,6 +13,7 @@ import com.optiroute.backend.dto.response.cost.CostCategoryResponse;
 import com.optiroute.backend.entity.vehicle.SemiTrailer;
 import com.optiroute.backend.entity.vehicle.Tractor;
 import com.optiroute.backend.type.cost.CostParameterCategoryType;
+import com.optiroute.backend.utils.MoneyUtils;
 
 @Service
 public class VehicleCostService {
@@ -29,32 +30,32 @@ public class VehicleCostService {
 		this.workingDaysService = workingDaysService;
 	}
 
-	public CostCategoryResponse calculateCosts(Tractor tractor, SemiTrailer semiTrailer, CostCalculationContext context, double fuelCost, double tollCost) {
+	public CostCategoryResponse calculateCosts(Tractor tractor, SemiTrailer semiTrailer, CostCalculationContext context, BigDecimal fuelCost, BigDecimal tollCost) {
 		return calculateCosts(tractor,semiTrailer,context,fuelCost,tollCost,List.of(context));
 	}
 
-	public CostCategoryResponse calculateCosts(Tractor tractor, SemiTrailer semiTrailer, CostCalculationContext context, double fuelCost, double tollCost,
+	public CostCategoryResponse calculateCosts(Tractor tractor, SemiTrailer semiTrailer, CostCalculationContext context, BigDecimal fuelCost, BigDecimal tollCost,
 		List<CostCalculationContext> dailyContexts) {
 		return calculateCosts(tractor, semiTrailer, context, fuelCost, tollCost, dailyContexts, null);
 	}
 
-	public CostCategoryResponse calculateCosts(Tractor tractor, SemiTrailer semiTrailer, CostCalculationContext context, double fuelCost, double tollCost,
+	public CostCategoryResponse calculateCosts(Tractor tractor, SemiTrailer semiTrailer, CostCalculationContext context, BigDecimal fuelCost, BigDecimal tollCost,
 		List<CostCalculationContext> dailyContexts, CostParameterSnapshot snapshot) {
 
 		List<AppliedCostResponse> costs = new ArrayList<>();
 
 		// HERE - Carburant
-		costs.add(new AppliedCostResponse(FUEL_LABEL, fuelCost));
+		costs.add(new AppliedCostResponse(FUEL_LABEL, MoneyUtils.orZero(fuelCost)));
 
 		// HERE - Péages
-		costs.add(new AppliedCostResponse(TOLL_LABEL, tollCost));
+		costs.add(new AppliedCostResponse(TOLL_LABEL, MoneyUtils.orZero(tollCost)));
 
 		// Amortissement
-		double depreciationCost = calculateDepreciation(tractor,semiTrailer,context.distanceKm(),context.dailyVehicleDistanceKm(),context.date());
+		BigDecimal depreciationCost = calculateDepreciation(tractor,semiTrailer,context.distanceKm(),context.dailyVehicleDistanceKm(),context.date());
 		costs.add(new AppliedCostResponse(DEPRECIATION_LABEL, depreciationCost));
 
 		// Entretien
-		double maintenanceCost = calculateMaintenance(tractor,semiTrailer,context.distanceKm());
+		BigDecimal maintenanceCost = calculateMaintenance(tractor,semiTrailer,context.distanceKm());
 		costs.add(new AppliedCostResponse(MAINTENANCE_LABEL, maintenanceCost));
 
 		// CostParameters VEHICLE
@@ -62,54 +63,52 @@ public class VehicleCostService {
 			? costParameterEngine.calculateCosts(CostParameterCategoryType.VEHICLE,context,dailyContexts)
 			: costParameterEngine.calculateCosts(CostParameterCategoryType.VEHICLE,context,dailyContexts,snapshot));
 
-		double totalCost = costs.stream().mapToDouble(AppliedCostResponse::amount).sum();
-
-		return new CostCategoryResponse(costs, totalCost);
+		return CostCategoryResponse.of(costs);
 	}
 
-	private double calculateMaintenance(Tractor tractor, SemiTrailer semiTrailer, double distanceKm) {
-		double costPerKm = 0;
+	private BigDecimal calculateMaintenance(Tractor tractor, SemiTrailer semiTrailer, double distanceKm) {
+		BigDecimal costPerKm = BigDecimal.ZERO;
 		if (tractor != null && tractor.getMaintenanceCostPerKm() != null) {
-			costPerKm += tractor.getMaintenanceCostPerKm().doubleValue();
+			costPerKm = costPerKm.add(tractor.getMaintenanceCostPerKm());
 		}
 		if (semiTrailer != null && semiTrailer.getMaintenanceCostPerKm() != null) {
-			costPerKm += semiTrailer.getMaintenanceCostPerKm().doubleValue();
+			costPerKm = costPerKm.add(semiTrailer.getMaintenanceCostPerKm());
 		}
-		return costPerKm * distanceKm;
+		return MoneyUtils.multiply(costPerKm, distanceKm);
 	}
 
-	private double calculateDepreciation(Tractor tractor, SemiTrailer semiTrailer, double distanceKm, double dailyVehicleDistanceKm, LocalDate date) {
+	private BigDecimal calculateDepreciation(Tractor tractor, SemiTrailer semiTrailer, double distanceKm, double dailyVehicleDistanceKm, LocalDate date) {
 		if (dailyVehicleDistanceKm <= 0) {
-			return 0;
+			return BigDecimal.ZERO;
 		}
 
-		double depreciationCost = 0;
+		BigDecimal depreciationCost = BigDecimal.ZERO;
 		if (tractor != null && isInDepreciationPeriod(tractor.getDepreciationStartDate(),tractor.getDepreciationEndDate(),date)) {
-			depreciationCost += calculateVehicleDepreciation(tractor.getPurchaseCost(),tractor.getDepreciationStartDate(),tractor.getDepreciationEndDate(),distanceKm,
-				dailyVehicleDistanceKm);
+			depreciationCost = depreciationCost.add(calculateVehicleDepreciation(tractor.getPurchaseCost(),tractor.getDepreciationStartDate(),
+				tractor.getDepreciationEndDate(),distanceKm,dailyVehicleDistanceKm));
 		}
 
 		if (semiTrailer != null && isInDepreciationPeriod(semiTrailer.getDepreciationStartDate(),semiTrailer.getDepreciationEndDate(),date)) {
-			depreciationCost += calculateVehicleDepreciation(semiTrailer.getPurchaseCost(),semiTrailer.getDepreciationStartDate(),semiTrailer.getDepreciationEndDate(),distanceKm,
-				dailyVehicleDistanceKm);
+			depreciationCost = depreciationCost.add(calculateVehicleDepreciation(semiTrailer.getPurchaseCost(),semiTrailer.getDepreciationStartDate(),
+				semiTrailer.getDepreciationEndDate(),distanceKm,dailyVehicleDistanceKm));
 		}
 
 		return depreciationCost;
 	}
 
-	private double calculateVehicleDepreciation(BigDecimal purchaseCost, LocalDate depreciationStartDate, LocalDate depreciationEndDate, double distanceKm,
+	private BigDecimal calculateVehicleDepreciation(BigDecimal purchaseCost, LocalDate depreciationStartDate, LocalDate depreciationEndDate, double distanceKm,
 		double dailyVehicleDistanceKm) {
 		if (purchaseCost == null || depreciationStartDate == null || depreciationEndDate == null) {
-			return 0;
+			return BigDecimal.ZERO;
 		}
 
 		int workingDaysInPeriod = workingDaysService.getWorkingDaysBetween(depreciationStartDate,depreciationEndDate);
 		if (workingDaysInPeriod <= 0) {
-			return 0;
+			return BigDecimal.ZERO;
 		}
 
-		double dailyDepreciation = purchaseCost.doubleValue() / workingDaysInPeriod;
-		return dailyDepreciation * (distanceKm / dailyVehicleDistanceKm);
+		BigDecimal dailyDepreciation = MoneyUtils.divide(purchaseCost, workingDaysInPeriod);
+		return MoneyUtils.multiply(dailyDepreciation, distanceKm / dailyVehicleDistanceKm);
 	}
 
 	private boolean isInDepreciationPeriod(LocalDate startDate, LocalDate endDate, LocalDate date) {
@@ -121,16 +120,16 @@ public class VehicleCostService {
 	}
 
 	// Amortissement cumulé sur la période sélectionnée pour un véhicule non affecté
-	// à un conducteur
-	public double calculateDepreciationForPeriod(BigDecimal purchaseCost, LocalDate depreciationStartDate, LocalDate depreciationEndDate, LocalDate periodStart,
+	// à un conducteur, arrondi au centime
+	public BigDecimal calculateDepreciationForPeriod(BigDecimal purchaseCost, LocalDate depreciationStartDate, LocalDate depreciationEndDate, LocalDate periodStart,
 		LocalDate periodEndExclusive) {
 		if (purchaseCost == null || depreciationStartDate == null || depreciationEndDate == null) {
-			return 0;
+			return MoneyUtils.ZERO;
 		}
 
 		int workingDaysInDepreciationPeriod = workingDaysService.getWorkingDaysBetween(depreciationStartDate,depreciationEndDate);
 		if (workingDaysInDepreciationPeriod <= 0) {
-			return 0;
+			return MoneyUtils.ZERO;
 		}
 
 		LocalDate periodEndInclusive = periodEndExclusive.minusDays(1);
@@ -138,12 +137,12 @@ public class VehicleCostService {
 		LocalDate overlapEnd = depreciationEndDate.isBefore(periodEndInclusive) ? depreciationEndDate : periodEndInclusive;
 
 		if (overlapEnd.isBefore(overlapStart)) {
-			return 0;
+			return MoneyUtils.ZERO;
 		}
 
 		int workingDaysInOverlap = workingDaysService.getWorkingDaysBetween(overlapStart,overlapEnd);
-		double dailyDepreciation = purchaseCost.doubleValue() / workingDaysInDepreciationPeriod;
+		BigDecimal dailyDepreciation = MoneyUtils.divide(purchaseCost, workingDaysInDepreciationPeriod);
 
-		return dailyDepreciation * workingDaysInOverlap;
+		return MoneyUtils.round(MoneyUtils.multiply(dailyDepreciation, workingDaysInOverlap));
 	}
 }
