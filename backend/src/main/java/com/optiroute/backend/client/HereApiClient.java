@@ -56,6 +56,6 @@ public class HereApiClient {
         }
 
         URI uri = uriBuilder.build().encode().toUri();
-        return restClient.get().uri(uri).retrieve().body(String.class);
+        return ProviderCalls.call("HERE", () -> restClient.get().uri(uri).retrieve().body(String.class));
     }
 }

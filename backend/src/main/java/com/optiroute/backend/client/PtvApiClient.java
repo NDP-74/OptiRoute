@@ -44,6 +44,6 @@ public class PtvApiClient {
         }
 
         URI uri = uriBuilder.build().encode().toUri();
-        return restClient.get().uri(uri).header("apiKey",properties.getApiKey()).retrieve().body(String.class);
+        return ProviderCalls.call("PTV", () -> restClient.get().uri(uri).header("apiKey",properties.getApiKey()).retrieve().body(String.class));
     }
 }

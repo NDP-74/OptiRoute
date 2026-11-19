@@ -1,5 +1,6 @@
 package com.optiroute.backend.service.route;
 
+import com.optiroute.backend.exception.RoutingProviderException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,7 +28,7 @@ public class RoutePtvParser {
             }
             return routes;
         } catch (Exception exception) {
-            throw new RuntimeException("PTV response parsing failed", exception);
+            throw new RoutingProviderException("Réponse PTV illisible.", exception);
         }
     }
 

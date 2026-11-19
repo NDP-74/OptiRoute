@@ -1,6 +1,8 @@
 package com.optiroute.backend.client;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
@@ -40,6 +42,24 @@ class HereApiClientTest {
         client.getRoutes("47,1", "49,3", List.of(), "2026-10-29T18:00:00Z",
             RouteTimeMode.DEPARTURE, new TruckConfiguration(), false, 0, true);
         server.verify();
+    }
+
+    @Test
+    void shouldWrapProviderErrorsWithoutExposingTheApiKey() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        HereApiProperties properties = new HereApiProperties();
+        properties.setApiKey("secret-key");
+        HereApiClient client = new HereApiClient(builder, properties);
+        server.expect(request -> { }).andRespond(org.springframework.test.web.client.response.MockRestResponseCreators
+            .withServiceUnavailable().body("maintenance"));
+
+        var exception = assertThrows(com.optiroute.backend.exception.RoutingProviderException.class, () -> client.getRoutes("47,1", "49,3",
+            List.of(), "2026-10-29T10:00:00Z", RouteTimeMode.DEPARTURE, new TruckConfiguration(), false, 0));
+
+        assertTrue(exception.getMessage().contains("503"));
+        assertFalse(exception.getMessage().contains("secret-key"));
+        assertNull(exception.getCause());
     }
 
     private void verifyTimeParameter(RouteTimeMode mode, String expected, String absent) {

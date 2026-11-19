@@ -8,6 +8,7 @@ import com.optiroute.backend.dto.request.transport.TransportRequest;
 import com.optiroute.backend.dto.response.route.RouteDto;
 import com.optiroute.backend.dto.response.route.RoutesResponse;
 import com.optiroute.backend.entity.transport.Service;
+import com.optiroute.backend.exception.TransportPlanningException;
 import com.optiroute.backend.mapper.RouteRequestFactory;
 import com.optiroute.backend.service.route.RouteOptimizationService;
 
@@ -25,7 +26,8 @@ public class TransportFacadeService {
     private final RouteOptimizationService routeOptimizationService;
     private final TransportRoutePlanner transportRoutePlanner;
 
-    @Transactional
+    // Les appels HERE (calcul et planification) sont faits hors transaction ; seule l'écriture du service
+    // et de ses trajets est transactionnelle (ServiceRouteService), sans sauvegarde partielle en cas d'échec.
     public Service createTransport(TransportRequest request) {
         RouteRequest routeRequest = routeRequestFactory.fromTransport(request);
         routeRequest.setDriverId(request.driverId());
@@ -33,17 +35,15 @@ public class TransportFacadeService {
 
         RouteDto selectedRoute = routeResponse.getRoutes().stream()
             .min((first, second) -> Long.compare(first.getDuration(), second.getDuration()))
-            .orElseThrow(() -> new IllegalArgumentException("No route available"));
+            .orElseThrow(() -> new TransportPlanningException("Planning incompatible : aucun itinéraire disponible."));
         return serviceRouteService.create(request, transportRoutePlanner.plan(request, selectedRoute));
     }
 
-    @Transactional
     public Service createFromRoute(TransportFromRouteRequest request) {
         return serviceRouteService.create(request.transport(),
             transportRoutePlanner.plan(request.transport(), request.selectedRoute()));
     }
 
-    @Transactional
     public Service updateFromRoute(Long id, TransportFromRouteRequest request) {
         return serviceRouteService.update(id, request.transport(),
             transportRoutePlanner.plan(request.transport(), request.selectedRoute()));

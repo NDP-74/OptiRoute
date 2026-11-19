@@ -1,5 +1,6 @@
 package com.optiroute.backend.service.route;
 
+import com.optiroute.backend.exception.RoutingProviderException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -101,7 +102,7 @@ public class RouteHereParser {
             return parsedRoutes;
 
         } catch (Exception e) {
-            throw new RuntimeException("HERE parsing failed", e);
+            throw new RoutingProviderException("Réponse HERE illisible.", e);
         }
     }
 
