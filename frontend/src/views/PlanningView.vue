@@ -488,7 +488,8 @@ const numberOfDisplayedDays = computed<number>(() => {
     const millisecondsPerDay = 24 * 60 * 60 * 1000;
     const difference = selectedEndDate.value.getTime() - selectedStartDate.value.getTime();
 
-    return Math.floor(difference / millisecondsPerDay) + 1;
+    // Arrondi : une période qui traverse un changement d'heure contient un jour de 23 h ou de 25 h
+    return Math.round(difference / millisecondsPerDay) + 1;
 });
 
 const days = computed<PlanningDay[]>(() => {
