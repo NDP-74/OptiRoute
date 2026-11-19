@@ -37,13 +37,13 @@ public class DriverService {
 
     @Transactional(readOnly = true)
     public DriverResponse getById(Long id) {
-        Driver driver = driverRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Driver not found with id: " + id));
+        Driver driver = driverRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Driver not found with id: " + id));
 
         return DriverUtils.toDriverResponse(driver);
     }
 
     public Driver getEntityById(Long id) {
-        return driverRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Driver not found with id: " + id));
+        return driverRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Driver not found with id: " + id));
     }
 
     @Transactional

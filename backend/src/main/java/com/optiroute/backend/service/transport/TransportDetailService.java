@@ -45,10 +45,10 @@ public class TransportDetailService {
     }
 
     public TransportDetailResponse getDetail(Long serviceId, Long routeId) {
-        com.optiroute.backend.entity.transport.Service service = serviceRepository.findById(serviceId).orElseThrow(() -> new RuntimeException("Service not found"));
+        com.optiroute.backend.entity.transport.Service service = serviceRepository.findById(serviceId).orElseThrow(() -> new EntityNotFoundException("Service not found"));
         List<Route> allServiceRoutes = routeRepository.findByServiceIdOrderByIdAsc(serviceId);
         if (allServiceRoutes.isEmpty()) {
-            throw new RuntimeException("Route not found");
+            throw new EntityNotFoundException("Route not found");
         }
         int routeNumber = 1;
         List<Route> routes = allServiceRoutes;

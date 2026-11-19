@@ -24,7 +24,10 @@ api.interceptors.response.use(
     (error) => {
         const authStore = useAuthStore()
 
-        if (error.response?.status === 401) {
+        // Un 401 sur la connexion signale des identifiants invalides, pas une session expirée
+        const isLoginRequest = error.config?.url?.endsWith('/auth/login')
+
+        if (error.response?.status === 401 && !isLoginRequest) {
             authStore.logout()
             window.location.href = '/login'
         }

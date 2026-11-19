@@ -2,6 +2,7 @@ package com.optiroute.backend.service.cost;
 
 import com.optiroute.backend.exception.ResourceInUseException;
 import com.optiroute.backend.repository.EventRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,7 +57,7 @@ public class CostParameterService {
 
     public CostParameterResponse update(Long id, UpdateCostParameterRequest request) {
 
-        CostParameter parameter = costParameterRepository.findById(id).orElseThrow(() -> new RuntimeException("Cost parameter not found"));
+        CostParameter parameter = costParameterRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Cost parameter not found"));
 
         parameter.setCategory(request.category());
         parameter.setLabel(request.label());
@@ -77,7 +78,7 @@ public class CostParameterService {
     @Transactional(readOnly = true)
     public CostParameterResponse getById(Long id) {
 
-        CostParameter parameter = costParameterRepository.findById(id).orElseThrow(() -> new RuntimeException("Cost parameter not found"));
+        CostParameter parameter = costParameterRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Cost parameter not found"));
 
         return toResponse(parameter);
     }
@@ -91,7 +92,7 @@ public class CostParameterService {
 
     public void delete(Long id) {
 
-        CostParameter parameter = costParameterRepository.findById(id).orElseThrow(() -> new RuntimeException("Cost parameter not found"));
+        CostParameter parameter = costParameterRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Cost parameter not found"));
 
         ResourceInUseException.ensureUnused("ce paramètre de coût", eventRepository.countByCostParameterId(id));
 
@@ -102,7 +103,7 @@ public class CostParameterService {
 
     public CostParameterResponse setActive(Long id, boolean active) {
 
-        CostParameter parameter = costParameterRepository.findById(id).orElseThrow(() -> new RuntimeException("Cost parameter not found"));
+        CostParameter parameter = costParameterRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Cost parameter not found"));
 
         parameter.setActive(active);
 

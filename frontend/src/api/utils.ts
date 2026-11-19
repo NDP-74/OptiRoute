@@ -1,4 +1,10 @@
-import axios from 'axios'
+import axios, { type AxiosError } from 'axios'
+
+// Message explicatif renvoyé par le backend (ApiErrorResponse.message)
+function serverMessage(error: AxiosError): string | undefined {
+    const message = (error.response?.data as { message?: unknown } | undefined)?.message
+    return typeof message === 'string' && message ? message : undefined
+}
 
 export function getApiErrorMessage(
     error: unknown,
@@ -24,15 +30,16 @@ export function getApiErrorMessage(
             return 'La ressource demandée est introuvable.'
 
         case 409:
-            return 'Cette opération entre en conflit avec des données existantes.'
+            return serverMessage(error) ?? 'Cette opération entre en conflit avec des données existantes.'
 
-        case 422: {
-            const message = (error.response?.data as { message?: unknown } | undefined)?.message
-            return typeof message === 'string' && message ? message : fallback
-        }
+        case 422:
+            return serverMessage(error) ?? fallback
 
         case 500:
             return 'Le serveur a rencontré une erreur.'
+
+        case 502:
+            return serverMessage(error) ?? 'Un service externe est indisponible. Réessayez dans quelques instants.'
 
         default:
             return fallback
