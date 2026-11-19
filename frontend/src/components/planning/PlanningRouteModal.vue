@@ -163,6 +163,7 @@ async function onDriverCreated(driver: DriverSummary) {
     drivers.value.push(driver)
     driverId.value = driver.id
     showCreateDriver.value = false
+    void applyDriverVehicles()
     try {
         const [loadedTractors, loadedSemiTrailers] = await Promise.all([getTractors(), getSemiTrailers()])
         tractors.value = loadedTractors
@@ -569,7 +570,10 @@ watch(() => props.show, (show) => {
     if (show) openForm()
 })
 
-watch(driverId, async (id) => {
+// Appelé uniquement sur un choix utilisateur : à l'ouverture d'une replanification, le tracteur et la
+// semi-remorque enregistrés sur le service ne doivent pas être remplacés par ceux du chauffeur
+async function applyDriverVehicles() {
+    const id = driverId.value
     if (id === undefined) return
 
     try {
@@ -580,7 +584,7 @@ watch(driverId, async (id) => {
     } catch (error) {
         notification.error('Chargement impossible', getApiErrorMessage(error, 'Le véhicule du chauffeur n’a pas pu être chargé.'))
     }
-})
+}
 
 onMounted(async () => {
     // Monté déjà ouvert (mode intégré) : le watch sur show ne se déclenche pas
@@ -644,6 +648,7 @@ onMounted(async () => {
                                 </label>
                                 <CreateSelect v-model="selectedDriverId" :options="driverOptions" :disabled="isSaving"
                                     label="Chauffeur" placeholder="Sélectionner un chauffeur" create-label="Nouveau chauffeur"
+                                    @update:model-value="applyDriverVehicles"
                                     @create="showCreateDriver = true" />
                             </div>
 
