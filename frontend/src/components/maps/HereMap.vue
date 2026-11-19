@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import type { PointOfInterest } from '@/models/PointOfInterest'
 
 //Variables
@@ -297,6 +297,24 @@ onMounted(() => {
 
     H.ui.UI.createDefault(map, defaultLayers)
 
-    window.addEventListener('resize', () => map.getViewPort().resize())
+    window.addEventListener('resize', resizeMap)
+})
+
+function resizeMap() {
+    map?.getViewPort().resize()
+}
+
+// Libère la carte (contexte WebGL) et l'écouteur global : sans cela, chaque ouverture de modale
+// en accumule de nouveaux jusqu'à atteindre la limite du navigateur (cartes blanches)
+onBeforeUnmount(() => {
+    window.removeEventListener('resize', resizeMap)
+    map?.dispose()
+    map = null
+    routePolylines.length = 0
+    waypointMarkers.length = 0
+    startMarker = null
+    endMarker = null
+    pointMarker = null
+    poiGroup = null
 })
 </script>
