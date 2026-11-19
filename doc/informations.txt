@@ -18,3 +18,5 @@ Formulaire dynamique avec verification des données
 
 Séparation grand routier / grand régionaux:
     Un conducteur ne pas rouler a plus de 9h (légalement max 10h)
+
+Grand routier / régionaux -> Répartition remplacé "arrivé à 20h" par dernier point relais / "routier" sur le trajet et Arrivé à 20h / ou pause à 10km de l'arrivée si arrivée trop tot

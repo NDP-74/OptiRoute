@@ -29,14 +29,23 @@ public class TransportFacadeService {
     // Les appels HERE (calcul et planification) sont faits hors transaction ; seule l'écriture du service
     // et de ses trajets est transactionnelle (ServiceRouteService), sans sauvegarde partielle en cas d'échec.
     public Service createTransport(TransportRequest request) {
+        RouteDto selectedRoute = calculateRoute(request);
+        return serviceRouteService.create(request, transportRoutePlanner.plan(request, selectedRoute));
+    }
+
+    public Service updateTransport(Long id, TransportRequest request) {
+        RouteDto selectedRoute = calculateRoute(request);
+        return serviceRouteService.update(id, request, transportRoutePlanner.plan(request, selectedRoute));
+    }
+
+    private RouteDto calculateRoute(TransportRequest request) {
         RouteRequest routeRequest = routeRequestFactory.fromTransport(request);
         routeRequest.setDriverId(request.driverId());
         RoutesResponse routeResponse = routeOptimizationService.calculateRoute(routeRequest);
 
-        RouteDto selectedRoute = routeResponse.getRoutes().stream()
+        return routeResponse.getRoutes().stream()
             .min((first, second) -> Long.compare(first.getDuration(), second.getDuration()))
             .orElseThrow(() -> new TransportPlanningException("Planning incompatible : aucun itinéraire disponible."));
-        return serviceRouteService.create(request, transportRoutePlanner.plan(request, selectedRoute));
     }
 
     public Service createFromRoute(TransportFromRouteRequest request) {

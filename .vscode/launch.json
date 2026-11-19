@@ -17,9 +17,18 @@
             "mainClass": "com.optiroute.backend.OptiRouteApplication",
             "env": {
                 "HERE_API_KEY": "HqU8SGT6rni_-RM3NkfvYHJVVrzWhefEmG2j1swtzIo",
+                "DASHDOC_API_TOKEN": "Token 39984b303b7e40e21cf03c5443498b1e773af8f1",
                 "PTV_API_KEY": "RVVfNmQ0NDQwYjZmMDQ2NDk5ZWI0NzRkNzgxZTAzN2Y4Y2M6OTEyYmRlZTYtMTRlMS00ZjJhLWI3MTUtYWFhZGJkZGU3Yzhl"
             },
             "projectName": "backend"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "dashdocApiToken",
+            "type": "promptString",
+            "description": "Dashdoc API token",
+            "password": true
         }
     ]
 }

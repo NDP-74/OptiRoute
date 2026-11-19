@@ -14,7 +14,11 @@ export function getApiErrorMessage(
         return fallback
     }
 
-    const status = error.response?.status
+    if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+        return 'Le délai de réponse est dépassé. Vérifiez la connexion au serveur et réessayez.'
+    }
+
+    const status = error.response?.status;
 
     switch (status) {
         case 400:
@@ -40,6 +44,12 @@ export function getApiErrorMessage(
 
         case 502:
             return serverMessage(error) ?? 'Un service externe est indisponible. Réessayez dans quelques instants.'
+
+        case 503:
+            return serverMessage(error) ?? 'Le service demandé n’est pas configuré.'
+
+        case 504:
+            return serverMessage(error) ?? 'Dashdoc met trop de temps à répondre. Réessayez dans quelques instants.'
 
         default:
             return fallback

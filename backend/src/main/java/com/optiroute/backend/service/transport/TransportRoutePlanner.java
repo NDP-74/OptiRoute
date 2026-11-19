@@ -45,7 +45,12 @@ class TransportRoutePlanner {
         ServiceTiming timing = transport.serviceTiming();
         OffsetDateTime deadline = deliveryDeadline(transport);
         OffsetDateTime departure;
-        if (timing != null && timing.departureStart() != null) {
+        boolean dashdocScheduledDeparture = "DASHDOC".equalsIgnoreCase(transport.externalSource())
+            && transport.routeTime() != null
+            && transport.timeMode() != RouteTimeMode.ARRIVAL;
+        if (dashdocScheduledDeparture) {
+            departure = transport.routeTime();
+        } else if (timing != null && timing.departureStart() != null) {
             departure = timing.departureStart().plusMinutes(minutes(timing.loadingDurationMinutes()));
         } else if (transport.routeTime() != null && transport.timeMode() != RouteTimeMode.ARRIVAL) {
             departure = transport.routeTime();
@@ -55,7 +60,8 @@ class TransportRoutePlanner {
             return List.of(new TransportRouteSegment(transport, selectedRoute, false));
         }
         departure = normalizeDeparture(departure, deadline, selectedRoute.getDuration());
-        boolean departureIsFixed = (timing != null && timing.departureStart() != null)
+        boolean departureIsFixed = dashdocScheduledDeparture
+            || (timing != null && timing.departureStart() != null)
             || (transport.routeTime() != null && transport.timeMode() != RouteTimeMode.ARRIVAL);
         GpsModeType mode = selectedRoute.getType() == null ? GpsModeType.FASTEST : selectedRoute.getType();
         Driver driver = transport.driverId() == null ? null : driverService.getEntityById(transport.driverId());

@@ -69,6 +69,50 @@ class TransportRoutePlannerTest {
     }
 
     @Test
+    void shouldUseDashdocScheduledStartAsExactDepartureAcrossDaylightSavingTime() {
+        OffsetDateTime scheduledStart = time("2026-03-29T01:15:00Z");
+        TransportRequest dashdoc = new TransportRequest(
+            "Dashdoc",
+            7L,
+            null,
+            null,
+            null,
+            false,
+            "dashdoc-1",
+            "DASHDOC",
+            scheduledStart,
+            RouteTimeMode.DEPARTURE,
+            "Origin",
+            null,
+            0,
+            0,
+            "Destination",
+            null,
+            0,
+            1,
+            BigDecimal.valueOf(1000),
+            new ServiceTiming(
+                45,
+                45,
+                time("2026-03-29T01:00:00Z"),
+                time("2026-03-29T01:30:00Z"),
+                time("2026-03-29T02:00:00Z"),
+                time("2026-03-29T02:30:00Z")),
+            List.of());
+
+        var segments = planner.plan(dashdoc, selected(1));
+
+        assertEquals(1, segments.size());
+        assertEquals(scheduledStart, departure(segments.getFirst()));
+        assertEquals(time("2026-03-29T02:15:00Z"), arrival(segments.getFirst()));
+        var calculation = ArgumentCaptor.forClass(RouteRequest.class);
+        verify(routing).calculateRoute(calculation.capture(), any());
+        assertEquals(scheduledStart, calculation.getValue().getRouteTime());
+        assertEquals(3, scheduledStart.atZoneSameInstant(PARIS).getHour());
+        assertEquals(2 * 3600, scheduledStart.atZoneSameInstant(PARIS).getOffset().getTotalSeconds());
+    }
+
+    @Test
     void shouldResumeBeforeFiveOnlyWhenRequiredAndNeverMoveTheTwentyCut() {
         var segments = planner.plan(request("2026-11-03T15:00:00+01:00", "2026-11-04T09:00:00+01:00", 10), selected(10));
 

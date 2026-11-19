@@ -3,7 +3,8 @@
         <PlanningToolbar :start-date="selectedStartDate" :end-date="selectedEndDate"
             :day-selection-mode="daySelectionMode" :selected-day-count="selectedDayKeys.size"
             v-model:view-id="selectedViewId" :views="savedViews" :loading-views="loadingViews"
-            :is-completing-days="isCompletingDays" @update:range="handleRangeChange" @today-range="applyTodayRange"
+            :is-completing-days="isCompletingDays" :is-syncing-dashdoc="isSyncingDashdoc"
+            @update:range="handleRangeChange" @today-range="applyTodayRange" @sync-dashdoc="syncDashdoc"
             @create-view="openViewEditor(null)" @edit-view="editSavedView"
             @create-route="openRouteModal" @start-day-selection="startDaySelection"
             @cancel-day-selection="cancelDaySelection" @complete-days="completeSelectedDays" />
@@ -41,6 +42,7 @@ import { usePlanning } from "@/utils/planningUtils";
 import { getPlanningViews, getTransportById } from "@/api/planningApi";
 import { getCurrentUser } from "@/api/userApi";
 import { createTransportFromRoute } from "@/api/transportApi";
+import { synchronizeDashdoc } from "@/api/dashdocApi";
 import { calculateRoute } from "@/api/here/mapsApi";
 import { getApiErrorMessage } from "@/api/utils";
 import { useNotification } from "@/composables/useNotification";
@@ -59,6 +61,7 @@ const showRouteModal = ref(false);
 const daySelectionMode = ref(false);
 const selectedDayKeys = ref<Set<string>>(new Set());
 const isCompletingDays = ref(false);
+const isSyncingDashdoc = ref(false);
 const notification = useNotification();
 
 function daySelectionKey(driverId: number, dayKey: string): string {
@@ -628,6 +631,47 @@ async function loadCurrentPeriod(): Promise<void> {
         endDate: formatDateKey(endDateExclusive),
         viewId: selectedViewId.value ?? undefined,
     });
+}
+
+async function syncDashdoc(): Promise<void> {
+    if (isSyncingDashdoc.value || isCompletingDays.value) {
+        return;
+    }
+
+    isSyncingDashdoc.value = true;
+    let result;
+    try {
+        result = await synchronizeDashdoc(
+            formatDateKey(selectedStartDate.value),
+            formatDateKey(selectedEndDate.value),
+        );
+    } catch (reason) {
+        notification.error("Échec de la synchronisation Dashdoc", getErrorMessage(reason));
+        return;
+    } finally {
+        isSyncingDashdoc.value = false;
+    }
+
+    const summary = `${result.created} créé(s), ${result.updated} mis à jour, ${result.skipped} ignoré(s).`;
+    const skipDetails = Object.entries(result.skippedReasons)
+        .slice(0, 3)
+        .map(([reason, count]) => `${count} ${reason.toLowerCase()}`)
+        .join(", ");
+    const skipMessage = skipDetails ? ` Motifs : ${skipDetails}.` : "";
+
+    if (result.failures.length > 0) {
+        notification.warning(
+            "Synchronisation partielle",
+            `${summary}${skipMessage} ${result.failures.length} transport(s) en erreur.`,
+            10000,
+        );
+    } else if (result.skipped > 0) {
+        notification.warning("Synchronisation terminée", `${summary}${skipMessage}`);
+    } else {
+        notification.success("Synchronisation terminée", summary);
+    }
+
+    await loadCurrentPeriod();
 }
 
 function syncUrlRange(start: Date, end: Date): void {

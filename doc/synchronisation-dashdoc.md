@@ -1,6 +1,6 @@
 # Synchronisation Dashdoc : services et trajets
 
-> Document de cadrage et guide de test. L'intégration Dashdoc de bout en bout reste à implémenter. Le découpage récurrent à 20 h avec HERE est disponible, même sans fenêtres sources. Pas de conduite jusqu'à 5 h par défaut ; un départ plus tôt est autorisé si nécessaire pour respecter la livraison. Les régionaux passent par leur stationnement et peuvent y arriver après 20 h. Les exemples ci-dessous simulent une entrée Dashdoc avec les API OptiRoute existantes.
+> Guide de cadrage et de test. Le bouton **Synchroniser** importe désormais les transports Dashdoc planifiés sur la période choisie (maximum sept jours). Le découpage récurrent à 20 h avec HERE est disponible, même sans fenêtres sources. Pas de conduite jusqu'à 5 h par défaut ; un départ plus tôt est autorisé si nécessaire pour respecter la livraison. Les régionaux passent par leur stationnement et peuvent y arriver après 20 h. Les exemples ci-dessous simulent une entrée Dashdoc avec les API OptiRoute existantes.
 
 ## 1. Modèle métier
 
@@ -94,7 +94,7 @@ Comportement cible pour chaque message ou import Dashdoc :
 
 L'intégration doit définir explicitement ce qui arrive aux trajets modifiés manuellement, commencés, terminés ou annulés lorsque Dashdoc renvoie une nouvelle version. Une synchronisation ne doit pas effacer silencieusement une modification utilisateur ou un état opérationnel.
 
-**État actuel :** `POST /api/transports` crée un nouveau service ; ce n'est pas encore un endpoint d'upsert Dashdoc. Répéter cet appel avec le même `externalId` peut donc créer un doublon. Il n'existe pas encore d'endpoint dédié du type `/api/dashdoc/sync`.
+**État actuel :** `POST /api/dashdoc/sync?startDate=AAAA-MM-JJ&endDate=AAAA-MM-JJ` synchronise les transports Dashdoc dont un créneau de chargement ou de livraison recoupe la période. Le même `(externalSource, externalId)` est mis à jour au lieu de créer un doublon. Les durées de manutention déjà renseignées sont conservées ; les nouvelles missions reçoivent 45 minutes par défaut.
 
 ### 3.2 Durées de manutention
 
@@ -448,13 +448,17 @@ Le retour au stationnement retenu peut dépasser 20 h. Les waypoints sont répar
 
 Le POST permet de vérifier les découpages nocturnes, le stationnement des grands régionaux, les coûts et le CA, ainsi que l'absence de sauvegarde partielle en cas de conflit. L'idempotence et les politiques de synchronisation restent à implémenter.
 
-## 6. Éléments à finaliser pour l'intégration réelle
+## 6. Comportement de la synchronisation réelle
 
-- Contrat exact de l'API Dashdoc utilisée et choix de la clé externe stable.
-- Politique de sélection ou représentation de plusieurs `deliveries` et `slots`.
-- Correspondance entre livraison Dashdoc, client, conducteur, véhicule, stationnement et état déjà chargé.
-- Valeur par défaut 45 minutes appliquée à l'import et distinction entre valeur importée et correction manuelle.
-- Upsert idempotent et politique d'écrasement des trajets modifiés, commencés, terminés ou annulés.
-- Adaptateur PTV vers la chronologie du tracé (le calcul à 20 h est disponible avec HERE).
-- Propagation complète des bornes maximales ; le stationnement grand régional, le découpage nocturne multi-jours, les coûts et la répartition du CA sont disponibles.
-- Représentation des horaires ou opérations multiples si le contrat Dashdoc comporte plusieurs points logistiques.
+- Configurer `DASHDOC_API_TOKEN` dans l'environnement du backend. Le client appelle `https://api.dashdoc.eu/api/v4/transports/` avec l'en-tête `Authorization: <clé API>` (sans préfixe `Bearer` ni `Token`) et suit les URL `next` fournies par Dashdoc (taille de page définie par l'API).
+- Le délai de lecture Dashdoc est indépendant des autres API : 120 secondes par défaut, configurable via `DASHDOC_READ_TIMEOUT` (et `DASHDOC_CONNECT_TIMEOUT` pour la connexion). Un timeout remonte en HTTP 504.
+- Dashdoc filtre les transports en amont avec une requête `status=<valeur>` par statut configuré dans `DashdocClient`. Les résultats de ces requêtes sont dédupliqués par UID. OptiRoute filtre ensuite localement sur les plages `segments[].scheduled_start_range` et `segments[].scheduled_end_range`, interprétées en `Europe/Paris` pour comparer les jours sélectionnés. Les instants ISO UTC restent inchangés et les conversions tiennent compte du changement d'heure.
+- Les bornes OptiRoute d'enlèvement viennent de `scheduled_start_range.start/end` du premier segment (ordre `sort_order`) ; les bornes de livraison viennent de `scheduled_end_range.start/end` du dernier segment. L'heure ponctuelle `scheduled_start`, lorsqu'elle existe, devient l'heure exacte de départ routier ; sinon, le début de la plage planifiée est utilisé. Cette heure exacte ne reçoit pas de durée de chargement supplémentaire.
+- Les adresses et coordonnées d'origine viennent de `segments[].origin.address` du premier segment ; celles de destination viennent de `segments[].destination.address` du dernier segment. Les coordonnées de ces segments sont utilisées pour le calcul de l'itinéraire, plutôt que celles de `deliveries[]`.
+- Le conducteur est associé par `trucker.display_name` comparé au prénom et nom OptiRoute (sans tenir compte de la casse, des accents ni des espaces superflus). Le véhicule est associé par `vehicle.license_plate`, sans tenir compte de la casse ni des séparateurs. Si une remorque est renseignée, sa plaque doit aussi correspondre à une semi-remorque OptiRoute.
+- Un transport avec plusieurs livraisons, plusieurs créneaux pour un même point, une affectation non unique, des coordonnées invalides ou un mapping manquant est ignoré et comptabilisé dans la réponse.
+- Les transports existants sont replannifiés depuis Dashdoc ; les événements associés aux trajets sont réaffectés par les services de planification existants.
+- En cas d'échec de calcul ou d'écriture sur un transport, l'erreur est incluse dans le bilan. Les autres transports de la période continuent d'être traités.
+- Les identifiants externes utilisent `uid`, avec `remote_id` comme repli. Le chiffre d'affaires vient de `agreed_price_total`. Le client reste non associé faute de règle de mapping définie.
+
+Les limites métier restantes sont la représentation des transports multi-livraisons (ils sont volontairement ignorés), les créneaux multiples et la politique de protection des trajets déjà commencés, terminés ou modifiés manuellement.
