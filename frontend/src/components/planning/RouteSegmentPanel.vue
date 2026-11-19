@@ -319,7 +319,7 @@ function cancel() {
 async function save() {
     const request = routeRequest.value
     const route = effectiveRoute.value
-    if (!request || !route || tractorId.value == null || isSaving.value) return
+    if (!request || !route || driverId.value == null || tractorId.value == null || isSaving.value) return
     if (!request.routeTime) {
         notification.error('Enregistrement impossible', 'Une heure de départ ou d’arrivée est requise.')
         return
@@ -328,7 +328,7 @@ async function save() {
     isSaving.value = true
     try {
         await updateTransportRoute(props.transport.id, props.routeId, {
-            driverId: driverId.value ?? undefined,
+            driverId: driverId.value,
             tractorId: tractorId.value,
             semiTrailerId: semiTrailerId.value ?? undefined,
             emptyTrip: emptyTrip.value,
@@ -369,7 +369,7 @@ async function save() {
                                 <User :size="14" /> Chauffeur
                             </span>
                             <CreateSelect v-model="driverId" :options="driverOptions" :disabled="isSaving"
-                                label="Chauffeur" placeholder="Aucun chauffeur" create-label="Nouveau chauffeur"
+                                label="Chauffeur" placeholder="Sélectionner un chauffeur" create-label="Nouveau chauffeur"
                                 @update:model-value="applyDriverVehicles" @create="showCreateDriver = true" />
                         </div>
                         <div class="space-y-1.5">
@@ -502,7 +502,7 @@ async function save() {
                     </button>
                     <button type="button"
                         class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                        :disabled="!effectiveRoute || tractorId == null || isSaving" @click="save">
+                        :disabled="!effectiveRoute || driverId == null || tractorId == null || isSaving" @click="save">
                         {{ isSaving ? 'Enregistrement…' : `Mettre à jour le trajet ${segmentIndex + 1}` }}
                     </button>
                 </div>

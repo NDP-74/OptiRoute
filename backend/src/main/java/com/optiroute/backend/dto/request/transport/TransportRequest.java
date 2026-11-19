@@ -13,7 +13,7 @@ import jakarta.validation.constraints.Size;
 
 public record TransportRequest(String name,
 
-        Long driverId, Long tractorId, Long semiTrailerId, Long customerId,
+        @NotNull Long driverId, Long tractorId, Long semiTrailerId, Long customerId,
 
         boolean emptyTrip,
 

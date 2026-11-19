@@ -12,7 +12,7 @@ import jakarta.validation.constraints.NotNull;
 
 // Modification d'un seul segment (route) d'un service, sans impact sur les autres segments
 public record RouteSegmentRequest(
-        Long driverId, @NotNull Long tractorId, Long semiTrailerId,
+        @NotNull Long driverId, @NotNull Long tractorId, Long semiTrailerId,
 
         boolean emptyTrip,
 

@@ -277,6 +277,7 @@ class ServiceRouteServiceTest {
     void shouldRejectNegativeDurationsInvertedWindowsAndInvalidWaypoints() throws Exception {
         TransportRequest invalid = mapper.readValue("""
             {
+              "driverId": 1,
               "serviceTiming": {
                 "loadingDurationMinutes": -1,
                 "arrivalStart": "2026-10-30T10:00:00Z",
@@ -287,7 +288,16 @@ class ServiceRouteServiceTest {
             """,TransportRequest.class);
         try (var factory = Validation.buildDefaultValidatorFactory()) {
             assertEquals(4,factory.getValidator().validate(invalid).size());
-            assertTrue(factory.getValidator().validate(mapper.readValue("{}",TransportRequest.class)).isEmpty());
+            assertTrue(factory.getValidator().validate(mapper.readValue("{\"driverId\": 1}",TransportRequest.class)).isEmpty());
+        }
+    }
+
+    @Test
+    void shouldRequireADriver() throws Exception {
+        try (var factory = Validation.buildDefaultValidatorFactory()) {
+            var violations = factory.getValidator().validate(mapper.readValue("{}",TransportRequest.class));
+            assertEquals(1,violations.size());
+            assertEquals("driverId",violations.iterator().next().getPropertyPath().toString());
         }
     }
 
