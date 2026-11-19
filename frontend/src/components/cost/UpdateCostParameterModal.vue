@@ -54,7 +54,8 @@ const populateForm = () => {
         value: props.costParameter.value,
         active: props.costParameter.active,
         assignmentType: props.costParameter.assignmentType,
-        conditions: props.costParameter.conditions,
+        // Copie : le formulaire ne doit pas modifier le paramètre affiché tant que rien n'est enregistré
+        conditions: props.costParameter.conditions.map(condition => ({ ...condition })),
     } satisfies CostParameterFormData)
 }
 

@@ -220,19 +220,26 @@ const tripClasses = computed<string>(() => {
         : "border-emerald-200 bg-emerald-100 text-emerald-700";
 });
 
+// Jetons de requête : seule la réponse de la dernière demande est appliquée (clics rapides entre transports ou trajets)
+let transportRequestToken = 0;
+let eventsRequestToken = 0;
+
 async function loadEvents(id: number, routeId: number | null): Promise<void> {
+    const token = ++eventsRequestToken;
     loadingEvents.value = true;
     try {
-        events.value = await getEventsByService(id, routeId ?? undefined);
+        const loadedEvents = await getEventsByService(id, routeId ?? undefined);
+        if (token === eventsRequestToken) events.value = loadedEvents;
     } catch (exception) {
         console.error(exception);
-        events.value = [];
+        if (token === eventsRequestToken) events.value = [];
     } finally {
-        loadingEvents.value = false;
+        if (token === eventsRequestToken) loadingEvents.value = false;
     }
 }
 
 async function loadTransport(): Promise<void> {
+    const token = ++transportRequestToken;
     if (props.transportId === null) {
         transport.value = null;
         selectedRouteId.value = null;
@@ -244,19 +251,23 @@ async function loadTransport(): Promise<void> {
     error.value = null;
 
     try {
+        const transportId = props.transportId;
         const requestedRouteId = selectedRouteId.value ?? props.routeId;
-        transport.value = await getTransportById(props.transportId, requestedRouteId ?? undefined);
+        const loadedTransport = await getTransportById(transportId, requestedRouteId ?? undefined);
+        if (token !== transportRequestToken) return;
+        transport.value = loadedTransport;
         selectedRouteId.value = transport.value.routes.some((route) => route.routeId === requestedRouteId)
             ? requestedRouteId
             : transport.value.routeId;
-        await loadEvents(props.transportId, selectedRouteId.value);
+        await loadEvents(transportId, selectedRouteId.value);
     } catch (exception) {
         console.error(exception);
+        if (token !== transportRequestToken) return;
 
         transport.value = null;
         error.value = "Une erreur est survenue pendant le chargement.";
     } finally {
-        loading.value = false;
+        if (token === transportRequestToken) loading.value = false;
     }
 }
 
@@ -268,6 +279,11 @@ watch(
             selectedRouteId.value = routeId;
             void loadTransport();
         } else {
+            // Invalide les requêtes en cours : leur réponse ne doit pas réapparaître après la fermeture
+            transportRequestToken++;
+            eventsRequestToken++;
+            loading.value = false;
+            loadingEvents.value = false;
             transport.value = null;
             selectedRouteId.value = null;
             error.value = null;
