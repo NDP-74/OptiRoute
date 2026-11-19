@@ -90,6 +90,12 @@ pour autoriser cette unité en base. Aucune donnée existante n'est modifiée.
 
 ## Implémentation
 
+### Conditions horaires et validation
+
+Les conditions horaires (`DEPARTURE_TIME`, `ARRIVAL_TIME`, `DRIVER_DAY_START_TIME`, `DRIVER_DAY_END_TIME`) sont évaluées sur la journée de départ en Europe/Paris. Une heure qui tombe le lendemain est prolongée de 24 h : une fin de journée à 01:30 le lendemain vaut 25:30, elle est donc « après 20:00 » et n’est pas égale à 01:30. La fin de journée est l’arrivée la plus tardive en instant, pas la plus grande heure.
+
+À l’enregistrement, chaque condition est contrôlée : champ cohérent avec la source, opérateur autorisé pour le champ (`LESS_THAN`/`GREATER_THAN` pour les nombres, `BEFORE`/`AFTER` pour les heures, égalité seule pour les booléens et le type de semi-remorque) et valeur lisible (nombre, `HH:mm`, `true`/`false`, identifiant). Une condition invalide est refusée en HTTP 400. Une condition invalide déjà en base est journalisée et considérée non satisfaite, sans bloquer le calcul des coûts.
+
 ### Fin de journée au stationnement
 
 La condition conducteur `DRIVER_ENDS_DAY_AT_PARKING` (« Termine la journée à son lieu de stationnement »)

@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -282,8 +284,14 @@ public class TransportCostService {
         Boolean driverEndsDayAtParking, int nightTransportCount, Map<Long, SemiTrailer> semiTrailersById) {
         double dailyKm = dayRoutes.stream().mapToDouble(r -> r.getDistanceMeters() / 1000.0).sum();
 
+        LocalDate date = route.getDepartureStart().atZoneSameInstant(ZONE).toLocalDate();
         LocalTime dayStart = dayRoutes.stream().map(r -> r.getDepartureStart().atZoneSameInstant(ZONE).toLocalTime()).min(Comparator.naturalOrder()).orElse(null);
-        LocalTime dayEnd = dayRoutes.stream().map(r -> r.getArrivalStart().atZoneSameInstant(ZONE).toLocalTime()).max(Comparator.naturalOrder()).orElse(null);
+        // Fin de journée = arrivée la plus tardive en instant (une arrivée après minuit reste la plus tardive)
+        ZonedDateTime dayEndDateTime = dayRoutes.stream().map(r -> r.getArrivalStart().atZoneSameInstant(ZONE))
+            .max(Comparator.comparing(ZonedDateTime::toInstant)).orElse(null);
+        LocalTime dayEnd = dayEndDateTime == null ? null : dayEndDateTime.toLocalTime();
+        int dayEndOffset = dayEndDateTime == null ? 0 : dayOffset(date, dayEndDateTime.toLocalDate());
+        ZonedDateTime arrival = route.getArrivalStart().atZoneSameInstant(ZONE);
 
         Long trailerTypeId = null;
         if (route.getSemiTrailerId() != null) {
@@ -292,10 +300,15 @@ public class TransportCostService {
             trailerTypeId = semiTrailer == null || semiTrailer.getTrailerType() == null ? null : semiTrailer.getTrailerType().getId();
         }
 
-        return new CostCalculationContext(route.getDepartureStart().atZoneSameInstant(ZONE).toLocalDate(), route.getDistanceMeters() / 1000.0, dailyKm,
+        return new CostCalculationContext(date, route.getDistanceMeters() / 1000.0, dailyKm,
             route.getDurationSeconds() / 3600.0, dayRoutes.size(), route.isEmptyTrip(), route.getDepartureStart().atZoneSameInstant(ZONE).toLocalTime(),
-            route.getArrivalStart().atZoneSameInstant(ZONE).toLocalTime(), dayStart, dayEnd, trailerTypeId, dailyDriverWorkDurationHours,
-            driverWorkDurations.getOrDefault(route.getId(),route.getDurationSeconds() / 3600.0), driverEndsDayAtParking, nightTransportCount);
+            arrival.toLocalTime(), dayStart, dayEnd, trailerTypeId, dailyDriverWorkDurationHours,
+            driverWorkDurations.getOrDefault(route.getId(),route.getDurationSeconds() / 3600.0), driverEndsDayAtParking, nightTransportCount,
+            dayOffset(date, arrival.toLocalDate()), dayEndOffset);
+    }
+
+    private int dayOffset(LocalDate from, LocalDate to) {
+        return (int) Math.max(0, ChronoUnit.DAYS.between(from, to));
     }
 
     private double calculateDriverWorkDurationHours(Route route) {

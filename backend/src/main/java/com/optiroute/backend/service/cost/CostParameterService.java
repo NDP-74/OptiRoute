@@ -37,7 +37,7 @@ public class CostParameterService {
         parameter.setLabel(request.label());
         parameter.setValue(request.value());
         parameter.setUnit(request.unit());
-        parameter.setActive(request.active());
+        parameter.setActive(request.isActive());
         if (request.assignmentType() != null) {
             parameter.setAssignmentType(request.assignmentType());
         }
@@ -57,7 +57,7 @@ public class CostParameterService {
         parameter.setLabel(request.label());
         parameter.setValue(request.value());
         parameter.setUnit(request.unit());
-        parameter.setActive(request.active());
+        parameter.setActive(request.isActive());
         if (request.assignmentType() != null) {
             parameter.setAssignmentType(request.assignmentType());
         }
@@ -105,9 +105,15 @@ public class CostParameterService {
     }
 
     private void replaceConditions(CostParameter parameter, List<CostConditionRequest> requests) {
+        boolean usesConditions = parameter.getAssignmentType() != CostParameterAssignmentType.MANUAL
+            && parameter.getAssignmentType() != CostParameterAssignmentType.ALWAYS && requests != null;
+        if (usesConditions) {
+            // Validation avant toute écriture : une condition invalide ferait échouer tous les calculs de coûts
+            requests.forEach(CostConditionService::validate);
+        }
+
         costConditionRepository.deleteByCostParameterId(parameter.getId());
-        if (parameter.getAssignmentType() == CostParameterAssignmentType.MANUAL
-            || parameter.getAssignmentType() == CostParameterAssignmentType.ALWAYS || requests == null) {
+        if (!usesConditions) {
             return;
         }
 
@@ -118,7 +124,7 @@ public class CostParameterService {
             condition.setSource(conditionRequest.source());
             condition.setField(conditionRequest.field());
             condition.setOperator(conditionRequest.operator());
-            condition.setValue(conditionRequest.value());
+            condition.setValue(conditionRequest.value().trim());
 
             costConditionRepository.save(condition);
         }
