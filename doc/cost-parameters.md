@@ -76,7 +76,9 @@ pour autoriser cette unité en base. Aucune donnée existante n'est modifiée.
   en indiquant le nombre d’événements concernés.
 - Lors de la modification d'un transport, les événements géolocalisés sont préremplis
   comme points de passage verrouillés. Ils restent inclus dans les calculs et ne peuvent
-  être remplacés, déplacés ou supprimés depuis le formulaire d'itinéraire.
+  être ni remplacés ni déplacés depuis le formulaire d'itinéraire. Une croix permet en revanche
+  de supprimer l'événement, après confirmation : il est supprimé comme depuis le détail du transport
+  et l'itinéraire est recalculé.
   Les étapes ajoutées manuellement restent modifiables et supprimables.
 - Les tiroirs de détail du tracteur et de la semi-remorque affichent en lecture seule les
   événements qui leur sont assignés (`GET /api/events/tractors/{id}` et
