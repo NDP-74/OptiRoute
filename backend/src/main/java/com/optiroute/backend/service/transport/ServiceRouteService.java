@@ -280,8 +280,8 @@ public class ServiceRouteService {
         if (routeDto.getType() != null) {
             route.setRouteType(routeDto.getType());
         }
-        route.setFuelCost(BigDecimal.valueOf(routeDto.getCosts().getFuelCost()));
-        route.setTollCost(BigDecimal.valueOf(routeDto.getCosts().getTollCost()));
+        route.setFuelCost(routeDto.getCosts().getFuelCost());
+        route.setTollCost(routeDto.getCosts().getTollCost());
     }
 
     private void applyRouteTimes(Route route, TransportRequest req, RouteDto routeDto, boolean calculatedTimes) {

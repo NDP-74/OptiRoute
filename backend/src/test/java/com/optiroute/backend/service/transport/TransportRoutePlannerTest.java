@@ -488,12 +488,52 @@ class TransportRoutePlannerTest {
 
         var segments = planner.plan(request("2026-11-03T15:00:00+01:00", null, 40), selected(40));
 
-        assertEquals(3, segments.size());
+        // Nuit 1 et 2 : le stationnement est à plus de 10 h de conduite, coupure sur route.
+        // Nuit 3 : le stationnement est à 5 h, il est retenu.
+        assertEquals(4, segments.size());
         assertEquals("Arrêt de nuit à 20 h", segments.getFirst().request().destinationName());
-        assertEquals("Depot", segments.get(1).request().destinationName());
+        assertEquals("Arrêt de nuit à 20 h", segments.get(1).request().destinationName());
+        assertEquals("Depot", segments.get(2).request().destinationName());
+        assertEquals(time("2026-11-05T10:00:00+01:00"), arrival(segments.get(2)));
         assertEquals("Depot", segments.getLast().request().originName());
-        assertEquals(time("2026-11-05T05:00:00+01:00"), departure(segments.getLast()));
+        assertEquals(time("2026-11-06T05:00:00+01:00"), departure(segments.getLast()));
         assertEquals(40 * 3600, segments.stream().mapToLong(s -> s.route().getDuration()).sum());
+        assertTrue(segments.stream().allMatch(s -> s.route().getDuration() <= TransportRoutePlanner.MAX_PARKING_DRIVING_SECONDS
+            || !"Depot".equals(s.request().destinationName())));
+    }
+
+    @ParameterizedTest
+    @ValueSource(doubles = {10, 11})
+    void shouldLimitDrivingToShortDistanceParkingToTenHours(double parkingLng) {
+        driver.setDriverType(DriverType.SHORT_DISTANCE);
+        driver.setLocationLongitude(BigDecimal.valueOf(parkingLng));
+
+        var segments = planner.plan(request("2026-11-03T08:00:00+01:00", null, 14), selected(14));
+
+        if (parkingLng == 10) {
+            assertEquals("Depot", segments.getFirst().request().destinationName());
+            assertEquals(time("2026-11-03T18:00:00+01:00"), arrival(segments.getFirst()));
+        } else {
+            // 11 h pour rejoindre le stationnement, même avant 20 h : refusé, coupure sur route
+            assertEquals("Arrêt de nuit à 20 h", segments.getFirst().request().destinationName());
+            assertEquals(time("2026-11-03T20:00:00+01:00"), arrival(segments.getFirst()));
+        }
+    }
+
+    @Test
+    void shouldNotUseShortDistanceParkingWhenDeliveryWindowOpensAfterTheNextDay() {
+        driver.setDriverType(DriverType.SHORT_DISTANCE);
+        driver.setLocationLongitude(BigDecimal.valueOf(6));
+        TransportRequest source = request("2026-11-03T15:00:00+01:00", "2026-11-05T16:00:00+01:00", 10);
+        source = copy(source, 7L, source.routeTime(), source.timeMode(),
+            new ServiceTiming(null, null, source.routeTime(), null, time("2026-11-05T13:00:00+01:00"),
+                time("2026-11-05T16:00:00+01:00")), List.of());
+
+        var segments = planner.plan(source, selected(10));
+
+        assertTrue(segments.stream().noneMatch(s -> "Depot".equals(s.request().destinationName())));
+        assertEquals("Arrêt de nuit à 20 h", segments.getFirst().request().destinationName());
+        assertEquals(time("2026-11-05T13:00:00+01:00"), arrival(segments.getLast()));
     }
 
     @Test

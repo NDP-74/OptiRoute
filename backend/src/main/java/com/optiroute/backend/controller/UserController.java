@@ -4,7 +4,6 @@ import com.optiroute.backend.dto.request.UserRequest;
 import com.optiroute.backend.dto.request.UserUpdateRequest;
 import com.optiroute.backend.dto.request.ChangePasswordRequest;
 import com.optiroute.backend.dto.response.UserResponse;
-import com.optiroute.backend.entity.User;
 import com.optiroute.backend.service.UserService;
 import jakarta.validation.Valid;
 
@@ -26,7 +25,7 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<User>> getUsers() {
+    public ResponseEntity<List<UserResponse>> getUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
 

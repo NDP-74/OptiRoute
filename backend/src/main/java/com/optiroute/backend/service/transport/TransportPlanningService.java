@@ -1,5 +1,6 @@
 package com.optiroute.backend.service.transport;
 
+import com.optiroute.backend.utils.MoneyUtils;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -102,7 +103,7 @@ public class TransportPlanningService {
                 }
             }
             BigDecimal routeRevenue = ServiceRouteRevenueAllocator.allocate(service.getRevenue(), serviceRoutes, route);
-            double revenue = routeRevenue == null ? 0 : routeRevenue.doubleValue();
+            BigDecimal revenue = routeRevenue == null ? MoneyUtils.ZERO : routeRevenue;
 
             Driver driver = route.getDriverId() == null ? null : driversById.get(route.getDriverId());
             Tractor tractor = route.getTractorId() == null ? null : tractorsById.get(route.getTractorId());
@@ -131,7 +132,7 @@ public class TransportPlanningService {
 
         PlanningUnassignedVehiclesResponse unassignedVehicles = includeUnusedVehicles
             ? buildUnassignedVehicles(availableDrivers, allTractors, allSemiTrailers, startDate, endDate)
-            : new PlanningUnassignedVehiclesResponse(List.of(), 0, List.of());
+            : new PlanningUnassignedVehiclesResponse(List.of(), MoneyUtils.ZERO, List.of());
 
         return new PlanningResponse(transports, drivers, unassignedVehicles);
     }
@@ -158,7 +159,7 @@ public class TransportPlanningService {
             .calculateDepreciationForPeriod(semiTrailer.getPurchaseCost(),semiTrailer.getDepreciationStartDate(),semiTrailer.getDepreciationEndDate(),startDate,endDate))));
 
         List<String> registrations = vehicles.stream().map(PlanningUnassignedVehicleResponse::registration).toList();
-        double depreciationCost = vehicles.stream().mapToDouble(PlanningUnassignedVehicleResponse::depreciationCost).sum();
+        BigDecimal depreciationCost = MoneyUtils.sum(vehicles, PlanningUnassignedVehicleResponse::depreciationCost);
 
         return new PlanningUnassignedVehiclesResponse(registrations, depreciationCost, vehicles);
     }

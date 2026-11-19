@@ -157,8 +157,8 @@ class EventServiceTest {
         assertEquals(12000L, route.getDistanceMeters());
         assertEquals(900L, route.getDurationSeconds());
         assertEquals("updated-polyline", route.getPolyline());
-        assertEquals(BigDecimal.valueOf(12.5), route.getFuelCost());
-        assertEquals(BigDecimal.valueOf(3.0), route.getTollCost());
+        assertEquals(new BigDecimal("12.50"), route.getFuelCost());
+        assertEquals(new BigDecimal("3.00"), route.getTollCost());
         assertEquals(route.getDepartureStart().plusSeconds(900), route.getArrivalStart());
     }
 
@@ -254,8 +254,8 @@ class EventServiceTest {
         when(eventRepository.findByRouteIdOrderByIdAsc(10L)).thenReturn(remainingEvents);
 
         RouteCostDetailsDto costs = new RouteCostDetailsDto();
-        costs.setFuelCost(12.5);
-        costs.setTollCost(3.0);
+        costs.setFuelCost(new BigDecimal("12.5"));
+        costs.setTollCost(new BigDecimal("3.0"));
         RouteDto selected = new RouteDto();
         selected.setDistanceMeters(12000);
         selected.setDuration(900);

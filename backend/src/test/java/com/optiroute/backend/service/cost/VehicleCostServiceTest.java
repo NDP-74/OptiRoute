@@ -48,7 +48,7 @@ class VehicleCostServiceTest {
         Method method = VehicleCostService.class.getDeclaredMethod("calculateDepreciation",Tractor.class,SemiTrailer.class,double.class,double.class,LocalDate.class);
         method.setAccessible(true);
 
-        double result = (double) method.invoke(service,tractor,semiTrailer,100.0,200.0,LocalDate.of(2024,1,5));
+        double result = ((BigDecimal) method.invoke(service,tractor,semiTrailer,100.0,200.0,LocalDate.of(2024,1,5))).doubleValue();
 
         assertEquals(150.0,result,0.0001);
     }
@@ -73,7 +73,7 @@ class VehicleCostServiceTest {
 
         CostCalculationContext context = new CostCalculationContext(LocalDate.of(2024,1,5), 100.0, 500.0, 3.0, 3, false, null, null, null, null, null, 5.0);
 
-        double result = engine.calculateCosts(CostParameterCategoryType.VEHICLE,context).getFirst().amount();
+        double result = engine.calculateCosts(CostParameterCategoryType.VEHICLE,context).getFirst().amount().doubleValue();
 
         assertEquals(100.0,result,0.0001);
     }
@@ -99,7 +99,7 @@ class VehicleCostServiceTest {
         when(costConditionService.isApplicable(parameter,matchingTrip)).thenReturn(true);
         when(costConditionService.isApplicable(parameter,nonMatchingTrip)).thenReturn(false);
 
-        double result = engine.calculateCosts(CostParameterCategoryType.VEHICLE,nonMatchingTrip,List.of(matchingTrip,nonMatchingTrip)).getFirst().amount();
+        double result = engine.calculateCosts(CostParameterCategoryType.VEHICLE,nonMatchingTrip,List.of(matchingTrip,nonMatchingTrip)).getFirst().amount().doubleValue();
 
         assertEquals(100.0,result,0.0001);
     }
@@ -244,10 +244,10 @@ class VehicleCostServiceTest {
         CostCalculationContext wednesday = nightContext(monday.plusDays(2),1,1,false);
         List<CostCalculationContext> contexts = List.of(mondayFirst,mondaySecond,tuesday,wednesday);
 
-        double mondayCost = engine.calculateCosts(CostParameterCategoryType.DRIVER,mondayFirst,contexts).getFirst().amount();
-        double tuesdayCost = engine.calculateCosts(CostParameterCategoryType.DRIVER,tuesday,contexts).getFirst().amount();
+        double mondayCost = engine.calculateCosts(CostParameterCategoryType.DRIVER,mondayFirst,contexts).getFirst().amount().doubleValue();
+        double tuesdayCost = engine.calculateCosts(CostParameterCategoryType.DRIVER,tuesday,contexts).getFirst().amount().doubleValue();
         var wednesdayCosts = engine.calculateCosts(CostParameterCategoryType.DRIVER,wednesday,contexts);
-        double wednesdayCost = wednesdayCosts.stream().mapToDouble(c -> c.amount()).sum();
+        double wednesdayCost = wednesdayCosts.stream().mapToDouble(c -> c.amount().doubleValue()).sum();
 
         assertEquals(20,mondayCost,0.0001);
         assertEquals(tuesdayAmount,tuesdayCost,0.0001);
@@ -267,10 +267,10 @@ class VehicleCostServiceTest {
         CostCalculationContext context = nightContext(LocalDate.of(2026,11,16),2,2,true);
         when(conditions.isApplicable(parameter,context)).thenReturn(true);
 
-        assertEquals(30,engine.calculateCosts(CostParameterCategoryType.VEHICLE,context,List.of(context,context)).getFirst().amount(),0.0001);
+        assertEquals(30,engine.calculateCosts(CostParameterCategoryType.VEHICLE,context,List.of(context,context)).getFirst().amount().doubleValue(),0.0001);
         parameter.setAssignmentType(CostParameterAssignmentType.MANUAL);
         assertTrue(engine.calculateCosts(CostParameterCategoryType.VEHICLE,context,List.of(context)).isEmpty());
-        assertEquals(20,engine.calculateManualCost(parameter,nightContext(context.date(),2,3,true)).amount(),0.0001);
+        assertEquals(20,engine.calculateManualCost(parameter,nightContext(context.date(),2,3,true)).amount().doubleValue(),0.0001);
     }
 
     @Test

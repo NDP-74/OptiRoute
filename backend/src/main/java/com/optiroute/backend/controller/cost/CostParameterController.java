@@ -6,6 +6,8 @@ import com.optiroute.backend.dto.response.cost.CostParameterResponse;
 import com.optiroute.backend.dto.response.cost.CostParameterLightResponse;
 import com.optiroute.backend.service.cost.CostParameterService;
 
+import jakarta.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,12 +36,12 @@ public class CostParameterController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CostParameterResponse create(@RequestBody CreateCostParameterRequest request) {
+    public CostParameterResponse create(@Valid @RequestBody CreateCostParameterRequest request) {
         return costParameterService.create(request);
     }
 
     @PutMapping("/{id}")
-    public CostParameterResponse update(@PathVariable Long id, @RequestBody UpdateCostParameterRequest request) {
+    public CostParameterResponse update(@PathVariable Long id, @Valid @RequestBody UpdateCostParameterRequest request) {
         return costParameterService.update(id,request);
     }
 

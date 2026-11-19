@@ -14,6 +14,7 @@ import com.optiroute.backend.dto.response.cost.CostCategoryResponse;
 import com.optiroute.backend.entity.driver.Driver;
 import com.optiroute.backend.type.cost.CostParameterCategoryType;
 import com.optiroute.backend.type.driver.DriverCostType;
+import com.optiroute.backend.utils.MoneyUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -43,11 +44,11 @@ public class DriverCostService {
         List<AppliedCostResponse> costs = new ArrayList<>();
 
         // Salaire conducteur
-        double salaryCost = 0;
+        BigDecimal salaryCost = BigDecimal.ZERO;
         int workingDays = workingDaysService.getWorkingDaysInYear(context.date().getYear());
         if (driver.getAnnualSalary() != null && workingDays > 0 && context.dailyDriverDurationHours() > 0) {
-            double dailySalary = driver.getAnnualSalary().doubleValue() / workingDays;
-            salaryCost = dailySalary * (context.driverWorkDurationHours() / context.dailyDriverDurationHours());
+            BigDecimal dailySalary = MoneyUtils.divide(driver.getAnnualSalary(), workingDays);
+            salaryCost = MoneyUtils.multiply(dailySalary, context.driverWorkDurationHours() / context.dailyDriverDurationHours());
         }
 
         costs.add(new AppliedCostResponse(SALARY_LABEL, salaryCost));
@@ -57,9 +58,7 @@ public class DriverCostService {
             ? costParameterEngine.calculateCosts(CostParameterCategoryType.DRIVER,context,dailyContexts)
             : costParameterEngine.calculateCosts(CostParameterCategoryType.DRIVER,context,dailyContexts,snapshot));
 
-        double totalCost = costs.stream().mapToDouble(AppliedCostResponse::amount).sum();
-
-        return new CostCategoryResponse(costs, totalCost);
+        return CostCategoryResponse.of(costs);
     }
 
     public BigDecimal calculateSalaryForPeriod(Driver driver, LocalDate startDate, LocalDate endDateExclusive) {

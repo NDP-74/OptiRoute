@@ -1,5 +1,6 @@
 package com.optiroute.backend.dto.response.transport;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 public record TransportPlanningResponse(
@@ -16,9 +17,9 @@ public record TransportPlanningResponse(
 
         boolean emptyTrip,
 
-        double totalCost,
+        BigDecimal totalCost,
 
-        double driverCost, double structureCost, double vehicleCost,
+        BigDecimal driverCost, BigDecimal structureCost, BigDecimal vehicleCost,
 
-        double revenue) {
+        BigDecimal revenue) {
 }

@@ -32,6 +32,8 @@ import lombok.RequiredArgsConstructor;
 class TransportRoutePlanner {
 
     private static final ZoneId PLANNING_ZONE = ZoneId.of("Europe/Paris");
+    // Conduite maximale pour rejoindre le stationnement d'un grand régional (le retour peut dépasser 20 h)
+    static final long MAX_PARKING_DRIVING_SECONDS = 10 * 3600;
 
     private final DriverService driverService;
     private final RouteRequestFactory routeRequestFactory;
@@ -153,6 +155,15 @@ class TransportRoutePlanner {
         if (proximity.distanceMeters() >= 50_000) {
             return List.of();
         }
+        LocalDate nextDay = date(current.routeTime()).plusDays(1);
+        OffsetDateTime morning = at(nextDay, 5);
+        OffsetDateTime evening = at(nextDay, 20);
+        // Le stationnement n'est retenu que si la livraison devient réalisable le lendemain :
+        // une fenêtre de livraison qui ouvre après le lendemain 20 h impose de réévaluer la nuit suivante.
+        ServiceTiming timing = current.serviceTiming();
+        if (timing != null && timing.arrivalStart() != null && timing.arrivalStart().isAfter(evening)) {
+            return List.of();
+        }
         List<Position> waypoints = current.waypoints() == null ? List.of() : current.waypoints();
         int firstWaypointCount = Math.min(proximity.firstWaypointCount(), waypoints.size());
         int remainingWaypointIndex = Math.min(proximity.remainingWaypointIndex(), waypoints.size());
@@ -160,10 +171,10 @@ class TransportRoutePlanner {
             current.originLat(), current.originLng(), driver.getLocationLabel(), driver.getLocationLabel(),
             lat, lng, waypoints.subList(0, firstWaypointCount), current.routeTime(), RouteTimeMode.DEPARTURE);
         RouteDto firstRoute = calculate(parking, mode);
+        if (firstRoute.getDuration() > MAX_PARKING_DRIVING_SECONDS) {
+            return List.of();
+        }
         OffsetDateTime parkingArrival = parking.routeTime().plusSeconds(firstRoute.getDuration());
-        LocalDate nextDay = date(current.routeTime()).plusDays(1);
-        OffsetDateTime morning = at(nextDay, 5);
-        OffsetDateTime evening = at(nextDay, 20);
         OffsetDateTime target = deadline == null || deadline.isAfter(evening) ? evening : deadline;
         if (target.isBefore(morning)) {
             return List.of();
