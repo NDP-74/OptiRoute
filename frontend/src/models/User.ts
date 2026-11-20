@@ -11,3 +11,10 @@ export interface UpdateUserRequest {
     lastName: string
     password?: string
 }
+
+export interface CreateUserRequest {
+    email: string
+    password: string
+    firstName: string
+    lastName: string
+}

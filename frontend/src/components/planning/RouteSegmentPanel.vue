@@ -7,9 +7,9 @@ import RouteForm from '@/components/maps/RouteForm.vue'
 import AssignEventModal from '@/components/transports/AssignEventModal.vue'
 import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal.vue'
 import CreateSelect from '@/components/ui/CreateSelect.vue'
-import CreateTractorModal from '@/components/vehicles/CreateTractorModal.vue'
-import CreateSemiTrailerModal from '@/components/vehicles/CreateSemiTrailerModal.vue'
-import CreateDriverModal from '@/components/drivers/CreateDriverModal.vue'
+import TractorModal from '@/components/vehicles/TractorModal.vue'
+import SemiTrailerModal from '@/components/vehicles/SemiTrailerModal.vue'
+import DriverModal from '@/components/drivers/DriverModal.vue'
 import { deleteEvent } from '@/api/eventApi'
 
 import { updateTransportRoute } from '@/api/transportApi'
@@ -28,6 +28,7 @@ import type { EventResponse } from '@/models/Event'
 
 import { formatCurrency, formatDateTime, formatDistance, formatDurationSeconds } from '@/utils/formatters'
 import { segmentWarnings } from '@/utils/segmentConsistency'
+import { formatVehicleRegistration } from '@/utils/vehicleUtils'
 
 const props = defineProps<{
     transport: TransportDetail
@@ -84,11 +85,11 @@ const showCreateTractor = ref(false)
 const showCreateSemiTrailer = ref(false)
 const tractorOptions = computed(() => tractors.value.map(tractor => ({
     value: tractor.id,
-    label: tractor.registration,
+    label: formatVehicleRegistration(tractor.registration),
 })))
 const semiTrailerOptions = computed(() => semiTrailers.value.map(semiTrailer => ({
     value: semiTrailer.id,
-    label: semiTrailer.registration,
+    label: formatVehicleRegistration(semiTrailer.registration),
 })))
 
 function onTractorCreated(tractor: TractorSummary) {
@@ -513,8 +514,8 @@ async function save() {
     <ConfirmDeleteModal :show="eventToDelete !== null" :loading="deletingEvent" title="Supprimer l’événement"
         message="Supprimer cet événement et son point de passage ? Le trajet sera recalculé et les modifications non enregistrées de cet onglet seront remplacées."
         @close="!deletingEvent && (eventToDelete = null)" @confirm="confirmDeleteEvent" />
-    <CreateTractorModal :show="showCreateTractor" @close="showCreateTractor = false" @created="onTractorCreated" />
-    <CreateSemiTrailerModal :show="showCreateSemiTrailer" @close="showCreateSemiTrailer = false"
+    <TractorModal :show="showCreateTractor" @close="showCreateTractor = false" @created="onTractorCreated" />
+    <SemiTrailerModal :show="showCreateSemiTrailer" @close="showCreateSemiTrailer = false"
         @created="onSemiTrailerCreated" />
-    <CreateDriverModal :show="showCreateDriver" @close="showCreateDriver = false" @created="onDriverCreated" />
+    <DriverModal :show="showCreateDriver" @close="showCreateDriver = false" @created="onDriverCreated" />
 </template>

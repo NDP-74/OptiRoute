@@ -8,6 +8,7 @@ import type { SemiTrailerSummary } from '@/models/vehicle/SemiTrailer'
 
 import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal.vue'
 import { useNotification } from '@/composables/useNotification'
+import { formatVehicleRegistration } from '@/utils/vehicleUtils'
 
 const notification = useNotification()
 
@@ -39,7 +40,7 @@ const confirmDelete = async () => {
 
         notification.success(
             'Semi-remorque supprimée',
-            `La semi-remorque « ${props.semiTrailer.registration} » a bien été supprimée.`,
+            `La semi-remorque « ${formatVehicleRegistration(props.semiTrailer.registration)} » a bien été supprimée.`,
         )
 
         emit('deleted')
@@ -60,6 +61,6 @@ const confirmDelete = async () => {
 
 <template>
     <ConfirmDeleteModal :show="props.show" :loading="deleting" title="Supprimer la semi-remorque"
-        :message="`Voulez-vous vraiment supprimer la semi-remorque ${props.semiTrailer?.registration ?? ''} ?`"
+        :message="`Voulez-vous vraiment supprimer la semi-remorque ${props.semiTrailer ? formatVehicleRegistration(props.semiTrailer.registration) : ''} ?`"
         @close="closeModal" @confirm="confirmDelete" />
 </template>

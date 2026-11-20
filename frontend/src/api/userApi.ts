@@ -1,5 +1,5 @@
 import api from './axios'
-import type { UpdateUserRequest, User } from '@/models/User'
+import type { CreateUserRequest, UpdateUserRequest, User } from '@/models/User'
 
 export const getCurrentUser = async (): Promise<User> => {
   const response = await api.get<User>('/users/me')
@@ -11,8 +11,8 @@ export const getUsers = async () => {
   return response.data
 }
 
-export const createUser = async (user: any) => {
-  const response = await api.post('/users', user)
+export const createUser = async (user: CreateUserRequest): Promise<User> => {
+  const response = await api.post<User>('/users', user)
   return response.data
 }
 

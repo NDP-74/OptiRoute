@@ -13,6 +13,7 @@ import type { CostParameterLight } from '@/models/cost/CostParameter'
 import type { EventResponse } from '@/models/Event'
 import type { PointOfInterest } from '@/models/PointOfInterest'
 import type { TransportDetail } from '@/models/transport/TransportDetail'
+import { formatVehicleRegistration } from '@/utils/vehicleUtils'
 
 const props = defineProps<{
     show: boolean
@@ -159,7 +160,7 @@ const selectClass = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-
                         <span>
                             <span class="font-medium">Tracteur</span>
                             <span class="block text-xs text-slate-500">
-                                {{ transport?.tractorRegistration ?? 'Aucun tracteur' }}
+                                {{ transport?.tractorRegistration ? formatVehicleRegistration(transport.tractorRegistration) : 'Aucun tracteur' }}
                             </span>
                         </span>
                     </label>
@@ -171,7 +172,7 @@ const selectClass = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-
                         <span>
                             <span class="font-medium">Semi-remorque</span>
                             <span class="block text-xs text-slate-500">
-                                {{ transport?.semiTrailerRegistration ?? 'Aucune semi-remorque' }}
+                                {{ transport?.semiTrailerRegistration ? formatVehicleRegistration(transport.semiTrailerRegistration) : 'Aucune semi-remorque' }}
                             </span>
                         </span>
                     </label>

@@ -12,13 +12,14 @@ import {
 import AppDetailDrawer from "@/components/ui/AppDetailDrawer.vue"
 import DetailSection from "@/components/ui/DetailSection.vue"
 import DetailRow from "@/components/ui/DetailRow.vue"
-import UpdateDriverModal from "@/components/drivers/UpdateDriverModal.vue"
+import DriverModal from "@/components/drivers/DriverModal.vue"
 import DeleteDriverModal from "@/components/drivers/DeleteDriverModal.vue"
 
 import { getDriver } from "@/api/driver/driverApi"
 
 import { formatCurrency, formatNumber } from "@/utils/formatters"
 import { getDriverName, getHourlyCost } from "@/utils/driverUtils"
+import { formatVehicleRegistration } from "@/utils/vehicleUtils"
 
 import type { DriverDetails } from "@/models/driver/Driver"
 
@@ -199,9 +200,11 @@ watch(
             </DetailSection>
 
             <DetailSection title="Véhicules affectés" :icon="Info">
-                <DetailRow label="Tracteur" :value="driver.tractorRegistration || 'Aucun'" />
+                <DetailRow label="Tracteur"
+                    :value="driver.tractorRegistration ? formatVehicleRegistration(driver.tractorRegistration) : 'Aucun'" />
 
-                <DetailRow label="Semi-remorque" :value="driver.semiTrailerRegistration || 'Aucune'" />
+                <DetailRow label="Semi-remorque"
+                    :value="driver.semiTrailerRegistration ? formatVehicleRegistration(driver.semiTrailerRegistration) : 'Aucune'" />
 
                 <DetailRow label="Lieu de stationnement" :value="driver.locationLabel || 'Non renseigné'"
                     :break-value="true" />
@@ -255,7 +258,7 @@ watch(
         </template>
     </AppDetailDrawer>
 
-    <UpdateDriverModal :show="showUpdateModal" :driver="driver" @close="closeUpdateModal"
+    <DriverModal :show="showUpdateModal" :driver="driver" @close="closeUpdateModal"
         @updated="handleDriverUpdated" />
 
     <DeleteDriverModal :show="showDeleteModal" :driver="driver" @close="closeDeleteModal"

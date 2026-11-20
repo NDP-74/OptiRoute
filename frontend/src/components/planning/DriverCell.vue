@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Container, Truck, UserRound } from "lucide-vue-next";
+import { formatVehicleRegistration } from "@/utils/vehicleUtils";
 
 const props = defineProps<{
   driverName: string;
@@ -28,12 +29,12 @@ const props = defineProps<{
           <div v-else-if="vehicleRegistrations.length" class="mt-3 flex items-center gap-3 text-xs text-slate-600">
             <span v-if="vehicleRegistrations[0]" class="flex min-w-0 items-center gap-1.5">
               <Truck :size="14" class="shrink-0 text-slate-400" />
-              <span class="truncate">{{ vehicleRegistrations[0] }}</span>
+              <span class="truncate">{{ formatVehicleRegistration(vehicleRegistrations[0]) }}</span>
             </span>
 
             <span v-if="vehicleRegistrations[1]" class="flex min-w-0 items-center gap-1.5">
               <Container :size="14" class="shrink-0 text-slate-400" />
-              <span class="truncate">{{ vehicleRegistrations[1] }}</span>
+              <span class="truncate">{{ formatVehicleRegistration(vehicleRegistrations[1]) }}</span>
             </span>
           </div>
         </div>

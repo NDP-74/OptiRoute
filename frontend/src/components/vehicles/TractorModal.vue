@@ -1,32 +1,30 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from "vue"
 
-import { createTractor } from "@/api/vehicle/tractorApi"
+import { createTractor, updateTractor } from "@/api/vehicle/tractorApi"
 import { getApiErrorMessage } from "@/api/utils"
 
-import type { CreateTractorRequest, TractorFormData, TractorSummary } from "@/models/vehicle/Tractor"
-import { createEmptyTractorForm } from "@/utils/vehicleUtils"
+import type { CreateTractorRequest, TractorDetails, TractorFormData, TractorSummary } from "@/models/vehicle/Tractor"
+import { createEmptyTractorForm, formatVehicleRegistration, normalizeVehicleRegistration } from "@/utils/vehicleUtils"
 
 import AppModal from "@/components/ui/AppModal.vue"
 import TractorForm from "@/components/vehicles/TractorForm.vue"
 
 import { useNotification } from "@/composables/useNotification"
 
-//Variables
-
 const notification = useNotification()
 const loading = ref(false)
 
 const props = defineProps<{
     show: boolean
+    tractor?: TractorDetails | null
 }>()
 
 const emit = defineEmits<{
     close: []
     created: [tractor: TractorSummary]
+    updated: []
 }>()
-
-//Manage Modal
 
 const closeModal = () => {
     if (!loading.value) {
@@ -34,14 +32,20 @@ const closeModal = () => {
     }
 }
 
-// Manage form
+const form = reactive<TractorFormData>(createEmptyTractorForm())
 
-const form = reactive<TractorFormData>(
-    createEmptyTractorForm(),
-)
-
-const resetForm = () => {
-    Object.assign(form, createEmptyTractorForm())
+const syncForm = () => {
+    if (props.tractor) {
+        Object.assign(form, {
+            registration: normalizeVehicleRegistration(props.tractor.registration),
+            purchaseCost: props.tractor.purchaseCost,
+            depreciationStartDate: props.tractor.depreciationStartDate,
+            depreciationEndDate: props.tractor.depreciationEndDate,
+            maintenanceCostPerKm: props.tractor.maintenanceCostPerKm,
+        } satisfies TractorFormData)
+    } else {
+        Object.assign(form, createEmptyTractorForm())
+    }
 }
 
 const submitTractor = async () => {
@@ -49,40 +53,54 @@ const submitTractor = async () => {
         loading.value = true
 
         const payload: CreateTractorRequest = {
-            registration: form.registration.trim().toUpperCase(),
-
+            registration: normalizeVehicleRegistration(form.registration),
             purchaseCost: form.purchaseCost,
             depreciationStartDate: form.depreciationStartDate || null,
             depreciationEndDate: form.depreciationEndDate || null,
             maintenanceCostPerKm: form.maintenanceCostPerKm,
         }
 
-        const tractor = await createTractor(payload)
+        if (props.tractor) {
+            await updateTractor(props.tractor.id, payload)
 
-        notification.success(
-            "Tracteur créé",
-            `Le tracteur « ${payload.registration} » a bien été créé.`,
-        )
+            notification.success(
+                "Tracteur modifié",
+                `Le tracteur « ${formatVehicleRegistration(payload.registration)} » a bien été modifié.`,
+            )
+            emit("updated")
+        } else {
+            const tractor = await createTractor(payload)
 
-        emit("created", tractor)
+            notification.success(
+                "Tracteur créé",
+                `Le tracteur « ${formatVehicleRegistration(payload.registration)} » a bien été créé.`,
+            )
+            emit("created", tractor)
+        }
     } catch (error: unknown) {
+        const action = props.tractor ? "Modification" : "Création"
+        const fallback = props.tractor
+            ? "Le tracteur n’a pas pu être modifié."
+            : "Le tracteur n’a pas pu être créé."
+
         notification.error(
-            "Création impossible",
-            getApiErrorMessage(error, "Le tracteur n’a pas pu être créé."),
+            `${action} impossible`,
+            getApiErrorMessage(error, fallback),
         )
     } finally {
         loading.value = false
     }
 }
 
-//Watch
-
 watch(
-    () => props.show,
-    (show) => {
+    [() => props.show, () => props.tractor],
+    ([show]) => {
         if (show) {
-            resetForm()
+            syncForm()
         }
+    },
+    {
+        immediate: true,
     },
 )
 </script>
@@ -91,7 +109,7 @@ watch(
     <AppModal :show="props.show" @close="closeModal">
         <form @submit.prevent="submitTractor">
             <h2 class="mb-6 text-2xl font-bold text-slate-900">
-                Ajouter un tracteur
+                {{ props.tractor ? "Modifier un tracteur" : "Ajouter un tracteur" }}
             </h2>
 
             <div class="max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">

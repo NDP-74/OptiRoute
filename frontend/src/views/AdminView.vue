@@ -6,9 +6,8 @@ import { getUsers } from '@/api/userApi'
 
 import type { User } from '@/models/User'
 
-import CreateUserModal from '@/components/users/CreateUserModal.vue'
+import UserModal from '@/components/users/UserModal.vue'
 import DeleteUserModal from '@/components/users/DeleteUserModal.vue'
-import EditUserModal from '@/components/users/EditUserModal.vue'
 import AppDropdown from '@/components/ui/AppDropdown.vue'
 
 const users = ref<User[]>([])
@@ -157,12 +156,12 @@ const closeUserAction = () => {
             </div>
         </section>
 
-        <CreateUserModal :show="showCreateModal" @close="showCreateModal = false" @created="loadUsers" />
+        <UserModal :show="showCreateModal" @close="showCreateModal = false" @created="loadUsers" />
 
         <DeleteUserModal :show="activeAction === 'delete'" :user="selectedUser" @close="closeUserAction"
             @deleted="loadUsers" />
 
-        <EditUserModal :show="activeAction === 'edit'" :user="selectedUser" @close="closeUserAction"
+        <UserModal :show="activeAction === 'edit'" :user="selectedUser" @close="closeUserAction"
             @updated="loadUsers" />
     </div>
 </template>

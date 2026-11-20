@@ -2,6 +2,7 @@
 import type { TrailerTypeOption } from "@/api/vehicle/semiTrailerApi"
 import type { SemiTrailerFormData } from "@/models/vehicle/SemiTrailer"
 
+import VehicleRegistrationInput from "@/components/vehicles/VehicleRegistrationInput.vue"
 import TrailerTypeSelect from "@/components/vehicles/TrailerTypeSelect.vue"
 
 const form = defineModel<SemiTrailerFormData>({
@@ -30,9 +31,7 @@ defineProps<{ disabled?: boolean }>()
                     Immatriculation
                 </label>
 
-                <input v-model="form.registration" type="text" required maxlength="15" placeholder="AB-123-CD"
-                    :disabled="disabled"
-                    class="w-full rounded-xl border border-slate-300 px-4 py-3 uppercase outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:bg-slate-100" />
+                <VehicleRegistrationInput v-model="form.registration" :disabled="disabled" />
             </div>
         </section>
 

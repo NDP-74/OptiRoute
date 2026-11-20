@@ -20,12 +20,13 @@ import DetailSection from "@/components/ui/DetailSection.vue"
 import DetailRow from "@/components/ui/DetailRow.vue"
 import AppDetailDrawer from "@/components/ui/AppDetailDrawer.vue"
 import DeleteSemiTrailerModal from "@/components/vehicles/DeleteSemiTrailerModal.vue"
-import UpdateSemiTrailerModal from "@/components/vehicles/UpdateSemiTrailerModal.vue"
+import SemiTrailerModal from "@/components/vehicles/SemiTrailerModal.vue"
 import VehicleEventsSection from "@/components/vehicles/VehicleEventsSection.vue"
 
 import {
     formatCurrency, formatDate,
 } from "@/utils/formatters"
+import { formatVehicleRegistration } from "@/utils/vehicleUtils"
 
 //Variables
 
@@ -188,7 +189,8 @@ watch(
 </script>
 
 <template>
-    <AppDetailDrawer :open="props.open" :title="semiTrailer?.registration ?? 'Détail de la semi-remorque'"
+    <AppDetailDrawer :open="props.open"
+        :title="semiTrailer?.registration ? formatVehicleRegistration(semiTrailer.registration) : 'Détail de la semi-remorque'"
         @close="emit('close')">
         <template #header>
             <div class="min-w-0">
@@ -197,7 +199,7 @@ watch(
                 </p>
 
                 <h2 class="mt-1 truncate text-xl font-bold text-slate-900">
-                    {{ semiTrailer?.registration ?? "Chargement..." }}
+                    {{ semiTrailer?.registration ? formatVehicleRegistration(semiTrailer.registration) : "Chargement..." }}
                 </h2>
             </div>
         </template>
@@ -236,7 +238,7 @@ watch(
 
             <!-- Identification -->
             <DetailSection title="Identification" :icon="Info">
-                <DetailRow label="Immatriculation" :value="semiTrailer.registration" />
+                <DetailRow label="Immatriculation" :value="formatVehicleRegistration(semiTrailer.registration)" />
 
                 <DetailRow label="Type" :value="semiTrailer.trailerType ?? 'Non renseigné'" />
             </DetailSection>
@@ -277,7 +279,7 @@ watch(
         </template>
     </AppDetailDrawer>
 
-    <UpdateSemiTrailerModal :show="showUpdateModal" :semi-trailer="semiTrailer" @close="closeUpdateModal"
+    <SemiTrailerModal :show="showUpdateModal" :semi-trailer="semiTrailer" @close="closeUpdateModal"
         @updated="handleSemiTrailerUpdated" />
 
     <DeleteSemiTrailerModal :show="showDeleteModal" :semi-trailer="semiTrailer" @close="closeDeleteModal"

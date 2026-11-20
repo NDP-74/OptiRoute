@@ -20,13 +20,14 @@ import { getApiErrorMessage } from "@/api/utils"
 import AppDetailDrawer from "@/components/ui/AppDetailDrawer.vue"
 import DetailSection from "@/components/ui/DetailSection.vue"
 import DetailRow from "@/components/ui/DetailRow.vue"
-import UpdateTractorModal from "@/components/vehicles/UpdateTractorModal.vue"
+import TractorModal from "@/components/vehicles/TractorModal.vue"
 import DeleteTractorModal from "@/components/vehicles/DeleteTractorModal.vue"
 import VehicleEventsSection from "@/components/vehicles/VehicleEventsSection.vue"
 
 import {
     formatCurrency, formatDate,
 } from "@/utils/formatters"
+import { formatVehicleRegistration } from "@/utils/vehicleUtils"
 
 //Variables
 
@@ -189,7 +190,9 @@ watch(
 </script>
 
 <template>
-    <AppDetailDrawer :open="props.open" :title="tractor?.registration ?? 'Détail du tracteur'" @close="emit('close')">
+    <AppDetailDrawer :open="props.open"
+        :title="tractor?.registration ? formatVehicleRegistration(tractor.registration) : 'Détail du tracteur'"
+        @close="emit('close')">
         <template #header>
             <div class="min-w-0">
                 <p class="text-xs font-medium uppercase tracking-wide text-blue-600">
@@ -197,7 +200,7 @@ watch(
                 </p>
 
                 <h2 class="mt-1 truncate text-xl font-bold text-slate-900">
-                    {{ tractor?.registration ?? "Chargement..." }}
+                    {{ tractor?.registration ? formatVehicleRegistration(tractor.registration) : "Chargement..." }}
                 </h2>
             </div>
         </template>
@@ -236,7 +239,7 @@ watch(
         <div v-else-if="tractor" class="space-y-6 p-6">
             <!-- Identification -->
             <DetailSection title="Identification" :icon="Info">
-                <DetailRow label="Immatriculation" :value="tractor.registration" />
+                <DetailRow label="Immatriculation" :value="formatVehicleRegistration(tractor.registration)" />
             </DetailSection>
 
             <!-- Achat et amortissement -->
@@ -276,7 +279,7 @@ watch(
         </template>
     </AppDetailDrawer>
 
-    <UpdateTractorModal :show="showUpdateModal" :tractor="tractor" @close="closeUpdateModal"
+    <TractorModal :show="showUpdateModal" :tractor="tractor" @close="closeUpdateModal"
         @updated="handleTractorUpdated" />
 
     <DeleteTractorModal :show="showDeleteModal" :tractor="tractor" @close="closeDeleteModal"

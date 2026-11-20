@@ -6,7 +6,7 @@ import { getDrivers } from "@/api/driver/driverApi"
 
 import type { DriverCostType, DriverSummary, DriverType } from "@/models/driver/Driver"
 
-import CreateDriverModal from "@/components/drivers/CreateDriverModal.vue"
+import DriverModal from "@/components/drivers/DriverModal.vue"
 import DeleteDriverModal from "@/components/drivers/DeleteDriverModal.vue"
 import DriverDetailDrawer from "@/components/drivers/DriverDetailDrawer.vue"
 import AppDropdown from "@/components/ui/AppDropdown.vue"
@@ -283,7 +283,7 @@ onMounted(loadDrivers)
         <DriverDetailDrawer :open="selectedDriverId !== null" :driver-id="selectedDriverId" @close="closeDriverDetails"
             @updated="loadDrivers" @deleted="handleDriverDeleted" />
 
-        <CreateDriverModal :show="showCreateModal" @close="showCreateModal = false" @created="handleDriverCreated" />
+        <DriverModal :show="showCreateModal" @close="showCreateModal = false" @created="handleDriverCreated" />
 
         <DeleteDriverModal :show="showDeleteModal" :driver="actionDriver" @close="closeDriverAction"
             @deleted="handleDriverDeleted" />

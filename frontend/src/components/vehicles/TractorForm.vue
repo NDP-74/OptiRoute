@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { TractorFormData } from "@/models/vehicle/Tractor"
 
+import VehicleRegistrationInput from "@/components/vehicles/VehicleRegistrationInput.vue"
+
 const form = defineModel<TractorFormData>({
     required: true,
 })
@@ -11,6 +13,7 @@ withDefaults(
         disabled: false,
     },
 )
+
 </script>
 
 <template>
@@ -30,9 +33,7 @@ withDefaults(
                     Immatriculation
                 </label>
 
-                <input v-model="form.registration" type="text" required maxlength="15" placeholder="AB-123-CD"
-                    :disabled="disabled"
-                    class="w-full rounded-xl border border-slate-300 px-4 py-3 uppercase outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:bg-slate-100" />
+                <VehicleRegistrationInput v-model="form.registration" :disabled="disabled" />
             </div>
         </section>
 

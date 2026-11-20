@@ -4,10 +4,10 @@ import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import AppModal from '@/components/ui/AppModal.vue'
 import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal.vue'
 import CreateSelect from '@/components/ui/CreateSelect.vue'
-import CreateTractorModal from '@/components/vehicles/CreateTractorModal.vue'
-import CreateSemiTrailerModal from '@/components/vehicles/CreateSemiTrailerModal.vue'
-import CreateDriverModal from '@/components/drivers/CreateDriverModal.vue'
-import CreateCustomerModal from '@/components/customers/CreateCustomerModal.vue'
+import TractorModal from '@/components/vehicles/TractorModal.vue'
+import SemiTrailerModal from '@/components/vehicles/SemiTrailerModal.vue'
+import DriverModal from '@/components/drivers/DriverModal.vue'
+import CustomerModal from '@/components/customers/CustomerModal.vue'
 import HereMap from '@/components/maps/HereMap.vue'
 import RouteForm from '@/components/maps/RouteForm.vue'
 
@@ -31,6 +31,7 @@ import type { TransportDetail } from '@/models/transport/TransportDetail'
 import type { EventResponse } from '@/models/Event'
 
 import { formatCurrency, formatDateTime, formatDistance, formatDurationSeconds, formatParisDateTimeLocal, parisDateTimeLocalToIso } from '@/utils/formatters'
+import { formatVehicleRegistration } from '@/utils/vehicleUtils'
 
 import {
     Building2,
@@ -140,11 +141,11 @@ const showCreateTractor = ref(false)
 const showCreateSemiTrailer = ref(false)
 const tractorOptions = computed(() => tractors.value.map(tractor => ({
     value: tractor.id,
-    label: tractor.registration,
+    label: formatVehicleRegistration(tractor.registration),
 })))
 const semiTrailerOptions = computed(() => semiTrailers.value.map(semiTrailer => ({
     value: semiTrailer.id,
-    label: semiTrailer.registration,
+    label: formatVehicleRegistration(semiTrailer.registration),
 })))
 
 function onTractorCreated(tractor: TractorSummary) {
@@ -902,9 +903,9 @@ onMounted(async () => {
     <ConfirmDeleteModal :show="eventToDelete !== null" :loading="deletingEvent" title="Supprimer l’événement"
         message="Supprimer cet événement et son point de passage ? Le trajet sera recalculé et les modifications non enregistrées de la replanification seront remplacées."
         @close="!deletingEvent && (eventToDelete = null)" @confirm="confirmDeleteEvent" />
-    <CreateTractorModal :show="showCreateTractor" @close="showCreateTractor = false" @created="onTractorCreated" />
-    <CreateSemiTrailerModal :show="showCreateSemiTrailer" @close="showCreateSemiTrailer = false"
+    <TractorModal :show="showCreateTractor" @close="showCreateTractor = false" @created="onTractorCreated" />
+    <SemiTrailerModal :show="showCreateSemiTrailer" @close="showCreateSemiTrailer = false"
         @created="onSemiTrailerCreated" />
-    <CreateDriverModal :show="showCreateDriver" @close="showCreateDriver = false" @created="onDriverCreated" />
-    <CreateCustomerModal :show="showCreateCustomer" @close="showCreateCustomer = false" @created="onCustomerCreated" />
+    <DriverModal :show="showCreateDriver" @close="showCreateDriver = false" @created="onDriverCreated" />
+    <CustomerModal :show="showCreateCustomer" @close="showCreateCustomer = false" @created="onCustomerCreated" />
 </template>

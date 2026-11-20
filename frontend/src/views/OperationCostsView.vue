@@ -6,7 +6,7 @@ import { getCostParameters, setCostParameterActive } from "@/api/cost/costParame
 
 import type { CostParameter, CostParameterLight } from "@/models/cost/CostParameter"
 
-import CreateCostParameterModal from "@/components/cost/CreateCostParameterModal.vue"
+import CostParameterModal from "@/components/cost/CostParameterModal.vue"
 import DeleteCostParameterModal from "@/components/cost/DeleteCostParameterModal.vue"
 import CostParameterDetailDrawer from "@/components/cost/CostParameterDetailDrawer.vue"
 
@@ -391,7 +391,7 @@ onMounted(loadCostParameters)
 
         <!-- Create -->
 
-        <CreateCostParameterModal :show="showCreateModal" @close="showCreateModal = false"
+        <CostParameterModal :show="showCreateModal" @close="showCreateModal = false"
             @created="handleCostParameterCreated" />
 
         <!-- Delete -->

@@ -5,12 +5,13 @@ import { MoreHorizontal, Plus, Search } from "lucide-vue-next"
 import { getTractors } from "@/api/vehicle/tractorApi"
 import type { TractorSummary } from "@/models/vehicle/Tractor"
 
-import CreateTractorModal from "@/components/vehicles/CreateTractorModal.vue"
+import TractorModal from "@/components/vehicles/TractorModal.vue"
 import DeleteTractorModal from "@/components/vehicles/DeleteTractorModal.vue"
 import TractorDetailDrawer from "@/components/vehicles/TractorDetailDrawer.vue"
 
 import AppDropdown from "@/components/ui/AppDropdown.vue"
 import { formatDate } from "@/utils/formatters"
+import { formatVehicleRegistration } from "@/utils/vehicleUtils"
 
 //Load tractors
 
@@ -175,7 +176,7 @@ onMounted(loadTractors)
                         @keydown.space.prevent="openTractorDetails(tractor)">
 
                         <td class="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
-                            {{ tractor.registration }}
+                            {{ formatVehicleRegistration(tractor.registration) }}
                         </td>
 
                         <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-600">
@@ -194,7 +195,7 @@ onMounted(loadTractors)
                                 <template #trigger="{ toggle }">
                                     <button type="button"
                                         class="rounded-md p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600"
-                                        :aria-label="`Actions pour le tracteur ${tractor.registration}`"
+                                        :aria-label="`Actions pour le tracteur ${formatVehicleRegistration(tractor.registration)}`"
                                         @click.stop="toggle">
                                         <MoreHorizontal class="h-5 w-5" aria-hidden="true" />
                                     </button>
@@ -224,7 +225,7 @@ onMounted(loadTractors)
         <TractorDetailDrawer :open="selectedTractorId !== null" :tractor-id="selectedTractorId"
             @close="closeTractorDetails" @updated="loadTractors" @deleted="handleTractorDeleted" />
 
-        <CreateTractorModal :show="showCreateModal" @close="showCreateModal = false" @created="handleTractorCreated" />
+        <TractorModal :show="showCreateModal" @close="showCreateModal = false" @created="handleTractorCreated" />
 
         <DeleteTractorModal :show="showDeleteModal" :tractor="actionTractor" @close="closeTractorAction"
             @deleted="handleTractorDeleted" />

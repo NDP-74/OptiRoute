@@ -1,51 +1,54 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from "vue"
 
-
-import { createEmptyCostParameterForm } from "@/utils/costParameterUtils"
-import type { CreateCostParameterRequest, CostParameterFormData } from "@/models/cost/CostParameter"
-
+import { createCostParameter, updateCostParameter } from "@/api/cost/costParameterApi"
 import { getApiErrorMessage } from "@/api/utils"
-import { createCostParameter } from "@/api/cost/costParameterApi"
+
+import type { CostParameter, CostParameterFormData, CreateCostParameterRequest } from "@/models/cost/CostParameter"
+import { createEmptyCostParameterForm } from "@/utils/costParameterUtils"
 
 import AppModal from "@/components/ui/AppModal.vue"
-import CostParameterForm from "./CostParameterForm.vue"
+import CostParameterForm from "@/components/cost/CostParameterForm.vue"
 
 import { useNotification } from "@/composables/useNotification"
-
-// Variables
 
 const notification = useNotification()
 const loading = ref(false)
 
 const props = defineProps<{
     show: boolean
+    costParameter?: CostParameter | null
 }>()
 
 const emit = defineEmits<{
     close: []
     created: []
+    updated: []
 }>()
 
-// Form
+const form = reactive<CostParameterFormData>(createEmptyCostParameterForm())
 
-const form = reactive<CostParameterFormData>(
-    createEmptyCostParameterForm(),
-)
-
-const resetForm = () => {
-    Object.assign(form, createEmptyCostParameterForm())
+const syncForm = () => {
+    if (props.costParameter) {
+        Object.assign(form, {
+            label: props.costParameter.label,
+            category: props.costParameter.category,
+            unit: props.costParameter.unit,
+            value: props.costParameter.value,
+            active: props.costParameter.active,
+            assignmentType: props.costParameter.assignmentType,
+            conditions: props.costParameter.conditions.map(condition => ({ ...condition })),
+        } satisfies CostParameterFormData)
+    } else {
+        Object.assign(form, createEmptyCostParameterForm())
+    }
 }
-
-// Modal
 
 const closeModal = () => {
     if (!loading.value) {
         emit("close")
     }
 }
-
-// Submit
 
 const submitCostParameter = async () => {
     try {
@@ -61,45 +64,56 @@ const submitCostParameter = async () => {
             conditions: form.conditions,
         }
 
-        await createCostParameter(payload)
+        if (props.costParameter) {
+            await updateCostParameter(props.costParameter.id, payload)
 
-        notification.success(
-            "Coût créé",
-            `Le coût « ${form.label} » a bien été ajouté.`,
-        )
+            notification.success(
+                "Coût modifié",
+                `Le coût « ${payload.label} » a bien été modifié.`,
+            )
+            emit("updated")
+        } else {
+            await createCostParameter(payload)
 
-        emit("created")
+            notification.success(
+                "Coût créé",
+                `Le coût « ${payload.label} » a bien été ajouté.`,
+            )
+            emit("created")
+        }
     } catch (error: unknown) {
+        const action = props.costParameter ? "Modification" : "Création"
+        const fallback = props.costParameter
+            ? "Le coût n’a pas pu être modifié."
+            : "Le coût n’a pas pu être créé."
+
         notification.error(
-            "Création impossible",
-            getApiErrorMessage(
-                error,
-                "Le coût n’a pas pu être créé.",
-            ),
+            `${action} impossible`,
+            getApiErrorMessage(error, fallback),
         )
     } finally {
         loading.value = false
     }
 }
 
-// Watch
-
 watch(
-    () => props.show,
-    (show) => {
+    [() => props.show, () => props.costParameter],
+    ([show]) => {
         if (show) {
-            resetForm()
+            syncForm()
+        } else {
+            Object.assign(form, createEmptyCostParameterForm())
         }
     },
+    { immediate: true },
 )
 </script>
 
 <template>
     <AppModal :show="props.show" @close="closeModal">
         <form @submit.prevent="submitCostParameter">
-
             <h2 class="mb-6 text-2xl font-bold text-slate-900">
-                Ajouter un coût
+                {{ props.costParameter ? "Modifier un coût" : "Ajouter un coût" }}
             </h2>
 
             <div class="max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
@@ -118,7 +132,6 @@ watch(
                     {{ loading ? "Enregistrement..." : "Enregistrer" }}
                 </button>
             </div>
-
         </form>
     </AppModal>
 </template>

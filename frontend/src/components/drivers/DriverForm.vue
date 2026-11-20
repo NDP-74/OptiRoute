@@ -7,8 +7,9 @@ import type { SemiTrailerSummary } from "@/models/vehicle/SemiTrailer"
 import type { DriverFormData } from "@/models/driver/Driver"
 import HereAutocompleteInput from "@/components/maps/HereAutocompleteInput.vue"
 import CreateSelect from "@/components/ui/CreateSelect.vue"
-import CreateTractorModal from "@/components/vehicles/CreateTractorModal.vue"
-import CreateSemiTrailerModal from "@/components/vehicles/CreateSemiTrailerModal.vue"
+import TractorModal from "@/components/vehicles/TractorModal.vue"
+import SemiTrailerModal from "@/components/vehicles/SemiTrailerModal.vue"
+import { formatVehicleRegistration } from "@/utils/vehicleUtils"
 
 const form = defineModel<DriverFormData>({
     required: true,
@@ -21,11 +22,11 @@ const showCreateTractor = ref(false)
 const showCreateSemiTrailer = ref(false)
 const tractorOptions = computed(() => tractors.value.map((tractor) => ({
     value: tractor.id,
-    label: tractor.registration,
+    label: formatVehicleRegistration(tractor.registration),
 })))
 const semiTrailerOptions = computed(() => semiTrailers.value.map((semiTrailer) => ({
     value: semiTrailer.id,
-    label: semiTrailer.registration,
+    label: formatVehicleRegistration(semiTrailer.registration),
 })))
 
 const onTractorCreated = (tractor: TractorSummary) => {
@@ -365,9 +366,9 @@ onMounted(async () => {
                 </div>
             </div>
         </section>
-        <CreateTractorModal :show="showCreateTractor" @close="showCreateTractor = false"
+        <TractorModal :show="showCreateTractor" @close="showCreateTractor = false"
             @created="onTractorCreated" />
-        <CreateSemiTrailerModal :show="showCreateSemiTrailer" @close="showCreateSemiTrailer = false"
+        <SemiTrailerModal :show="showCreateSemiTrailer" @close="showCreateSemiTrailer = false"
             @created="onSemiTrailerCreated" />
     </div>
 </template>

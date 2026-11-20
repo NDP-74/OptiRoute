@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { Building2, Euro, RefreshCw } from 'lucide-vue-next'
 import CreateSelect from '@/components/ui/CreateSelect.vue'
-import CreateCustomerModal from '@/components/customers/CreateCustomerModal.vue'
+import CustomerModal from '@/components/customers/CustomerModal.vue'
 
 import { getCustomers } from '@/api/customerApi'
 import { updateServiceInfo } from '@/api/transportApi'
@@ -172,5 +172,5 @@ async function save() {
             </button>
         </div>
     </div>
-    <CreateCustomerModal :show="showCreateCustomer" @close="showCreateCustomer = false" @created="onCustomerCreated" />
+    <CustomerModal :show="showCreateCustomer" @close="showCreateCustomer = false" @created="onCustomerCreated" />
 </template>

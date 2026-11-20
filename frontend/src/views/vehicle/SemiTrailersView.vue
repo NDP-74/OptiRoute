@@ -6,12 +6,13 @@ import { getSemiTrailerTypes, getSemiTrailers } from "@/api/vehicle/semiTrailerA
 import type { TrailerTypeOption } from "@/api/vehicle/semiTrailerApi"
 import type { SemiTrailerSummary } from "@/models/vehicle/SemiTrailer"
 
-import CreateSemiTrailerModal from "@/components/vehicles/CreateSemiTrailerModal.vue"
+import SemiTrailerModal from "@/components/vehicles/SemiTrailerModal.vue"
 import DeleteSemiTrailerModal from "@/components/vehicles/DeleteSemiTrailerModal.vue"
 import SemiTrailerDetailDrawer from "@/components/vehicles/SemiTrailerDetailDrawer.vue"
 
 import AppDropdown from "@/components/ui/AppDropdown.vue"
 import { formatDate } from "@/utils/formatters"
+import { formatVehicleRegistration } from "@/utils/vehicleUtils"
 
 //Load semi-trailers
 
@@ -200,7 +201,7 @@ onMounted(() => {
                         @keydown.space.prevent="openSemiTrailerDetails(semiTrailer)">
 
                         <td class="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
-                            {{ semiTrailer.registration }}
+                            {{ formatVehicleRegistration(semiTrailer.registration) }}
                         </td>
 
                         <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-600">
@@ -219,7 +220,7 @@ onMounted(() => {
                                 <template #trigger="{ toggle }">
                                     <button type="button"
                                         class="rounded-md p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600"
-                                        :aria-label="`Actions pour le semi-remorque ${semiTrailer.registration}`"
+                                        :aria-label="`Actions pour le semi-remorque ${formatVehicleRegistration(semiTrailer.registration)}`"
                                         @click.stop="toggle">
                                         <MoreHorizontal class="h-5 w-5" aria-hidden="true" />
                                     </button>
@@ -251,7 +252,7 @@ onMounted(() => {
         <SemiTrailerDetailDrawer :open="selectedSemiTrailerId !== null" :semiTrailerId="selectedSemiTrailerId"
             @close="closeSemiTrailerDetails" @updated="loadSemiTrailers" @deleted="handleSemiTrailerDeleted" />
 
-        <CreateSemiTrailerModal :show="showCreateModal" @close="showCreateModal = false"
+        <SemiTrailerModal :show="showCreateModal" @close="showCreateModal = false"
             @created="handleSemiTrailerCreated" />
 
         <DeleteSemiTrailerModal :show="showDeleteModal" :semiTrailer="actionSemiTrailer" @close="closeSemiTrailerAction"

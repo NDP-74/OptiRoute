@@ -6,7 +6,7 @@ import { getCustomers } from "@/api/customerApi"
 
 import type { CustomerSummary } from "@/models/Customer"
 
-import CreateCustomerModal from "@/components/customers/CreateCustomerModal.vue"
+import CustomerModal from "@/components/customers/CustomerModal.vue"
 import CustomerDetailDrawer from "@/components/customers/CustomerDetailDrawer.vue"
 import DeleteCustomerModal from "@/components/customers/DeleteCustomerModal.vue"
 import AppDropdown from "@/components/ui/AppDropdown.vue"
@@ -155,7 +155,7 @@ onMounted(async () => {
 
         <CustomerDetailDrawer :open="selectedCustomerId !== null" :customer-id="selectedCustomerId"
             @close="closeCustomerDetails" @updated="loadCustomers" @deleted="handleCustomerDeleted" />
-        <CreateCustomerModal :show="showCreateModal" @close="showCreateModal = false"
+        <CustomerModal :show="showCreateModal" @close="showCreateModal = false"
             @created="handleCustomerCreated" />
         <DeleteCustomerModal :show="customerToDelete !== null" :customer="customerToDelete" @close="closeDeleteCustomer"
             @deleted="handleCustomerDeleted" />

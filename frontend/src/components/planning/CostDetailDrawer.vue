@@ -6,6 +6,7 @@ import AppDetailDrawer from "@/components/ui/AppDetailDrawer.vue"
 import DetailRow from "@/components/ui/DetailRow.vue"
 import DetailSection from "@/components/ui/DetailSection.vue"
 import { formatCurrency } from "@/utils/formatters"
+import { formatVehicleRegistration } from "@/utils/vehicleUtils"
 
 import type { PlanningDriver } from "@/models/planning/planning"
 
@@ -40,7 +41,8 @@ const result = computed(() => props.driver ? props.driver.totalRevenue - props.d
             </DetailSection>
 
             <DetailSection v-else title="Véhicules non utilisés" :icon="Truck">
-                <DetailRow v-for="registration in driver.vehicleRegistrations" :key="registration" :label="registration"
+                <DetailRow v-for="registration in driver.vehicleRegistrations" :key="registration"
+                    :label="formatVehicleRegistration(registration)"
                     :value="formatCurrency(driver.vehicleDepreciationCosts?.find(vehicle => vehicle.registration === registration)?.depreciationCost ?? null)" />
                 <DetailRow v-if="driver.vehicleRegistrations.length === 0" label="Véhicules" value="Aucun véhicule" />
             </DetailSection>

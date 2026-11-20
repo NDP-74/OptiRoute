@@ -4,6 +4,7 @@ import { computed } from "vue";
 import type { PlanningTransport } from "@/models/planning/planning";
 import { ChevronLeft, ChevronRight, Container, Truck } from 'lucide-vue-next'
 import { formatParisShortDay, formatParisTime } from "@/utils/formatters";
+import { formatVehicleRegistration } from "@/utils/vehicleUtils";
 
 const currencyFormatter = new Intl.NumberFormat("fr-FR", {
     style: "currency",
@@ -85,12 +86,12 @@ const formattedResult = computed(() => currencyFormatter.format(result.value));
             class="mt-3 flex items-center gap-3 text-xs text-slate-600">
             <span v-if="transport.tractorRegistration" class="flex min-w-0 items-center gap-1.5">
                 <Truck :size="14" class="shrink-0 text-slate-400" />
-                <span class="truncate">{{ transport.tractorRegistration }}</span>
+                <span class="truncate">{{ formatVehicleRegistration(transport.tractorRegistration) }}</span>
             </span>
 
             <span v-if="transport.semiTrailerRegistration" class="flex min-w-0 items-center gap-1.5">
                 <Container :size="14" class="shrink-0 text-slate-400" />
-                <span class="truncate">{{ transport.semiTrailerRegistration }}</span>
+                <span class="truncate">{{ formatVehicleRegistration(transport.semiTrailerRegistration) }}</span>
             </span>
 
         </div>

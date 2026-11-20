@@ -7,7 +7,7 @@ import AppDetailDrawer from "@/components/ui/AppDetailDrawer.vue"
 import DetailSection from "@/components/ui/DetailSection.vue"
 import DetailRow from "@/components/ui/DetailRow.vue"
 
-import UpdateCostParameterModal from "@/components/cost/UpdateCostParameterModal.vue"
+import CostParameterModal from "@/components/cost/CostParameterModal.vue"
 import DeleteCostParameterModal from "@/components/cost/DeleteCostParameterModal.vue"
 
 import type { CostParameter, CostCondition } from "@/models/cost/CostParameter"
@@ -214,7 +214,7 @@ const formatCondition = (condition: CostCondition) => {
         </template>
     </AppDetailDrawer>
 
-    <UpdateCostParameterModal :show="showUpdateModal" :cost-parameter="costParameter" @close="closeUpdateModal"
+    <CostParameterModal :show="showUpdateModal" :cost-parameter="costParameter" @close="closeUpdateModal"
         @updated="handleCostParameterUpdated" />
 
     <DeleteCostParameterModal :show="showDeleteModal" :cost-parameter="costParameter" @close="closeDeleteModal"

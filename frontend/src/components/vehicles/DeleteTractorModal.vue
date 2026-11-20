@@ -8,6 +8,7 @@ import type { TractorSummary } from '@/models/vehicle/Tractor'
 
 import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal.vue'
 import { useNotification } from '@/composables/useNotification'
+import { formatVehicleRegistration } from '@/utils/vehicleUtils'
 
 const notification = useNotification()
 
@@ -39,7 +40,7 @@ const confirmDelete = async () => {
 
         notification.success(
             'Tracteur supprimé',
-            `Le tracteur « ${props.tractor.registration} » a bien été supprimé.`,
+            `Le tracteur « ${formatVehicleRegistration(props.tractor.registration)} » a bien été supprimé.`,
         )
 
         emit('deleted')
@@ -57,6 +58,6 @@ const confirmDelete = async () => {
 
 <template>
     <ConfirmDeleteModal :show="props.show" :loading="deleting" title="Supprimer le tracteur"
-        :message="`Voulez-vous vraiment supprimer le tracteur ${props.tractor?.registration ?? ''} ?`"
+        :message="`Voulez-vous vraiment supprimer le tracteur ${props.tractor ? formatVehicleRegistration(props.tractor.registration) : ''} ?`"
         @close="closeModal" @confirm="confirmDelete" />
 </template>

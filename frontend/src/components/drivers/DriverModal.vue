@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from "vue"
 
-import { updateDriver } from "@/api/driver/driverApi"
+import { createDriver, updateDriver } from "@/api/driver/driverApi"
 import { getApiErrorMessage } from "@/api/utils"
 
-import type { DriverDetails, DriverFormData, UpdateDriverRequest } from "@/models/driver/Driver"
-
+import type { CreateDriverRequest, DriverDetails, DriverFormData } from "@/models/driver/Driver"
 import { createEmptyDriverForm } from "@/utils/driverUtils"
 
 import AppModal from "@/components/ui/AppModal.vue"
@@ -13,22 +12,41 @@ import DriverForm from "@/components/drivers/DriverForm.vue"
 
 import { useNotification } from "@/composables/useNotification"
 
-//Variables
-
 const notification = useNotification()
 const loading = ref(false)
 
 const props = defineProps<{
     show: boolean
-    driver: DriverDetails | null
+    driver?: DriverDetails | null
 }>()
 
 const emit = defineEmits<{
     close: []
+    created: [driver: DriverDetails]
     updated: []
 }>()
 
-//Manage Modal
+const form = reactive<DriverFormData>(createEmptyDriverForm())
+
+const syncForm = () => {
+    if (props.driver) {
+        Object.assign(form, {
+            firstName: props.driver.firstName,
+            lastName: props.driver.lastName,
+            annualSalary: props.driver.annualSalary,
+            monthlyWorkingHours: props.driver.monthlyWorkingHours,
+            tractorId: props.driver.tractorId,
+            semiTrailerId: props.driver.semiTrailerId,
+            costType: props.driver.costType,
+            driverType: props.driver.driverType,
+            locationLabel: props.driver.locationLabel,
+            locationLatitude: props.driver.locationLatitude,
+            locationLongitude: props.driver.locationLongitude,
+        } satisfies DriverFormData)
+    } else {
+        Object.assign(form, createEmptyDriverForm())
+    }
+}
 
 const closeModal = () => {
     if (!loading.value) {
@@ -36,45 +54,13 @@ const closeModal = () => {
     }
 }
 
-// Manage form
-
-const form = reactive<DriverFormData>(
-    createEmptyDriverForm(),
-)
-
-const populateForm = () => {
-    if (!props.driver) {
-        return
-    }
-
-    Object.assign(form, {
-        firstName: props.driver.firstName,
-        lastName: props.driver.lastName,
-
-        annualSalary: props.driver.annualSalary,
-        monthlyWorkingHours: props.driver.monthlyWorkingHours,
-        tractorId: props.driver.tractorId,
-        semiTrailerId: props.driver.semiTrailerId,
-        costType: props.driver.costType,
-        driverType: props.driver.driverType,
-        locationLabel: props.driver.locationLabel,
-        locationLatitude: props.driver.locationLatitude,
-        locationLongitude: props.driver.locationLongitude,
-    } satisfies DriverFormData)
-}
-
 const submitDriver = async () => {
-    if (!props.driver) {
-        return
-    }
-
     try {
         loading.value = true
 
-        const payload: UpdateDriverRequest = {
+        const payload: CreateDriverRequest = {
             firstName: form.firstName,
             lastName: form.lastName,
-
             annualSalary: form.annualSalary,
             monthlyWorkingHours: form.monthlyWorkingHours,
             tractorId: form.tractorId,
@@ -86,36 +72,45 @@ const submitDriver = async () => {
             locationLongitude: form.locationLongitude,
         }
 
-        await updateDriver(props.driver.id, payload)
+        if (props.driver) {
+            await updateDriver(props.driver.id, payload)
 
-        notification.success(
-            "Conducteur modifié",
-            `Le conducteur « ${form.firstName} ${form.lastName} » a bien été modifié.`,
-        )
+            notification.success(
+                "Conducteur modifié",
+                `Le conducteur « ${form.firstName} ${form.lastName} » a bien été modifié.`,
+            )
+            emit("updated")
+        } else {
+            const driver = await createDriver(payload)
 
-        emit("updated")
+            notification.success(
+                "Conducteur créé",
+                `Le conducteur « ${form.firstName} ${form.lastName} » a bien été ajouté.`,
+            )
+            emit("created", driver)
+        }
     } catch (error: unknown) {
-        notification.error(
-            "Modification impossible",
-            getApiErrorMessage(error, "Le conducteur n’a pas pu être modifié."),
-        )
+        const action = props.driver ? "Modification" : "Création"
+        const fallback = props.driver
+            ? "Le conducteur n’a pas pu être modifié."
+            : "Le conducteur n’a pas pu être créé."
+
+        notification.error(`${action} impossible`, getApiErrorMessage(error, fallback))
     } finally {
         loading.value = false
     }
 }
 
-//Watch
-
 watch(
     [() => props.show, () => props.driver],
-    ([show, driver]) => {
-        if (show && driver) {
-            populateForm()
+    ([show]) => {
+        if (show) {
+            syncForm()
+        } else {
+            Object.assign(form, createEmptyDriverForm())
         }
     },
-    {
-        immediate: true,
-    },
+    { immediate: true },
 )
 </script>
 
@@ -123,7 +118,7 @@ watch(
     <AppModal :show="props.show" @close="closeModal">
         <form @submit.prevent="submitDriver">
             <h2 class="mb-6 text-2xl font-bold text-slate-900">
-                Modifier un conducteur
+                {{ props.driver ? "Modifier un conducteur" : "Ajouter un conducteur" }}
             </h2>
 
             <div class="max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">

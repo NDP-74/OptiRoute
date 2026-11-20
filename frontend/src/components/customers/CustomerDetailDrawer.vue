@@ -4,7 +4,7 @@ import { Building2, Clock, Edit3, MapPin, Trash2 } from "lucide-vue-next"
 
 import { getCustomer } from "@/api/customerApi"
 import DeleteCustomerModal from "@/components/customers/DeleteCustomerModal.vue"
-import EditCustomerModal from "@/components/customers/EditCustomerModal.vue"
+import CustomerModal from "@/components/customers/CustomerModal.vue"
 import AppDetailDrawer from "@/components/ui/AppDetailDrawer.vue"
 import DetailRow from "@/components/ui/DetailRow.vue"
 import DetailSection from "@/components/ui/DetailSection.vue"
@@ -160,7 +160,7 @@ watch(
         </template>
     </AppDetailDrawer>
 
-    <EditCustomerModal :show="showUpdateModal" :customer="customer" @close="showUpdateModal = false"
+    <CustomerModal :show="showUpdateModal" :customer="customer" @close="showUpdateModal = false"
         @updated="handleCustomerUpdated" />
     <DeleteCustomerModal :show="showDeleteModal" :customer="customer" @close="showDeleteModal = false"
         @deleted="handleCustomerDeleted" />

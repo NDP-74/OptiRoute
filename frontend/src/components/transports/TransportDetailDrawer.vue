@@ -23,6 +23,7 @@ import AppDetailDrawer from "@/components/ui/AppDetailDrawer.vue"
 import ConfirmDeleteModal from "@/components/ui/ConfirmDeleteModal.vue"
 
 import { formatDurationSeconds, formatCurrency, formatDateTime, formatDistance } from "@/utils/formatters"
+import { formatVehicleRegistration } from "@/utils/vehicleUtils"
 
 const showDeleteModal = ref(false)
 const showEventModal = ref(false)
@@ -415,9 +416,11 @@ watch(
                     <TransportDetailBlock title="Donneur d’ordre" :primary="activeTransport.customerName"
                         :secondary="customerAddress" />
 
-                    <TransportDetailBlock title="Tracteur" :primary="activeTransport.tractorRegistration" />
+                    <TransportDetailBlock title="Tracteur"
+                        :primary="activeTransport.tractorRegistration ? formatVehicleRegistration(activeTransport.tractorRegistration) : null" />
 
-                    <TransportDetailBlock title="Semi-remorque" :primary="activeTransport.semiTrailerRegistration" />
+                    <TransportDetailBlock title="Semi-remorque"
+                        :primary="activeTransport.semiTrailerRegistration ? formatVehicleRegistration(activeTransport.semiTrailerRegistration) : null" />
 
 
                 </div>
